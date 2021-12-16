@@ -1,0 +1,44 @@
+{% extends "flextool3/base.html" %}
+{% load static %}
+{% load render_bundle from webpack_loader %}
+
+{% block title %} Model editor - Flextool 3{% endblock %}
+
+{% block head %}
+    <link rel="stylesheet" href="{% static 'flextool3/tree.css' %}" type="text/css">
+{% endblock %}
+
+{% block top-bar %}
+    <li><a href="{% url 'flextool3:index' %}">Projects</a></li>
+    <li><a href="{% url 'flextool3:detail' project.id %}">Project details</a></li>
+    <li><p>Model editor</p></li>
+    <li><a href="{% url 'flextool3:solve' project.id %}">Solve</a></li>
+    <li><a href="{% url 'flextool3:view' project.id %}">Results</a></li>
+{% endblock %}
+
+{% block content %}
+    <div id="editor-app">
+        <div id="object-tree">
+            <h1>Objects:</h1>
+            <ul class="root">
+                <li v-for="objectClass in objectClasses.values()"><span class="caret">{% templatetag openvariable %}objectClass.name{% templatetag closevariable %}</span>
+                    <ul class="nested">
+                        <li v-for="object, objectIndex in objectsForClass(objectClass)">{% templatetag openvariable %}object.name{% templatetag closevariable %}</li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+        <div id="object-parameter-value-table">
+            <table>
+                <tr>
+                    <th>Class</th><th>Object</th><th>Parameter</th><th>Alternative</th><th>Value</th>
+                </tr>
+                <tr v-for="value, valueIndex in valuesForObject(objects[0])">
+                    <td>{% templatetag openvariable %}value.parameter_name{% templatetag closevariable %}</td>
+                </tr>
+            </table>
+        </div>
+    </div>
+    {{ script_data|json_script:"script-data" }}
+    {% render_bundle 'edit' %}
+{% endblock %}

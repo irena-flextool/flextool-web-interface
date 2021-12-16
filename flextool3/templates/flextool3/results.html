@@ -1,0 +1,16 @@
+{% extends "flextool3/base.html" %}
+
+{% block title %} Results - Flextool 3{% endblock %}
+
+{% block top-bar %}
+    <li><a href="{% url 'flextool3:index' %}">Projects</a></li>
+    <li><a href="{% url 'flextool3:detail' project.id %}">Project details</a></li>
+    <li><a href="{% url 'flextool3:edit' project.id %}">Model editor</a></li>
+    <li><a href="{% url 'flextool3:solve' project.id %}">Solve</a></li>
+    <li><p>Results</p></li>
+{% endblock %}
+
+{% block content %}
+    <h1>View results here</h1>
+
+{% endblock %}

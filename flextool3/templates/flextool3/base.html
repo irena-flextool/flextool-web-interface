@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}{% endblock %} - Flextool 3</title>
+    {% load static %}
+    <link rel="icon" type="image/x-icon" href="{% static 'flextool3/favicon.ico' %}">
+    {% block head %}{% endblock %}
+    <link rel="stylesheet" href="{% static 'flextool3/style.css' %}" type="text/css">
+</head>
+<body>
+    <nav id="top-bar">
+        <ul>
+            {% block top-bar %}{% endblock %}
+            <li><a href="{% url 'flextool3:logout' %}">Logout</a></li>
+        </ul>
+    </nav>
+    <section>
+        {% block content %}{% endblock %}
+    </section>
+</body>
+</html>

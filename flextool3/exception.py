@@ -1,0 +1,2 @@
+class FlextoolException(Exception):
+    pass

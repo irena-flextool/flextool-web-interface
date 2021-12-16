@@ -1,0 +1,39 @@
+{
+  "status": "done",
+  "assets": {
+    "js/chunk-vendors.js": {
+      "name": "js/chunk-vendors.js",
+      "path": "C:\\data\\src\\flextool_backend\\flextool3\\static\\flextool3\\js\\chunk-vendors.js"
+    },
+    "js/edit.js": {
+      "name": "js/edit.js",
+      "path": "C:\\data\\src\\flextool_backend\\flextool3\\static\\flextool3\\js\\edit.js"
+    },
+    "js/index.js": {
+      "name": "js/index.js",
+      "path": "C:\\data\\src\\flextool_backend\\flextool3\\static\\flextool3\\js\\index.js"
+    },
+    "favicon.ico": {
+      "name": "favicon.ico",
+      "path": "C:\\data\\src\\flextool_backend\\flextool3\\static\\flextool3\\favicon.ico"
+    },
+    "tree.css": {
+      "name": "tree.css",
+      "path": "C:\\data\\src\\flextool_backend\\flextool3\\static\\flextool3\\tree.css"
+    },
+    "style.css": {
+      "name": "style.css",
+      "path": "C:\\data\\src\\flextool_backend\\flextool3\\static\\flextool3\\style.css"
+    }
+  },
+  "chunks": {
+    "index": [
+      "js/chunk-vendors.js",
+      "js/index.js"
+    ],
+    "edit": [
+      "js/chunk-vendors.js",
+      "js/edit.js"
+    ]
+  }
+}
