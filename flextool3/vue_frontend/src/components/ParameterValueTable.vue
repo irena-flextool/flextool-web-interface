@@ -10,7 +10,8 @@
 </template>
 
 <script>
-import { h, onMounted, reactive, ref } from "vue/dist/vue.esm-bundler.js"
+import { h, onMounted, ref } from "vue/dist/vue.esm-bundler.js"
+import { NInput, NInputNumber, NText } from 'naive-ui'
 import * as Communication from "../modules/communication.js";
 
 
@@ -35,21 +36,16 @@ function makeColumns() {
         title: "Value",
         key: "value",
         render: function (rowData) {
-            const value = rowData.value;
-            let renderValue = value;
-            const valueType = typeof(value);
-            if (valueType != "string") {
+            if (!rowData.type) {
+                const valueType = typeof(rowData.value);
                 if (valueType == "number") {
-                    renderValue = String(value);
-                }
-                else if (valueType == "object") {
-                    renderValue = rowData.type;
+                    return h(NInputNumber, {showButton: false, defaultValue: rowData.value});
                 }
                 else {
-                    renderValue = "Unknown type"
+                    return h(NInput, {defaultValue: rowData.value, onChange: (value) => rowData.value = value;});
                 }
             }
-            return h("p", {}, renderValue);
+            return h(NText, {italic: true}, {default: () => rowData.type});
         }
     };
     return [
@@ -88,11 +84,6 @@ export default {
         const data = ref([]);
         const loading = ref(true);
         const columns = ref(makeColumns());
-        const entityClassColumn = reactive(columns.value[0]);
-        const entityColumn = reactive(columns.value[1]);
-        const parameterColumn = reactive(columns.value[2]);
-        const alternativeColumn = reactive(columns.value[3]);
-        const valueColumn = reactive(columns.value[4]);
         onMounted(function () {
             fetchObjectParameterValues(props.projectId, props.modelUrl).then(function(rows) {
                 data.value = rows;
@@ -102,11 +93,6 @@ export default {
         return {
             data: data,
             columns: columns,
-            entityClassColumn: entityClassColumn,
-            entityColumn: entityColumn,
-            parameterColumn: parameterColumn,
-            alternativeColumn: alternativeColumn,
-            valueColumn: valueColumn,
             loading: loading,
             rowKey (rowData) {
                 return rowData.id;
