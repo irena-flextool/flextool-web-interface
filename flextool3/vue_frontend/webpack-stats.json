@@ -3,27 +3,348 @@
   "assets": {
     "js/chunk-vendors.js": {
       "name": "js/chunk-vendors.js",
-      "path": "C:\\data\\src\\flextool_backend\\flextool3\\static\\flextool3\\js\\chunk-vendors.js"
+      "path": "C:\\data\\src\\flextool_backend\\flextool3\\static\\flextool3\\js\\chunk-vendors.js",
+      "publicPath": "http://localhost:8080/js/chunk-vendors.js"
     },
     "js/edit.js": {
       "name": "js/edit.js",
-      "path": "C:\\data\\src\\flextool_backend\\flextool3\\static\\flextool3\\js\\edit.js"
+      "path": "C:\\data\\src\\flextool_backend\\flextool3\\static\\flextool3\\js\\edit.js",
+      "publicPath": "http://localhost:8080/js/edit.js"
     },
     "js/index.js": {
       "name": "js/index.js",
-      "path": "C:\\data\\src\\flextool_backend\\flextool3\\static\\flextool3\\js\\index.js"
-    },
-    "favicon.ico": {
-      "name": "favicon.ico",
-      "path": "C:\\data\\src\\flextool_backend\\flextool3\\static\\flextool3\\favicon.ico"
-    },
-    "tree.css": {
-      "name": "tree.css",
-      "path": "C:\\data\\src\\flextool_backend\\flextool3\\static\\flextool3\\tree.css"
+      "path": "C:\\data\\src\\flextool_backend\\flextool3\\static\\flextool3\\js\\index.js",
+      "publicPath": "http://localhost:8080/js/index.js"
     },
     "style.css": {
       "name": "style.css",
-      "path": "C:\\data\\src\\flextool_backend\\flextool3\\static\\flextool3\\style.css"
+      "path": "C:\\data\\src\\flextool_backend\\flextool3\\static\\flextool3\\style.css",
+      "publicPath": "http://localhost:8080/style.css"
+    },
+    "favicon.ico": {
+      "name": "favicon.ico",
+      "path": "C:\\data\\src\\flextool_backend\\flextool3\\static\\flextool3\\favicon.ico",
+      "publicPath": "http://localhost:8080/favicon.ico"
+    },
+    "tree.css": {
+      "name": "tree.css",
+      "path": "C:\\data\\src\\flextool_backend\\flextool3\\static\\flextool3\\tree.css",
+      "publicPath": "http://localhost:8080/tree.css"
+    },
+    "chunk-vendors.4cbd45fb4bc99a8a0473.hot-update.js": {
+      "name": "chunk-vendors.4cbd45fb4bc99a8a0473.hot-update.js",
+      "path": "C:\\data\\src\\flextool_backend\\flextool3\\static\\flextool3\\chunk-vendors.4cbd45fb4bc99a8a0473.hot-update.js",
+      "publicPath": "http://localhost:8080/chunk-vendors.4cbd45fb4bc99a8a0473.hot-update.js"
+    },
+    "edit.4cbd45fb4bc99a8a0473.hot-update.js": {
+      "name": "edit.4cbd45fb4bc99a8a0473.hot-update.js",
+      "path": "C:\\data\\src\\flextool_backend\\flextool3\\static\\flextool3\\edit.4cbd45fb4bc99a8a0473.hot-update.js",
+      "publicPath": "http://localhost:8080/edit.4cbd45fb4bc99a8a0473.hot-update.js"
+    },
+    "4cbd45fb4bc99a8a0473.hot-update.json": {
+      "name": "4cbd45fb4bc99a8a0473.hot-update.json",
+      "path": "C:\\data\\src\\flextool_backend\\flextool3\\static\\flextool3\\4cbd45fb4bc99a8a0473.hot-update.json",
+      "publicPath": "http://localhost:8080/4cbd45fb4bc99a8a0473.hot-update.json"
+    },
+    "edit.3ff0d0cc904be95c802b.hot-update.js": {
+      "name": "edit.3ff0d0cc904be95c802b.hot-update.js",
+      "path": "C:\\data\\src\\flextool_backend\\flextool3\\static\\flextool3\\edit.3ff0d0cc904be95c802b.hot-update.js",
+      "publicPath": "http://localhost:8080/edit.3ff0d0cc904be95c802b.hot-update.js"
+    },
+    "3ff0d0cc904be95c802b.hot-update.json": {
+      "name": "3ff0d0cc904be95c802b.hot-update.json",
+      "path": "C:\\data\\src\\flextool_backend\\flextool3\\static\\flextool3\\3ff0d0cc904be95c802b.hot-update.json",
+      "publicPath": "http://localhost:8080/3ff0d0cc904be95c802b.hot-update.json"
+    },
+    "chunk-vendors.1be7c2f8265c8be2b490.hot-update.js": {
+      "name": "chunk-vendors.1be7c2f8265c8be2b490.hot-update.js",
+      "path": "C:\\data\\src\\flextool_backend\\flextool3\\static\\flextool3\\chunk-vendors.1be7c2f8265c8be2b490.hot-update.js",
+      "publicPath": "http://localhost:8080/chunk-vendors.1be7c2f8265c8be2b490.hot-update.js"
+    },
+    "edit.1be7c2f8265c8be2b490.hot-update.js": {
+      "name": "edit.1be7c2f8265c8be2b490.hot-update.js",
+      "path": "C:\\data\\src\\flextool_backend\\flextool3\\static\\flextool3\\edit.1be7c2f8265c8be2b490.hot-update.js",
+      "publicPath": "http://localhost:8080/edit.1be7c2f8265c8be2b490.hot-update.js"
+    },
+    "1be7c2f8265c8be2b490.hot-update.json": {
+      "name": "1be7c2f8265c8be2b490.hot-update.json",
+      "path": "C:\\data\\src\\flextool_backend\\flextool3\\static\\flextool3\\1be7c2f8265c8be2b490.hot-update.json",
+      "publicPath": "http://localhost:8080/1be7c2f8265c8be2b490.hot-update.json"
+    },
+    "edit.fa98c03977027c9fb238.hot-update.js": {
+      "name": "edit.fa98c03977027c9fb238.hot-update.js",
+      "path": "C:\\data\\src\\flextool_backend\\flextool3\\static\\flextool3\\edit.fa98c03977027c9fb238.hot-update.js",
+      "publicPath": "http://localhost:8080/edit.fa98c03977027c9fb238.hot-update.js"
+    },
+    "fa98c03977027c9fb238.hot-update.json": {
+      "name": "fa98c03977027c9fb238.hot-update.json",
+      "path": "C:\\data\\src\\flextool_backend\\flextool3\\static\\flextool3\\fa98c03977027c9fb238.hot-update.json",
+      "publicPath": "http://localhost:8080/fa98c03977027c9fb238.hot-update.json"
+    },
+    "edit.23f72b144c97eb38e35b.hot-update.js": {
+      "name": "edit.23f72b144c97eb38e35b.hot-update.js",
+      "path": "C:\\data\\src\\flextool_backend\\flextool3\\static\\flextool3\\edit.23f72b144c97eb38e35b.hot-update.js",
+      "publicPath": "http://localhost:8080/edit.23f72b144c97eb38e35b.hot-update.js"
+    },
+    "23f72b144c97eb38e35b.hot-update.json": {
+      "name": "23f72b144c97eb38e35b.hot-update.json",
+      "path": "C:\\data\\src\\flextool_backend\\flextool3\\static\\flextool3\\23f72b144c97eb38e35b.hot-update.json",
+      "publicPath": "http://localhost:8080/23f72b144c97eb38e35b.hot-update.json"
+    },
+    "edit.dd4d30e95c60b7b0ab99.hot-update.js": {
+      "name": "edit.dd4d30e95c60b7b0ab99.hot-update.js",
+      "path": "C:\\data\\src\\flextool_backend\\flextool3\\static\\flextool3\\edit.dd4d30e95c60b7b0ab99.hot-update.js",
+      "publicPath": "http://localhost:8080/edit.dd4d30e95c60b7b0ab99.hot-update.js"
+    },
+    "dd4d30e95c60b7b0ab99.hot-update.json": {
+      "name": "dd4d30e95c60b7b0ab99.hot-update.json",
+      "path": "C:\\data\\src\\flextool_backend\\flextool3\\static\\flextool3\\dd4d30e95c60b7b0ab99.hot-update.json",
+      "publicPath": "http://localhost:8080/dd4d30e95c60b7b0ab99.hot-update.json"
+    },
+    "edit.b1630af6b94c3fface96.hot-update.js": {
+      "name": "edit.b1630af6b94c3fface96.hot-update.js",
+      "path": "C:\\data\\src\\flextool_backend\\flextool3\\static\\flextool3\\edit.b1630af6b94c3fface96.hot-update.js",
+      "publicPath": "http://localhost:8080/edit.b1630af6b94c3fface96.hot-update.js"
+    },
+    "b1630af6b94c3fface96.hot-update.json": {
+      "name": "b1630af6b94c3fface96.hot-update.json",
+      "path": "C:\\data\\src\\flextool_backend\\flextool3\\static\\flextool3\\b1630af6b94c3fface96.hot-update.json",
+      "publicPath": "http://localhost:8080/b1630af6b94c3fface96.hot-update.json"
+    },
+    "edit.5127247b42acd256ffb8.hot-update.js": {
+      "name": "edit.5127247b42acd256ffb8.hot-update.js",
+      "path": "C:\\data\\src\\flextool_backend\\flextool3\\static\\flextool3\\edit.5127247b42acd256ffb8.hot-update.js",
+      "publicPath": "http://localhost:8080/edit.5127247b42acd256ffb8.hot-update.js"
+    },
+    "5127247b42acd256ffb8.hot-update.json": {
+      "name": "5127247b42acd256ffb8.hot-update.json",
+      "path": "C:\\data\\src\\flextool_backend\\flextool3\\static\\flextool3\\5127247b42acd256ffb8.hot-update.json",
+      "publicPath": "http://localhost:8080/5127247b42acd256ffb8.hot-update.json"
+    },
+    "edit.813099b79dbdb8b3bc7e.hot-update.js": {
+      "name": "edit.813099b79dbdb8b3bc7e.hot-update.js",
+      "path": "C:\\data\\src\\flextool_backend\\flextool3\\static\\flextool3\\edit.813099b79dbdb8b3bc7e.hot-update.js",
+      "publicPath": "http://localhost:8080/edit.813099b79dbdb8b3bc7e.hot-update.js"
+    },
+    "813099b79dbdb8b3bc7e.hot-update.json": {
+      "name": "813099b79dbdb8b3bc7e.hot-update.json",
+      "path": "C:\\data\\src\\flextool_backend\\flextool3\\static\\flextool3\\813099b79dbdb8b3bc7e.hot-update.json",
+      "publicPath": "http://localhost:8080/813099b79dbdb8b3bc7e.hot-update.json"
+    },
+    "chunk-vendors.df621f9f88e6750d0fd6.hot-update.js": {
+      "name": "chunk-vendors.df621f9f88e6750d0fd6.hot-update.js",
+      "path": "C:\\data\\src\\flextool_backend\\flextool3\\static\\flextool3\\chunk-vendors.df621f9f88e6750d0fd6.hot-update.js",
+      "publicPath": "http://localhost:8080/chunk-vendors.df621f9f88e6750d0fd6.hot-update.js"
+    },
+    "edit.df621f9f88e6750d0fd6.hot-update.js": {
+      "name": "edit.df621f9f88e6750d0fd6.hot-update.js",
+      "path": "C:\\data\\src\\flextool_backend\\flextool3\\static\\flextool3\\edit.df621f9f88e6750d0fd6.hot-update.js",
+      "publicPath": "http://localhost:8080/edit.df621f9f88e6750d0fd6.hot-update.js"
+    },
+    "df621f9f88e6750d0fd6.hot-update.json": {
+      "name": "df621f9f88e6750d0fd6.hot-update.json",
+      "path": "C:\\data\\src\\flextool_backend\\flextool3\\static\\flextool3\\df621f9f88e6750d0fd6.hot-update.json",
+      "publicPath": "http://localhost:8080/df621f9f88e6750d0fd6.hot-update.json"
+    },
+    "chunk-vendors.9db7cd8985af21f20cc2.hot-update.js": {
+      "name": "chunk-vendors.9db7cd8985af21f20cc2.hot-update.js",
+      "path": "C:\\data\\src\\flextool_backend\\flextool3\\static\\flextool3\\chunk-vendors.9db7cd8985af21f20cc2.hot-update.js",
+      "publicPath": "http://localhost:8080/chunk-vendors.9db7cd8985af21f20cc2.hot-update.js"
+    },
+    "edit.9db7cd8985af21f20cc2.hot-update.js": {
+      "name": "edit.9db7cd8985af21f20cc2.hot-update.js",
+      "path": "C:\\data\\src\\flextool_backend\\flextool3\\static\\flextool3\\edit.9db7cd8985af21f20cc2.hot-update.js",
+      "publicPath": "http://localhost:8080/edit.9db7cd8985af21f20cc2.hot-update.js"
+    },
+    "9db7cd8985af21f20cc2.hot-update.json": {
+      "name": "9db7cd8985af21f20cc2.hot-update.json",
+      "path": "C:\\data\\src\\flextool_backend\\flextool3\\static\\flextool3\\9db7cd8985af21f20cc2.hot-update.json",
+      "publicPath": "http://localhost:8080/9db7cd8985af21f20cc2.hot-update.json"
+    },
+    "edit.9b8f990f41d3825813ee.hot-update.js": {
+      "name": "edit.9b8f990f41d3825813ee.hot-update.js",
+      "path": "C:\\data\\src\\flextool_backend\\flextool3\\static\\flextool3\\edit.9b8f990f41d3825813ee.hot-update.js",
+      "publicPath": "http://localhost:8080/edit.9b8f990f41d3825813ee.hot-update.js"
+    },
+    "9b8f990f41d3825813ee.hot-update.json": {
+      "name": "9b8f990f41d3825813ee.hot-update.json",
+      "path": "C:\\data\\src\\flextool_backend\\flextool3\\static\\flextool3\\9b8f990f41d3825813ee.hot-update.json",
+      "publicPath": "http://localhost:8080/9b8f990f41d3825813ee.hot-update.json"
+    },
+    "edit.9b7acb554028c0f66a78.hot-update.js": {
+      "name": "edit.9b7acb554028c0f66a78.hot-update.js",
+      "path": "C:\\data\\src\\flextool_backend\\flextool3\\static\\flextool3\\edit.9b7acb554028c0f66a78.hot-update.js",
+      "publicPath": "http://localhost:8080/edit.9b7acb554028c0f66a78.hot-update.js"
+    },
+    "9b7acb554028c0f66a78.hot-update.json": {
+      "name": "9b7acb554028c0f66a78.hot-update.json",
+      "path": "C:\\data\\src\\flextool_backend\\flextool3\\static\\flextool3\\9b7acb554028c0f66a78.hot-update.json",
+      "publicPath": "http://localhost:8080/9b7acb554028c0f66a78.hot-update.json"
+    },
+    "edit.cd8ea1fc1174a44791ff.hot-update.js": {
+      "name": "edit.cd8ea1fc1174a44791ff.hot-update.js",
+      "path": "C:\\data\\src\\flextool_backend\\flextool3\\static\\flextool3\\edit.cd8ea1fc1174a44791ff.hot-update.js",
+      "publicPath": "http://localhost:8080/edit.cd8ea1fc1174a44791ff.hot-update.js"
+    },
+    "cd8ea1fc1174a44791ff.hot-update.json": {
+      "name": "cd8ea1fc1174a44791ff.hot-update.json",
+      "path": "C:\\data\\src\\flextool_backend\\flextool3\\static\\flextool3\\cd8ea1fc1174a44791ff.hot-update.json",
+      "publicPath": "http://localhost:8080/cd8ea1fc1174a44791ff.hot-update.json"
+    },
+    "edit.34918ad1984dcf4f8043.hot-update.js": {
+      "name": "edit.34918ad1984dcf4f8043.hot-update.js",
+      "path": "C:\\data\\src\\flextool_backend\\flextool3\\static\\flextool3\\edit.34918ad1984dcf4f8043.hot-update.js",
+      "publicPath": "http://localhost:8080/edit.34918ad1984dcf4f8043.hot-update.js"
+    },
+    "34918ad1984dcf4f8043.hot-update.json": {
+      "name": "34918ad1984dcf4f8043.hot-update.json",
+      "path": "C:\\data\\src\\flextool_backend\\flextool3\\static\\flextool3\\34918ad1984dcf4f8043.hot-update.json",
+      "publicPath": "http://localhost:8080/34918ad1984dcf4f8043.hot-update.json"
+    },
+    "edit.56a1002de2540160de0d.hot-update.js": {
+      "name": "edit.56a1002de2540160de0d.hot-update.js",
+      "path": "C:\\data\\src\\flextool_backend\\flextool3\\static\\flextool3\\edit.56a1002de2540160de0d.hot-update.js",
+      "publicPath": "http://localhost:8080/edit.56a1002de2540160de0d.hot-update.js"
+    },
+    "56a1002de2540160de0d.hot-update.json": {
+      "name": "56a1002de2540160de0d.hot-update.json",
+      "path": "C:\\data\\src\\flextool_backend\\flextool3\\static\\flextool3\\56a1002de2540160de0d.hot-update.json",
+      "publicPath": "http://localhost:8080/56a1002de2540160de0d.hot-update.json"
+    },
+    "edit.84090bd08045cbe49637.hot-update.js": {
+      "name": "edit.84090bd08045cbe49637.hot-update.js",
+      "path": "C:\\data\\src\\flextool_backend\\flextool3\\static\\flextool3\\edit.84090bd08045cbe49637.hot-update.js",
+      "publicPath": "http://localhost:8080/edit.84090bd08045cbe49637.hot-update.js"
+    },
+    "84090bd08045cbe49637.hot-update.json": {
+      "name": "84090bd08045cbe49637.hot-update.json",
+      "path": "C:\\data\\src\\flextool_backend\\flextool3\\static\\flextool3\\84090bd08045cbe49637.hot-update.json",
+      "publicPath": "http://localhost:8080/84090bd08045cbe49637.hot-update.json"
+    },
+    "edit.d7337bca2ff279c1dca2.hot-update.js": {
+      "name": "edit.d7337bca2ff279c1dca2.hot-update.js",
+      "path": "C:\\data\\src\\flextool_backend\\flextool3\\static\\flextool3\\edit.d7337bca2ff279c1dca2.hot-update.js",
+      "publicPath": "http://localhost:8080/edit.d7337bca2ff279c1dca2.hot-update.js"
+    },
+    "d7337bca2ff279c1dca2.hot-update.json": {
+      "name": "d7337bca2ff279c1dca2.hot-update.json",
+      "path": "C:\\data\\src\\flextool_backend\\flextool3\\static\\flextool3\\d7337bca2ff279c1dca2.hot-update.json",
+      "publicPath": "http://localhost:8080/d7337bca2ff279c1dca2.hot-update.json"
+    },
+    "edit.fabd8815ac0a57d7cdb2.hot-update.js": {
+      "name": "edit.fabd8815ac0a57d7cdb2.hot-update.js",
+      "path": "C:\\data\\src\\flextool_backend\\flextool3\\static\\flextool3\\edit.fabd8815ac0a57d7cdb2.hot-update.js",
+      "publicPath": "http://localhost:8080/edit.fabd8815ac0a57d7cdb2.hot-update.js"
+    },
+    "fabd8815ac0a57d7cdb2.hot-update.json": {
+      "name": "fabd8815ac0a57d7cdb2.hot-update.json",
+      "path": "C:\\data\\src\\flextool_backend\\flextool3\\static\\flextool3\\fabd8815ac0a57d7cdb2.hot-update.json",
+      "publicPath": "http://localhost:8080/fabd8815ac0a57d7cdb2.hot-update.json"
+    },
+    "edit.a20a72859377fd17f2d6.hot-update.js": {
+      "name": "edit.a20a72859377fd17f2d6.hot-update.js",
+      "path": "C:\\data\\src\\flextool_backend\\flextool3\\static\\flextool3\\edit.a20a72859377fd17f2d6.hot-update.js",
+      "publicPath": "http://localhost:8080/edit.a20a72859377fd17f2d6.hot-update.js"
+    },
+    "a20a72859377fd17f2d6.hot-update.json": {
+      "name": "a20a72859377fd17f2d6.hot-update.json",
+      "path": "C:\\data\\src\\flextool_backend\\flextool3\\static\\flextool3\\a20a72859377fd17f2d6.hot-update.json",
+      "publicPath": "http://localhost:8080/a20a72859377fd17f2d6.hot-update.json"
+    },
+    "edit.b32f394078c1b1bfefca.hot-update.js": {
+      "name": "edit.b32f394078c1b1bfefca.hot-update.js",
+      "path": "C:\\data\\src\\flextool_backend\\flextool3\\static\\flextool3\\edit.b32f394078c1b1bfefca.hot-update.js",
+      "publicPath": "http://localhost:8080/edit.b32f394078c1b1bfefca.hot-update.js"
+    },
+    "b32f394078c1b1bfefca.hot-update.json": {
+      "name": "b32f394078c1b1bfefca.hot-update.json",
+      "path": "C:\\data\\src\\flextool_backend\\flextool3\\static\\flextool3\\b32f394078c1b1bfefca.hot-update.json",
+      "publicPath": "http://localhost:8080/b32f394078c1b1bfefca.hot-update.json"
+    },
+    "chunk-vendors.8e18aac82259552d42c3.hot-update.js": {
+      "name": "chunk-vendors.8e18aac82259552d42c3.hot-update.js",
+      "path": "C:\\data\\src\\flextool_backend\\flextool3\\static\\flextool3\\chunk-vendors.8e18aac82259552d42c3.hot-update.js",
+      "publicPath": "http://localhost:8080/chunk-vendors.8e18aac82259552d42c3.hot-update.js"
+    },
+    "edit.8e18aac82259552d42c3.hot-update.js": {
+      "name": "edit.8e18aac82259552d42c3.hot-update.js",
+      "path": "C:\\data\\src\\flextool_backend\\flextool3\\static\\flextool3\\edit.8e18aac82259552d42c3.hot-update.js",
+      "publicPath": "http://localhost:8080/edit.8e18aac82259552d42c3.hot-update.js"
+    },
+    "8e18aac82259552d42c3.hot-update.json": {
+      "name": "8e18aac82259552d42c3.hot-update.json",
+      "path": "C:\\data\\src\\flextool_backend\\flextool3\\static\\flextool3\\8e18aac82259552d42c3.hot-update.json",
+      "publicPath": "http://localhost:8080/8e18aac82259552d42c3.hot-update.json"
+    },
+    "edit.b108436a0e95d0460146.hot-update.js": {
+      "name": "edit.b108436a0e95d0460146.hot-update.js",
+      "path": "C:\\data\\src\\flextool_backend\\flextool3\\static\\flextool3\\edit.b108436a0e95d0460146.hot-update.js",
+      "publicPath": "http://localhost:8080/edit.b108436a0e95d0460146.hot-update.js"
+    },
+    "b108436a0e95d0460146.hot-update.json": {
+      "name": "b108436a0e95d0460146.hot-update.json",
+      "path": "C:\\data\\src\\flextool_backend\\flextool3\\static\\flextool3\\b108436a0e95d0460146.hot-update.json",
+      "publicPath": "http://localhost:8080/b108436a0e95d0460146.hot-update.json"
+    },
+    "edit.2dd787e5e74954bfe4b6.hot-update.js": {
+      "name": "edit.2dd787e5e74954bfe4b6.hot-update.js",
+      "path": "C:\\data\\src\\flextool_backend\\flextool3\\static\\flextool3\\edit.2dd787e5e74954bfe4b6.hot-update.js",
+      "publicPath": "http://localhost:8080/edit.2dd787e5e74954bfe4b6.hot-update.js"
+    },
+    "2dd787e5e74954bfe4b6.hot-update.json": {
+      "name": "2dd787e5e74954bfe4b6.hot-update.json",
+      "path": "C:\\data\\src\\flextool_backend\\flextool3\\static\\flextool3\\2dd787e5e74954bfe4b6.hot-update.json",
+      "publicPath": "http://localhost:8080/2dd787e5e74954bfe4b6.hot-update.json"
+    },
+    "edit.be1d8e763f5e071e7c80.hot-update.js": {
+      "name": "edit.be1d8e763f5e071e7c80.hot-update.js",
+      "path": "C:\\data\\src\\flextool_backend\\flextool3\\static\\flextool3\\edit.be1d8e763f5e071e7c80.hot-update.js",
+      "publicPath": "http://localhost:8080/edit.be1d8e763f5e071e7c80.hot-update.js"
+    },
+    "be1d8e763f5e071e7c80.hot-update.json": {
+      "name": "be1d8e763f5e071e7c80.hot-update.json",
+      "path": "C:\\data\\src\\flextool_backend\\flextool3\\static\\flextool3\\be1d8e763f5e071e7c80.hot-update.json",
+      "publicPath": "http://localhost:8080/be1d8e763f5e071e7c80.hot-update.json"
+    },
+    "edit.e19f348e76c226cbabcd.hot-update.js": {
+      "name": "edit.e19f348e76c226cbabcd.hot-update.js",
+      "path": "C:\\data\\src\\flextool_backend\\flextool3\\static\\flextool3\\edit.e19f348e76c226cbabcd.hot-update.js",
+      "publicPath": "http://localhost:8080/edit.e19f348e76c226cbabcd.hot-update.js"
+    },
+    "e19f348e76c226cbabcd.hot-update.json": {
+      "name": "e19f348e76c226cbabcd.hot-update.json",
+      "path": "C:\\data\\src\\flextool_backend\\flextool3\\static\\flextool3\\e19f348e76c226cbabcd.hot-update.json",
+      "publicPath": "http://localhost:8080/e19f348e76c226cbabcd.hot-update.json"
+    },
+    "edit.f52f77ed4bafcdc32766.hot-update.js": {
+      "name": "edit.f52f77ed4bafcdc32766.hot-update.js",
+      "path": "C:\\data\\src\\flextool_backend\\flextool3\\static\\flextool3\\edit.f52f77ed4bafcdc32766.hot-update.js",
+      "publicPath": "http://localhost:8080/edit.f52f77ed4bafcdc32766.hot-update.js"
+    },
+    "f52f77ed4bafcdc32766.hot-update.json": {
+      "name": "f52f77ed4bafcdc32766.hot-update.json",
+      "path": "C:\\data\\src\\flextool_backend\\flextool3\\static\\flextool3\\f52f77ed4bafcdc32766.hot-update.json",
+      "publicPath": "http://localhost:8080/f52f77ed4bafcdc32766.hot-update.json"
+    },
+    "edit.88cc96ca564af779c678.hot-update.js": {
+      "name": "edit.88cc96ca564af779c678.hot-update.js",
+      "path": "C:\\data\\src\\flextool_backend\\flextool3\\static\\flextool3\\edit.88cc96ca564af779c678.hot-update.js",
+      "publicPath": "http://localhost:8080/edit.88cc96ca564af779c678.hot-update.js"
+    },
+    "88cc96ca564af779c678.hot-update.json": {
+      "name": "88cc96ca564af779c678.hot-update.json",
+      "path": "C:\\data\\src\\flextool_backend\\flextool3\\static\\flextool3\\88cc96ca564af779c678.hot-update.json",
+      "publicPath": "http://localhost:8080/88cc96ca564af779c678.hot-update.json"
+    },
+    "edit.e4deff112126c7de20fd.hot-update.js": {
+      "name": "edit.e4deff112126c7de20fd.hot-update.js",
+      "path": "C:\\data\\src\\flextool_backend\\flextool3\\static\\flextool3\\edit.e4deff112126c7de20fd.hot-update.js",
+      "publicPath": "http://localhost:8080/edit.e4deff112126c7de20fd.hot-update.js"
+    },
+    "e4deff112126c7de20fd.hot-update.json": {
+      "name": "e4deff112126c7de20fd.hot-update.json",
+      "path": "C:\\data\\src\\flextool_backend\\flextool3\\static\\flextool3\\e4deff112126c7de20fd.hot-update.json",
+      "publicPath": "http://localhost:8080/e4deff112126c7de20fd.hot-update.json"
     }
   },
   "chunks": {
@@ -33,7 +354,11 @@
     ],
     "edit": [
       "js/chunk-vendors.js",
-      "js/edit.js"
+      "js/edit.js",
+      "edit.e4deff112126c7de20fd.hot-update.js"
     ]
-  }
+  },
+  "publicPath": "http://localhost:8080/",
+  "error": "ModuleError",
+  "message": "Module Error (from ./node_modules/eslint-loader/index.js):\n\nC:\\data\\src\\flextool_backend\\flextool3\\vue_frontend\\src\\components\\ParameterValueTable.vue\n  74:30  error  'value.type' is assigned to itself  no-self-assign\n\n✖ 1 problem (1 error, 0 warnings)\n"
 }

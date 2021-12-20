@@ -40,13 +40,6 @@ class EditView(LoginRequiredMixin, generic.DetailView):
     model = Project
     template_name = "flextool3/edit.html"
 
-    def get_context_data(self, **kwargs):
-        data = super().get_context_data(**kwargs)
-        data["script_data"] = {
-            "modelUrl": reverse("flextool3:model")
-        }
-        return data
-
 
 class SolveView(LoginRequiredMixin, generic.DetailView):
     model = Project

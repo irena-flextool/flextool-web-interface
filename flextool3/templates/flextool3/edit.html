@@ -17,28 +17,8 @@
 {% endblock %}
 
 {% block content %}
-    <div id="editor-app">
-        <div id="object-tree">
-            <h1>Objects:</h1>
-            <ul class="root">
-                <li v-for="objectClass in objectClasses.values()"><span class="caret">{% templatetag openvariable %}objectClass.name{% templatetag closevariable %}</span>
-                    <ul class="nested">
-                        <li v-for="object, objectIndex in objectsForClass(objectClass)">{% templatetag openvariable %}object.name{% templatetag closevariable %}</li>
-                    </ul>
-                </li>
-            </ul>
-        </div>
-        <div id="object-parameter-value-table">
-            <table>
-                <tr>
-                    <th>Class</th><th>Object</th><th>Parameter</th><th>Alternative</th><th>Value</th>
-                </tr>
-                <tr v-for="value, valueIndex in valuesForObject(objects[0])">
-                    <td>{% templatetag openvariable %}value.parameter_name{% templatetag closevariable %}</td>
-                </tr>
-            </table>
-        </div>
+    <div id="edit-app">
+        <parameter-value-table model-url="{% url 'flextool3:model' %}" :project-id="{{ project.id }}"></parameter-value-table>
     </div>
-    {{ script_data|json_script:"script-data" }}
     {% render_bundle 'edit' %}
 {% endblock %}
