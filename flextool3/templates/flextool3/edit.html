@@ -18,7 +18,9 @@
 
 {% block content %}
     <div id="edit-app">
-        <parameter-value-table model-url="{% url 'flextool3:model' %}" :project-id="{{ project.id }}"></parameter-value-table>
+        <n-message-provider>
+            <editor-app model-url="{% url 'flextool3:model' %}" :project-id="{{ project.id }}"></editor-app>
+        </n-message-provider>
     </div>
     {% render_bundle 'edit' %}
 {% endblock %}

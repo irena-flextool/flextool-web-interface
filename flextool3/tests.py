@@ -6,7 +6,7 @@ from django.contrib.auth.models import User
 from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
-from spinedb_api import DatabaseMapping, import_object_classes
+from spinedb_api import DatabaseMapping, from_database, import_object_classes, import_object_parameter_values, import_object_parameters, import_objects
 
 from .exception import FlextoolException
 from .models import Execution, Project
@@ -177,10 +177,10 @@ class ModelInterfaceTests(TestCase):
             db_map.connection.close()
             with login_as_baron(self.client) as login_successful:
                 self.assertTrue(login_successful)
-                response = self.client.post(self.model_url, {"type": "object classes?", "project_id": 1}, content_type="application/json")
+                response = self.client.post(self.model_url, {"type": "object classes?", "projectId": 1}, content_type="application/json")
                 self.assertEqual(response.status_code, 200)
                 destroy_project_dict = json.loads(response.content)
-                self.assertEqual(destroy_project_dict, {"type": "object classes", "classes": {}})
+                self.assertEqual(destroy_project_dict, {"type": "object classes", "classes": []})
 
     def test_get_single_object_class(self):
         """'model' view responds with a dict containing object class name keyed by its id."""
@@ -191,7 +191,27 @@ class ModelInterfaceTests(TestCase):
             db_map.connection.close()
             with login_as_baron(self.client) as login_successful:
                 self.assertTrue(login_successful)
-                response = self.client.post(self.model_url, {"type": "object classes?", "project_id": 1}, content_type="application/json")
+                response = self.client.post(self.model_url, {"type": "object classes?", "projectId": 1}, content_type="application/json")
                 self.assertEqual(response.status_code, 200)
                 destroy_project_dict = json.loads(response.content)
-                self.assertEqual(destroy_project_dict, {"type": "object classes", "classes": {"1": "my_class"}})
+                self.assertEqual(destroy_project_dict, {"type": "object classes", "classes": [{"commit_id": 2, "description": None, "display_icon": None, "display_order": 99, "hidden": 0, "id": 1, "name":"my_class"}]})
+
+    def test_update_parameter_value(self):
+        """'model' view updates a parameter value and responds with OK status."""
+        with fake_project(self.baron) as project_dir:
+            db_map = DatabaseMapping("sqlite:///" + str(project_dir / PATH_TO_MODEL_DATABASE), create=True)
+            import_object_classes(db_map, ("my_class",))
+            import_object_parameters(db_map, (("my_class", "my_parameter"),))
+            import_objects(db_map, (("my_class", "my_object"),))
+            import_object_parameter_values(db_map, (("my_class", "my_object", "my_parameter", 2.3),))
+            db_map.commit_session("Add test data.")
+            with login_as_baron(self.client) as login_successful:
+                self.assertTrue(login_successful)
+                response = self.client.post(self.model_url, {"type": "update values", "projectId": 1, "updates": [{"id": 1, "value": -5.5}]}, content_type="application/json")
+                self.assertEqual(response.status_code, 200)
+                destroy_project_dict = json.loads(response.content)
+                self.assertEqual(destroy_project_dict, {"type": "values updated", "status": "ok"})
+            parameter_values = db_map.query(db_map.object_parameter_value_sq).all()
+            self.assertEqual(len(parameter_values), 1)
+            self.assertEqual(from_database(parameter_values[0].value), -5.5)
+            db_map.connection.close()

@@ -15,7 +15,7 @@ import { NInput, NInputNumber, NText } from 'naive-ui'
 import * as Communication from "../modules/communication.js";
 
 
-function makeColumns() {
+function makeColumns(emit) {
     const entityClassColumn = {
         title: "Class",
         key: "object_class_name",
@@ -42,7 +42,7 @@ function makeColumns() {
                     return h(NInputNumber, {showButton: false, defaultValue: rowData.value});
                 }
                 else {
-                    return h(NInput, {defaultValue: rowData.value, onChange: (value) => rowData.value = value;});
+                    return h(NInput, {defaultValue: rowData.value, onChange: (value) => emit("valueUpdated", {value: value, id: rowData.id})});
                 }
             }
             return h(NText, {italic: true}, {default: () => rowData.type});
@@ -80,10 +80,11 @@ export default {
         modelUrl: String,
         projectId: Number
     },
-    setup (props) {
+    emit: ["valueUpdated:data"],
+    setup (props, context) {
         const data = ref([]);
         const loading = ref(true);
-        const columns = ref(makeColumns());
+        const columns = ref(makeColumns(context.emit));
         onMounted(function () {
             fetchObjectParameterValues(props.projectId, props.modelUrl).then(function(rows) {
                 data.value = rows;

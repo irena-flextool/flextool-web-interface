@@ -7,7 +7,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import Http404, HttpResponse, HttpResponseBadRequest
 from django.views import generic
 from django.urls import reverse
-from spinedb_api import DatabaseMapping, from_database
+from spinedb_api import DatabaseMapping, to_database, SpineIntegrityError
 from .models import Project, PROJECT_NAME_LENGTH
 from . import site
 from .exception import FlextoolException
@@ -128,6 +128,8 @@ def model(request):
         project = Project.objects.get(id=project_id)
     except Project.DoesNotExist:
         return HttpResponseBadRequest("Project does not exist.")
+    if project.user.id != request.user.id:
+        return HttpResponseBadRequest("Project does not exist.")
     try:
         type_ = body["type"]
     except KeyError():
@@ -138,6 +140,12 @@ def model(request):
         return get_objects(project)
     if type_ == "object parameter values?":
         return get_object_parameter_values(project)
+    if type_ == "update values":
+        try:
+            updates = body["updates"]
+        except KeyError:
+            return HttpResponseBadRequest()
+        return update_parameter_values(project, updates)
     return HttpResponseBadRequest("Unknown 'type'.")
 
 
@@ -159,6 +167,28 @@ def get_object_parameter_values(project):
         for value in values:
             value["value"] = str(value["value"], encoding="utf-8")
         return HttpResponse(json.dumps({"type": "object parameter values", "values": values}), content_type="application/json")
+
+
+def update_parameter_values(project, updates):
+    sterilized_updates = []
+    for update in updates:
+        sterilized = {}
+        try:
+            sterilized["id"] = update["id"]
+            sterilized["value"], sterilized["type"] = to_database(update["value"])
+        except KeyError:
+            return HttpResponseBadRequest()
+        sterilized_updates.append(sterilized)
+    del updates  # Don't use updates from this point onwards.
+    with model_database_map(project) as db_map:
+        try:
+            status, errors = db_map.update_parameter_values(*sterilized_updates, strict=True)
+            if errors:
+                return HttpResponseBadRequest()
+        except SpineIntegrityError as e:
+            return HttpResponseBadRequest(f"Database integrity error: {e}")
+        db_map.commit_session("Update parameter values.")
+        return HttpResponse(json.dumps({"type": "values updated", "status": "ok"}), content_type="application/json")
 
 
 @contextmanager

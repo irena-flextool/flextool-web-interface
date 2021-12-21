@@ -1,9 +1,8 @@
 import * as Vue from "vue/dist/vue.esm-bundler.js";
 import naive from "naive-ui";
-import ParameterValueTable from "./components/ParameterValueTable.vue";
+import EditorApp from "./components/EditorApp.vue";
 
-const app = Vue.createApp({
-});
+const app = Vue.createApp({});
 app.use(naive);
-app.component("parameter-value-table", ParameterValueTable);
+app.component("editor-app", EditorApp);
 app.mount("#edit-app");
