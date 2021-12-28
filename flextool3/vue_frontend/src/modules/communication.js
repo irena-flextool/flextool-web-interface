@@ -2,6 +2,7 @@ function getScriptData() {
     const dataElement = document.querySelector("#script-data");
     return JSON.parse(dataElement.textContent);
 }
+
 function getCookie(name) {
     let cookieValue = null;
     if (document.cookie && document.cookie !== "") {
@@ -17,8 +18,26 @@ function getCookie(name) {
     }
     return cookieValue;
 }
+
 const csrftoken = getCookie('csrftoken');
+
 function makeFetchInit() {
-    return {method: "POST", credentials: "same-origin", headers: {"X-CSRFToken": csrftoken, 'Content-Type': 'application/json'}};
+    return {
+        method: "POST",
+        credentials: "same-origin",
+        headers: {"X-CSRFToken": csrftoken, 'Content-Type': 'application/json'}
+    };
 }
-export {getScriptData, makeFetchInit};
+
+function fetchModelData(queryType, projectId, modelUrl, extraBody = {}) {
+    const fetchInit = makeFetchInit();
+    fetchInit["body"] = JSON.stringify({"type": queryType, "projectId": projectId, ...extraBody});
+    return fetch(modelUrl, fetchInit).then(function(response) {
+        if (!response.ok) {
+          throw new Error("Network response was not OK.");
+        }
+        return response.json();
+    });
+}
+
+export {getScriptData, makeFetchInit, fetchModelData};

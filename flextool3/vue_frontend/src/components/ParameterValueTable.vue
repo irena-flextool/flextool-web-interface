@@ -10,7 +10,7 @@
 </template>
 
 <script>
-import { h, onMounted, ref } from "vue/dist/vue.esm-bundler.js"
+import { h, ref, toRefs, watch } from "vue/dist/vue.esm-bundler.js"
 import { NInput, NInputNumber, NText } from 'naive-ui'
 import * as Communication from "../modules/communication.js";
 
@@ -57,36 +57,32 @@ function makeColumns(emit) {
     ];
 }
 
-function fetchObjectParameterValues(projectId, modelUrl) {
-    const fetchInit = Communication.makeFetchInit();
-    const init = Object.create(fetchInit);
-    init["body"] = JSON.stringify({"type": "object parameter values?", "projectId": projectId});
-    return fetch(modelUrl, init).then(function(response) {
-        if (!response.ok) {
-          throw new Error("Network response was not OK.");
-        }
-        return response.json().then(function(data) {
+function fetchObjectParameterValues(classId, projectId, modelUrl) {
+    return Communication.fetchModelData("object parameter values?", projectId, modelUrl, {"object_class_id": classId}).then(function(data) {
             const values = data.values;
             values.forEach((value) => {
                 value.value = JSON.parse(value.value);
             });
             return values;
         });
-    });
 }
 
 export default {
     props: {
         modelUrl: String,
-        projectId: Number
+        projectId: Number,
+        classId: Number
     },
     emit: ["valueUpdated:data"],
     setup (props, context) {
         const data = ref([]);
-        const loading = ref(true);
+        const loading = ref(false);
         const columns = ref(makeColumns(context.emit));
-        onMounted(function () {
-            fetchObjectParameterValues(props.projectId, props.modelUrl).then(function(rows) {
+        const classId = toRefs(props).classId;
+        watch(classId, function() {
+            data.value.length = 0;
+            loading.value = true;
+            fetchObjectParameterValues(classId.value, props.projectId, props.modelUrl).then(function(rows) {
                 data.value = rows;
                 loading.value = false;
             });

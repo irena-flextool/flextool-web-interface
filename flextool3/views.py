@@ -137,9 +137,15 @@ def model(request):
     if type_ == "object classes?":
         return get_object_classes(project)
     if type_ == "objects?":
-        return get_objects(project)
+        class_id = body.get("object_class_id")
+        if class_id is not None and not isinstance(class_id, int):
+            return HttpResponseBadRequest()
+        return get_objects(project, class_id)
     if type_ == "object parameter values?":
-        return get_object_parameter_values(project)
+        class_id = body.get("object_class_id")
+        if class_id is not None and not isinstance(class_id, int):
+            return HttpResponseBadRequest()
+        return get_object_parameter_values(project, class_id)
     if type_ == "update values":
         try:
             updates = body["updates"]
@@ -155,15 +161,21 @@ def get_object_classes(project):
         return HttpResponse(json.dumps({"type": "object classes", "classes": classes}), content_type="application/json")
 
 
-def get_objects(project):
+def get_objects(project, class_id=None):
     with model_database_map(project) as db_map:
-        objects = [row._asdict() for row in db_map.query(db_map.object_sq)]
+        if class_id is None:
+            objects = [row._asdict() for row in db_map.query(db_map.object_sq)]
+        else:
+            objects = [row._asdict() for row in db_map.query(db_map.object_sq).filter(db_map.object_sq.c.class_id == class_id)]
         return HttpResponse(json.dumps({"type": "objects", "objects": objects}), content_type="application/json")
 
 
-def get_object_parameter_values(project):
+def get_object_parameter_values(project, class_id = None):
     with model_database_map(project) as db_map:
-        values = [row._asdict() for row in db_map.query(db_map.object_parameter_value_sq)]
+        if class_id is None:
+            values = [row._asdict() for row in db_map.query(db_map.object_parameter_value_sq)]
+        else:
+            values = [row._asdict() for row in db_map.query(db_map.object_parameter_value_sq).filter(db_map.object_parameter_value_sq.c.object_class_id == class_id)]
         for value in values:
             value["value"] = str(value["value"], encoding="utf-8")
         return HttpResponse(json.dumps({"type": "object parameter values", "values": values}), content_type="application/json")

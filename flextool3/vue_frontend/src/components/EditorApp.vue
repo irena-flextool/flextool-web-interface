@@ -1,10 +1,25 @@
 <template>
-    <n-button @click="commitSession">Save</n-button>
-    <parameter-value-table :model-url="modelUrl" :project-id="projectId" @value-updated="addUpdatedValue"></parameter-value-table>
+    <n-layout>
+        <n-layout-header>
+            <n-space justify="end">
+                <n-button @click="commitSession">Save</n-button>
+            </n-space>
+        </n-layout-header>
+        <n-layout has-sider>
+            <n-layout-sider>
+                <object-tree :model-url="modelUrl" :project-id="projectId" @object-class-selected="showParametersForObjectClass"></object-tree>
+            </n-layout-sider>
+            <n-layout-content>
+                <parameter-value-table :model-url="modelUrl" :project-id="projectId" :class-id="currentObjectClassId" @value-updated="addUpdatedValue"></parameter-value-table>
+            </n-layout-content>
+        </n-layout>
+    </n-layout>
 </template>
 
 <script>
+import { ref } from "vue/dist/vue.esm-bundler.js"
 import {useMessage} from "naive-ui";
+import EntityTree from "./EntityTree.vue";
 import ParameterValueTable from "./ParameterValueTable.vue";
 import * as Communication from "../modules/communication.js";
 
@@ -66,16 +81,22 @@ export default {
     },
     setup(props) {
         const message = useMessage();
+        const currentObjectClassId = ref();
         return {
+            currentObjectClassId: currentObjectClassId,
             addUpdatedValue(data) {
                 updates.updateValue(data.id, data.value);
             },
             commitSession() {
                 updates.commit(props.projectId, props.modelUrl, message);
+            },
+            showParametersForObjectClass(classId) {
+                currentObjectClassId.value = classId;
             }
         }
     },
     components: {
+        "object-tree": EntityTree,
         "parameter-value-table": ParameterValueTable
     }
 }
