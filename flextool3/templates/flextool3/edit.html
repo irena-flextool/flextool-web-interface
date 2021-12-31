@@ -4,10 +4,6 @@
 
 {% block title %} Model editor - Flextool 3{% endblock %}
 
-{% block head %}
-    <link rel="stylesheet" href="{% static 'flextool3/tree.css' %}" type="text/css">
-{% endblock %}
-
 {% block top-bar %}
     <li><a href="{% url 'flextool3:index' %}">Projects</a></li>
     <li><a href="{% url 'flextool3:detail' project.id %}">Project details</a></li>
