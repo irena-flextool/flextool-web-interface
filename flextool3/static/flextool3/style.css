@@ -27,3 +27,7 @@
     color: white;
     background-color: black;
 }
+
+#index-app {
+    max-width: 50em;
+}

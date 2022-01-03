@@ -10,6 +10,6 @@ urlpatterns = [
     path("<int:pk>/edit/", views.EditView.as_view(), name="edit"),
     path("<int:pk>/solve/", views.SolveView.as_view(), name="solve"),
     path("<int:pk>/results/", views.ResultsView.as_view(), name="view"),
-    path("ama/", views.ama, name="ama"),
+    path("projects/", views.projects, name="projects"),
     path("model/", views.model, name="model"),
 ]

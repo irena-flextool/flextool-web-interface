@@ -29,15 +29,56 @@ function makeFetchInit() {
     };
 }
 
-function fetchModelData(queryType, projectId, modelUrl, extraBody = {}) {
+function fetchProjectList(projectsUrl) {
     const fetchInit = makeFetchInit();
-    fetchInit["body"] = JSON.stringify({"type": queryType, "projectId": projectId, ...extraBody});
-    return fetch(modelUrl, fetchInit).then(function(response) {
+    fetchInit["body"] = JSON.stringify({"type": "project list?"});
+    return fetch(projectsUrl, fetchInit).then(function(response) {
         if (!response.ok) {
-          throw new Error("Network response was not OK.");
+            return response.text().then(function(message) {
+                throw new Error(`Failed to load project list: ${message}`);
+            });
+        }
+        return response.json()
+    });
+}
+
+function createProject(projectName, projectsUrl) {
+    const fetchInit = makeFetchInit();
+    fetchInit["body"] = JSON.stringify({type: "create project?", name: projectName});
+    return fetch(projectsUrl, fetchInit).then(function(response) {
+        if (!response.ok) {
+            return response.text().then(function(message) {
+                throw new Error(`Failed to create project: ${message}`);
+            });
         }
         return response.json();
     });
 }
 
-export {getScriptData, makeFetchInit, fetchModelData};
+function destroyProject(id, projectsUrl) {
+    const fetchInit = makeFetchInit();
+    fetchInit["body"] = JSON.stringify({type: "destroy project?", id: id});
+    return fetch(projectsUrl, fetchInit).then(function(response) {
+        if (!response.ok) {
+            return response.text().then(function(message) {
+                throw new Error(`Failed to delete project: ${message}`);
+            });
+        }
+        return response.json();
+    });
+}
+
+function fetchModelData(queryType, projectId, modelUrl, extraBody = {}) {
+    const fetchInit = makeFetchInit();
+    fetchInit["body"] = JSON.stringify({"type": queryType, "projectId": projectId, ...extraBody});
+    return fetch(modelUrl, fetchInit).then(function(response) {
+        if (!response.ok) {
+            return response.text().then(function(message) {
+                throw new Error(`Failed to fetch ${queryType}: ${message}`);
+            });
+        }
+        return response.json();
+    });
+}
+
+export {getScriptData, makeFetchInit, fetchModelData, fetchProjectList, createProject, destroyProject};

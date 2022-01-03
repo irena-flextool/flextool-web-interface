@@ -17,7 +17,7 @@
 </template>
 
 <script>
-import { ref } from "vue/dist/vue.esm-bundler.js"
+import { ref } from "vue/dist/vue.esm-bundler.js";
 import {useMessage} from "naive-ui";
 import EntityTree from "./EntityTree.vue";
 import ParameterValueTable from "./ParameterValueTable.vue";

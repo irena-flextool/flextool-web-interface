@@ -6,7 +6,6 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import Http404, HttpResponse, HttpResponseBadRequest
 from django.views import generic
-from django.urls import reverse
 from spinedb_api import DatabaseMapping, to_database, SpineIntegrityError
 from .models import Project, PROJECT_NAME_LENGTH
 from . import site
@@ -21,14 +20,6 @@ class IndexView(LoginRequiredMixin, generic.ListView):
     def get_queryset(self):
         """Returns user's projects."""
         return Project.objects.filter(user_id=self.request.user.id)
-
-    def get_context_data(self, **kwargs):
-        data = super().get_context_data(**kwargs)
-        data["script_data"] = {
-            "detailUrls": {project.id: reverse("flextool3:detail", kwargs={"pk": project.id}) for project in data["projects"]},
-            "amaUrl": reverse("flextool3:ama")
-        }
-        return data
 
 
 class DetailView(LoginRequiredMixin, generic.DetailView):
@@ -52,14 +43,14 @@ class ResultsView(LoginRequiredMixin, generic.DetailView):
 
 
 @login_required
-def ama(request):
+def projects(request):
     if request.method != "POST":
         raise Http404()
     body = json.loads(request.body)
     try:
         question = body["type"]
-    except KeyError:
-        return HttpResponseBadRequest()
+    except KeyError as missing:
+        return HttpResponseBadRequest(f"Missing '{missing}'.")
     if question == "project list?":
         return project_list(request.user.id)
     if question == "create project?":
@@ -70,23 +61,22 @@ def ama(request):
 
 
 def project_list(user_id):
-    projects = Project.objects.filter(user_id=user_id)
-    response = json.dumps({"type": "project list", "projects": [project.project_list_data() for project in projects]})
+    response = json.dumps({"type": "project list", "projects": [project.project_list_data() for project in Project.objects.filter(user_id=user_id)]})
     return HttpResponse(response, content_type="application/json")
 
 
 def create_project(user, request_body):
     try:
         project_name = request_body["name"]
-    except KeyError:
-        return HttpResponseBadRequest()
+    except KeyError as missing:
+        return HttpResponseBadRequest(f"Missing '{missing}'")
     project_name = project_name[:PROJECT_NAME_LENGTH].strip()
     if re.match(r"(^\w&)|(^\w(\w|\s)*\w$)", project_name) is None:
         return HttpResponseBadRequest("Invalid project name.")
     try:
         new_project = Project.create(user, project_name, site.FLEXTOOL_PROJECTS_ROOT, site.FLEXTOOL_PROJECT_TEMPLATE)
     except FlextoolException as error:
-        return HttpResponseBadRequest(f"Could not create project: {error}")
+        return HttpResponseBadRequest(str(error))
     new_project.save()
     return HttpResponse(json.dumps({"type": "new project", "project": new_project.project_list_data()}), content_type="application/json")
 
@@ -102,17 +92,16 @@ def destroy_project(user, request_body):
         HttpResponse: response to be sent to client
     """
     try:
-        project_name = request_body["name"]
-    except KeyError:
-        return HttpResponseBadRequest()
+        id_ = request_body["id"]
+    except KeyError as missing:
+        return HttpResponseBadRequest(f"Missing '{missing}'.")
     try:
-        project = Project.objects.get(user_id=user.id, name=project_name)
+        project = Project.objects.get(user_id=user.id, pk=id_)
     except Project.DoesNotExist:
         return HttpResponseBadRequest("Project does not exist.")
-    id_ = project.id
     project.remove_project_dir()
     project.delete()
-    return HttpResponse(json.dumps({"type": "destroy project", "name": project_name, "id": id_}), content_type="application/json")
+    return HttpResponse(json.dumps({"type": "destroy project", "id": id_}), content_type="application/json")
 
 
 @login_required
@@ -122,8 +111,8 @@ def model(request):
     body = json.loads(request.body)
     try:
         project_id = body["projectId"]
-    except KeyError:
-        return HttpResponseBadRequest()
+    except KeyError as missing:
+        return HttpResponseBadRequest(f"Missing '{missing}'.")
     try:
         project = Project.objects.get(id=project_id)
     except Project.DoesNotExist:
@@ -132,25 +121,25 @@ def model(request):
         return HttpResponseBadRequest("Project does not exist.")
     try:
         type_ = body["type"]
-    except KeyError():
-        return HttpResponseBadRequest()
+    except KeyError as missing:
+        return HttpResponseBadRequest(f"Missing '{missing}'.")
     if type_ == "object classes?":
         return get_object_classes(project)
     if type_ == "objects?":
         class_id = body.get("object_class_id")
         if class_id is not None and not isinstance(class_id, int):
-            return HttpResponseBadRequest()
+            return HttpResponseBadRequest("Wrong 'object_class_id' data type.")
         return get_objects(project, class_id)
     if type_ == "object parameter values?":
         class_id = body.get("object_class_id")
         if class_id is not None and not isinstance(class_id, int):
-            return HttpResponseBadRequest()
+            return HttpResponseBadRequest(f"Wrong 'object_class_id' data type.")
         return get_object_parameter_values(project, class_id)
     if type_ == "update values":
         try:
             updates = body["updates"]
-        except KeyError:
-            return HttpResponseBadRequest()
+        except KeyError as missing:
+            return HttpResponseBadRequest(f"Missing '{missing}'")
         return update_parameter_values(project, updates)
     return HttpResponseBadRequest("Unknown 'type'.")
 
@@ -188,15 +177,15 @@ def update_parameter_values(project, updates):
         try:
             sterilized["id"] = update["id"]
             sterilized["value"], sterilized["type"] = to_database(update["value"])
-        except KeyError:
-            return HttpResponseBadRequest()
+        except KeyError as missing:
+            return HttpResponseBadRequest(f"Missing'{missing}'.")
         sterilized_updates.append(sterilized)
     del updates  # Don't use updates from this point onwards.
     with model_database_map(project) as db_map:
         try:
             status, errors = db_map.update_parameter_values(*sterilized_updates, strict=True)
             if errors:
-                return HttpResponseBadRequest()
+                return HttpResponseBadRequest("Errors while updating values.")
         except SpineIntegrityError as e:
             return HttpResponseBadRequest(f"Database integrity error: {e}")
         db_map.commit_session("Update parameter values.")

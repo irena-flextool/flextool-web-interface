@@ -10,18 +10,9 @@
 
 {% block content %}
     <div id="index-app">
-        <p v-if="loading">Loading project list...</p>
-        <ol v-else id="project-list">
-            <li v-for="(project, index) in projects" id="project.id">
-                <a :href="project.url">{% templatetag openvariable %}project.name{% templatetag closevariable %}</a>
-                <button @click="destroyProject(index)">Destroy</button>
-            </li>
-            <li id="last-item">
-                <input id="new-project-name" type="text" placeholder="Enter project name here..." v-model="newProjectName">
-                <button id="create-button" @click="createProject">Create</button>
-            </li>
-        </ol>
+        <n-message-provider>
+            <index-app projects-url="{% url 'flextool3:projects' %}"></index-app>
+        </n-message-provider>
     </div>
-    {{ script_data|json_script:"script-data" }}
     {% render_bundle 'index' %}
 {% endblock %}

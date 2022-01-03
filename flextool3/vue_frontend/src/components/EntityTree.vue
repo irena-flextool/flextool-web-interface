@@ -12,7 +12,7 @@
 </template>
 
 <script>
-import { ref } from "vue/dist/vue.esm-bundler.js"
+import { ref } from "vue/dist/vue.esm-bundler.js";
 import * as Communication from "../modules/communication.js";
 
 function fetchObjectClasses(projectId, modelUrl) {

@@ -118,9 +118,9 @@ class ExecutionModelTests(TestCase):
         self.assertLessEqual(execution.execution_time, timezone.now())
 
 
-class AMAInterfaceTests(TestCase):
+class ProjectsInterfaceTests(TestCase):
     baron = None
-    ama_url = reverse("flextool3:ama")
+    projects_url = reverse("flextool3:projects")
 
     @classmethod
     def setUpTestData(cls):
@@ -128,21 +128,21 @@ class AMAInterfaceTests(TestCase):
         cls.baron.set_password("secretbaron")
         cls.baron.save()
 
-    def test_ask_for_empty_project_list(self):
+    def test_get_empty_project_list(self):
         """'ama' view responds to 'project list?' post properly even when there are no projects in the database."""
         with login_as_baron(self.client) as login_successful:
             self.assertTrue(login_successful)
-            response = self.client.post(self.ama_url, {"type": "project list?"}, content_type="application/json")
+            response = self.client.post(self.projects_url, {"type": "project list?"}, content_type="application/json")
             self.assertEqual(response.status_code, 200)
             project_list_dict = json.loads(response.content)
             self.assertEqual(project_list_dict, {"type": "project list", "projects": []})
 
-    def test_ask_for_populated_project_list(self):
+    def test_get_populated_project_list(self):
         """'ama' view responds to 'project list?' post properly with a list of user's projects."""
         with fake_project(self.baron):
             with login_as_baron(self.client) as login_successful:
                 self.assertTrue(login_successful)
-                response = self.client.post(self.ama_url, {"type": "project list?"}, content_type="application/json")
+                response = self.client.post(self.projects_url, {"type": "project list?"}, content_type="application/json")
                 self.assertEqual(response.status_code, 200)
                 project_list_dict = json.loads(response.content)
                 self.assertEqual(project_list_dict, {"type": "project list", "projects": [{"id": 1, "name": "my_test_project", "url": "/flextool3/1/"}]})
@@ -152,10 +152,10 @@ class AMAInterfaceTests(TestCase):
         with fake_project(self.baron) as project_dir:
             with login_as_baron(self.client) as login_successful:
                 self.assertTrue(login_successful)
-                response = self.client.post(self.ama_url, {"type": "destroy project?", "name": "my_test_project"}, content_type="application/json")
+                response = self.client.post(self.projects_url, {"type": "destroy project?", "id": 1}, content_type="application/json")
                 self.assertEqual(response.status_code, 200)
                 destroy_project_dict = json.loads(response.content)
-                self.assertEqual(destroy_project_dict, {"type": "destroy project", "name": "my_test_project", "id": 1})
+                self.assertEqual(destroy_project_dict, {"type": "destroy project", "id": 1})
                 self.assertFalse(Project.objects.all())
                 self.assertFalse(project_dir.exists())
 
