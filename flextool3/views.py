@@ -1,13 +1,14 @@
 import json
 import re
+import sys
 from contextlib import contextmanager
 
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import Http404, HttpResponse, HttpResponseBadRequest
 from django.views import generic
-from spinedb_api import DatabaseMapping, to_database, SpineIntegrityError
-from .models import Project, PROJECT_NAME_LENGTH
+from spinedb_api import DatabaseMapping, to_database, SpineIntegrityError, SpineDBVersionError
+from .models import Execution, Project, PROJECT_NAME_LENGTH
 from . import site
 from .exception import FlextoolException
 
@@ -110,38 +111,49 @@ def model(request):
         raise Http404()
     body = json.loads(request.body)
     try:
-        project_id = body["projectId"]
-    except KeyError as missing:
-        return HttpResponseBadRequest(f"Missing '{missing}'.")
-    try:
-        project = Project.objects.get(id=project_id)
-    except Project.DoesNotExist:
-        return HttpResponseBadRequest("Project does not exist.")
-    if project.user.id != request.user.id:
-        return HttpResponseBadRequest("Project does not exist.")
+        project = _resolve_project(request, body)
+    except FlextoolException as error:
+        return HttpResponseBadRequest(str(error))
     try:
         type_ = body["type"]
     except KeyError as missing:
         return HttpResponseBadRequest(f"Missing '{missing}'.")
-    if type_ == "object classes?":
-        return get_object_classes(project)
-    if type_ == "objects?":
-        class_id = body.get("object_class_id")
-        if class_id is not None and not isinstance(class_id, int):
-            return HttpResponseBadRequest("Wrong 'object_class_id' data type.")
-        return get_objects(project, class_id)
-    if type_ == "object parameter values?":
-        class_id = body.get("object_class_id")
-        if class_id is not None and not isinstance(class_id, int):
-            return HttpResponseBadRequest(f"Wrong 'object_class_id' data type.")
-        return get_object_parameter_values(project, class_id)
-    if type_ == "update values":
-        try:
-            updates = body["updates"]
-        except KeyError as missing:
-            return HttpResponseBadRequest(f"Missing '{missing}'")
-        return update_parameter_values(project, updates)
+    try:
+        if type_ == "object classes?":
+            return get_object_classes(project)
+        if type_ == "objects?":
+            class_id = body.get("object_class_id")
+            if class_id is not None and not isinstance(class_id, int):
+                return HttpResponseBadRequest("Wrong 'object_class_id' data type.")
+            return get_objects(project, class_id)
+        if type_ == "object parameter values?":
+            class_id = body.get("object_class_id")
+            if class_id is not None and not isinstance(class_id, int):
+                return HttpResponseBadRequest(f"Wrong 'object_class_id' data type.")
+            return get_object_parameter_values(project, class_id)
+        if type_ == "update values":
+            try:
+                updates = body["updates"]
+            except KeyError as missing:
+                return HttpResponseBadRequest(f"Missing '{missing}'")
+            return update_parameter_values(project, updates)
+    except SpineDBVersionError:
+        return HttpResponse(json.dumps({"type": "upgrade database?"}), content_type="application/json")
     return HttpResponseBadRequest("Unknown 'type'.")
+
+
+def _resolve_project(request, body):
+    try:
+        project_id = body["projectId"]
+    except KeyError as missing:
+        raise FlextoolException(f"Missing '{missing}'.")
+    try:
+        project = Project.objects.get(id=project_id)
+    except Project.DoesNotExist:
+        raise FlextoolException("Project does not exist.")
+    if project.user.id != request.user.id:
+        raise FlextoolException("Project does not exist.")
+    return project
 
 
 def get_object_classes(project):
@@ -200,3 +212,101 @@ def model_database_map(project):
         yield db_map
     finally:
         db_map.connection.close()
+
+
+@login_required
+def executions(request):
+    if request.method != "POST":
+        raise Http404()
+    body = json.loads(request.body)
+    try:
+        question = body["type"]
+    except KeyError as missing:
+        return HttpResponseBadRequest(f"Missing '{missing}'.")
+    if question == "execution list?":
+        return execution_list(request, body)
+    if question == "create execution?":
+        return create_execution(request, body)
+    if question == "destroy execution?":
+        return destroy_execution(request, body)
+    if question == "execute?":
+        return execute(request, body)
+    if question == "log?":
+        return log(request, body)
+    if question == "status?":
+        return status(request, body)
+    return HttpResponseBadRequest("Unknown 'type'.")
+
+
+def execution_list(request, request_body):
+    try:
+        project = _resolve_project(request, request_body)
+    except FlextoolException as error:
+        return HttpResponseBadRequest(str(error))
+    response = json.dumps({"type": "execution list", "executions": [execution.execution_list_data() for execution in Execution.objects.filter(project_id=project.id)]})
+    return HttpResponse(response, content_type="application/json")
+
+
+def create_execution(request, request_body):
+    try:
+        project = _resolve_project(request, request_body)
+    except FlextoolException as error:
+        return HttpResponseBadRequest(str(error))
+    try:
+        new_execution = Execution(project=project)
+    except FlextoolException as error:
+        return HttpResponseBadRequest(str(error))
+    new_execution.save()
+    return HttpResponse(json.dumps({"type": "new execution", "execution": new_execution.execution_list_data()}), content_type="application/json")
+
+
+def _resolve_execution(request, request_body):
+    try:
+        execution_id = request_body["id"]
+    except KeyError as missing:
+        raise FlextoolException(f"missing '{missing}")
+    try:
+        execution = Execution.objects.get(pk=execution_id)
+    except Execution.DoesNotExist:
+        raise FlextoolException("Execution does not exist.")
+    if execution.project.user.id != request.user.id:
+        raise FlextoolException("Execution does not exist.")
+    return execution
+
+
+def destroy_execution(request, request_body):
+    try:
+        execution = _resolve_execution(request, request_body)
+    except FlextoolException as error:
+        return HttpResponseBadRequest(str(error))
+    execution_id = execution.id
+    execution.delete()
+    return HttpResponse(json.dumps({"type": "destroy execution", "id": execution_id}), content_type="application/json")
+
+
+def execute(request, request_body):
+    try:
+        execution = _resolve_execution(request, request_body)
+    except FlextoolException as error:
+        return HttpResponseBadRequest(str(error))
+    execution.start(sys.executable, ["--version"])
+    return HttpResponse(json.dumps({"type": "execute", "id": execution.id}), content_type="application/json")
+
+
+def log(request, request_body):
+    try:
+        execution = _resolve_execution(request, request_body)
+    except FlextoolException as error:
+        return HttpResponseBadRequest(str(error))
+    execution_log = execution.append_log()
+    if execution_log is None:
+        return HttpResponse(json.dumps({"type": "log ended"}), content_type="application/json")
+    return HttpResponse(json.dumps({"type": "log", "lines": execution_log}), content_type="application/json")
+
+
+def status(request, request_body):
+    try:
+        execution = _resolve_execution(request, request_body)
+    except FlextoolException as error:
+        return HttpResponseBadRequest(str(error))
+    return HttpResponse(json.dumps({"type": "status", "status": execution.status}), content_type="application/json")

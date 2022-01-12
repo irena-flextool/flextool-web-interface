@@ -1,4 +1,5 @@
 {% extends "flextool3/base.html" %}
+{% load render_bundle from webpack_loader %}
 
 {% block title %} Solve model - Flextool 3{% endblock %}
 
@@ -12,6 +13,10 @@
 
 
 {% block content %}
-    <h1>Solve model here</h1>
-    <button>Solve</button>
+    <div id="solve-app">
+        <n-message-provider>
+            <solve-app executions-url="{% url 'flextool3:executions' %}" :project-id="{{ project.id }}"></solve-app>
+        </n-message-provider>
+    </div>
+    {% render_bundle 'solve' %}
 {% endblock %}

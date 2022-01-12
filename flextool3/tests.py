@@ -1,7 +1,9 @@
 import json
 from contextlib import contextmanager
 from pathlib import Path
+import sys
 from tempfile import TemporaryDirectory
+import unittest
 from django.contrib.auth.models import User
 from django.test import TestCase
 from django.urls import reverse
@@ -9,6 +11,7 @@ from django.utils import timezone
 from spinedb_api import DatabaseMapping, from_database, import_object_classes, import_object_parameter_values, import_object_parameters, import_objects
 
 from .exception import FlextoolException
+from . import execution
 from .models import Execution, Project
 
 
@@ -104,18 +107,6 @@ class ExecutionModelTests(TestCase):
         cls.baron.save()
         cls.project = Project(user=cls.baron, name="my_test_project", path="/project/dir/")
         cls.project.save()
-
-    def test_collect_logs(self):
-        execution = Execution(project=self.project)
-        program = "for i in range(1, 4): print(i)"
-        arguments = ["-c", program]
-        execution.start("python", arguments)
-        while execution.append_log():
-            pass
-        execution.process.wait()
-        # Note: This will fail when debugging in PyCharm because of PyCharm's instrumentation magic.
-        self.assertEqual(execution.log, "1\n2\n3\n")
-        self.assertLessEqual(execution.execution_time, timezone.now())
 
 
 class ProjectsInterfaceTests(TestCase):
@@ -257,3 +248,15 @@ class ModelInterfaceTests(TestCase):
             self.assertEqual(len(parameter_values), 1)
             self.assertEqual(from_database(parameter_values[0].value), -5.5)
             db_map.connection.close()
+
+
+class ExecutionTests(unittest.TestCase):
+    def tearDown(self):
+        execution.delete_all()
+
+    def test_start(self):
+        execution.start(0, sys.executable, ["--version"])
+        self.assertIsNotNone(execution.get_process(0))
+        while execution.is_running(0):
+            pass
+        self.assertTrue(execution.read_line(0).startswith("Python"))

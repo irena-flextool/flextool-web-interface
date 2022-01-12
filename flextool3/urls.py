@@ -12,4 +12,5 @@ urlpatterns = [
     path("<int:pk>/results/", views.ResultsView.as_view(), name="view"),
     path("projects/", views.projects, name="projects"),
     path("model/", views.model, name="model"),
+    path("executions/", views.executions, name="executions"),
 ]

@@ -55,9 +55,9 @@ function createProject(projectName, projectsUrl) {
     });
 }
 
-function destroyProject(id, projectsUrl) {
+function destroyProject(projectId, projectsUrl) {
     const fetchInit = makeFetchInit();
-    fetchInit["body"] = JSON.stringify({type: "destroy project?", id: id});
+    fetchInit["body"] = JSON.stringify({type: "destroy project?", id: projectId});
     return fetch(projectsUrl, fetchInit).then(function(response) {
         if (!response.ok) {
             return response.text().then(function(message) {
@@ -81,4 +81,95 @@ function fetchModelData(queryType, projectId, modelUrl, extraBody = {}) {
     });
 }
 
-export {getScriptData, makeFetchInit, fetchModelData, fetchProjectList, createProject, destroyProject};
+function fetchExecutionList(projectId, executionsUrl) {
+    const fetchInit = makeFetchInit();
+    fetchInit.body = JSON.stringify({type: "execution list?", projectId: projectId});
+    return fetch(executionsUrl, fetchInit).then(function(response) {
+        if (!response.ok) {
+            return response.text().then(function(message) {
+                throw new Error(`Failed to load solve list: ${message}`);
+            });
+        }
+        return response.json()
+    });
+}
+
+function createExecution(projectId, executionsUrl) {
+    const fetchInit = makeFetchInit();
+    fetchInit.body = JSON.stringify({type: "create execution?", projectId: projectId});
+    return fetch(executionsUrl, fetchInit).then(function(response) {
+        if (!response.ok) {
+            return response.text().then(function(message) {
+                throw new Error(`Failed to create solve: ${message}`);
+            });
+        }
+        return response.json();
+    });
+}
+
+function destroyExecution(executionId, executionsUrl) {
+    const fetchInit = makeFetchInit();
+    fetchInit["body"] = JSON.stringify({type: "destroy execution?", id: executionId});
+    return fetch(executionsUrl, fetchInit).then(function(response) {
+        if (!response.ok) {
+            return response.text().then(function(message) {
+                throw new Error(`Failed to delete execution: ${message}`);
+            });
+        }
+        return response.json();
+    });
+}
+
+function executeExecution(executionId, executionsUrl) {
+    const fetchInit = makeFetchInit();
+    fetchInit["body"] = JSON.stringify({type: "execute?", id: executionId});
+    return fetch(executionsUrl, fetchInit).then(function(response) {
+        if (!response.ok) {
+            return response.text().then(function(message) {
+                throw new Error(`Failed to execute: ${message}`);
+            });
+        }
+        return response.json();
+    });
+}
+
+function fetchExecutionLogLines(executionId, executionsUrl) {
+    const fetchInit = makeFetchInit();
+    fetchInit["body"] = JSON.stringify({type: "log?", id: executionId});
+    return fetch(executionsUrl, fetchInit).then(function(response) {
+        if (!response.ok) {
+            return response.text().then(function(message) {
+                throw new Error(`Failed to get log: ${message}`);
+            });
+        }
+        return response.json();
+    });
+}
+
+function fetchExecutionStatus(executionId, executionsUrl) {
+    const fetchInit = makeFetchInit();
+    fetchInit["body"] = JSON.stringify({type: "status?", id: executionId});
+    return fetch(executionsUrl, fetchInit).then(function(response) {
+        if (!response.ok) {
+            return response.text().then(function(message) {
+                throw new Error(`Failed to get execution status: ${message}`);
+            });
+        }
+        return response.json();
+    });
+}
+
+export {
+    getScriptData,
+    makeFetchInit,
+    fetchModelData,
+    fetchProjectList,
+    createProject,
+    destroyProject,
+    fetchExecutionList,
+    createExecution,
+    destroyExecution,
+    executeExecution,
+    fetchExecutionLogLines,
+    fetchExecutionStatus
+};

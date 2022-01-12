@@ -2,13 +2,13 @@ import os
 from pathlib import Path
 from shutil import copytree, rmtree
 import stat
-from subprocess import Popen, PIPE, STDOUT
 from django.contrib.auth.models import User
 from django.db import models
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.translation import gettext_lazy
 from .exception import FlextoolException
+from . import execution
 
 PROJECT_NAME_LENGTH = 60
 
@@ -76,23 +76,36 @@ class Project(models.Model):
 
 class Execution(models.Model):
     class Status(models.TextChoices):
+        YET_TO_START = "YS", gettext_lazy("Not started yet")
         FINISHED = "OK", gettext_lazy("Finished")
         RUNNING = "RU", gettext_lazy("Running")
         ERROR = "ER", gettext_lazy("Finished with errors")
         ABORTED = "AB", gettext_lazy("Aborted")
 
     project = models.ForeignKey(Project, on_delete=models.CASCADE)
-    execution_time = models.DateTimeField(null=True)
-    status = models.CharField(max_length=2, choices=Status.choices, default=Status.RUNNING)
+    execution_time = models.DateTimeField(null=True, default=None)
+    status = models.CharField(max_length=2, choices=Status.choices, default=Status.YET_TO_START)
     log = models.TextField(default="")
-    process = None
 
     def append_log(self):
-        line = self.process.stdout.readline()
-        if not line:
-            return False
+        """Reads a line from process' stdout and appends it to log.
+
+        Returns:
+            list of str: log lines or None if no log is available
+        """
+        if self.status != self.Status.RUNNING:
+            return None
+        if not execution.is_running(self.id):
+            lines = execution.read_lines(self.id)
+            for line in lines:
+                self.log += line
+            self.status = self.Status.FINISHED
+            self.save()
+            return lines
+        line = execution.read_line(self.id)
         self.log += line
-        return True
+        self.save()
+        return [line]
 
     def start(self, command, arguments):
         """Starts executing given command.
@@ -101,8 +114,17 @@ class Execution(models.Model):
             command (str): command to execute
             arguments (list of str): command line arguments
         """
+        if self.status != self.Status.YET_TO_START:
+            return
         self.execution_time = timezone.now()
-        self.process = Popen([command] + arguments, stdout=PIPE, stderr=STDOUT, text=True)
+        self.status = self.Status.RUNNING
+        execution.start(self.id, command, arguments)
         self.save()
 
+    def execution_list_data(self):
+        """Creates data dict for solve page's execution list.
 
+        Returns:
+            dict: execution list data
+        """
+        return {"id": self.id}

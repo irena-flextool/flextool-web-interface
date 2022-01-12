@@ -9,6 +9,10 @@ const pages = {
         entry: './src/edit.js',
         chunks: ['chunk-vendors']
     },
+    'solve': {
+        entry: './src/solve.js',
+        chunks: ['chunk-vendors']
+    }
 }
 
 module.exports = {
