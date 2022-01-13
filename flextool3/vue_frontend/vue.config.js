@@ -12,6 +12,10 @@ const pages = {
     'solve': {
         entry: './src/solve.js',
         chunks: ['chunk-vendors']
+    },
+    "upgrade-notification": {
+        entry: "./src/upgradeNotification.js",
+        chunks: ["chunk-vendors"]
     }
 }
 

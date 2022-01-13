@@ -1,0 +1,9 @@
+{% extends "flextool3/edit_base.html" %}
+{% load render_bundle from webpack_loader %}
+
+{% block content %}
+    <div id="upgrade-notification-app">
+        <upgrade-notification-app edit-url="{% url 'flextool3:edit' project.id %}"></upgrade-notification-app>
+    </div>
+    {% render_bundle 'upgrade-notification' %}
+{% endblock %}

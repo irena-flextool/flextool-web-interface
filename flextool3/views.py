@@ -1,13 +1,15 @@
 import json
 import re
+from shutil import copyfile
 import sys
 from contextlib import contextmanager
 
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.http import Http404, HttpResponse, HttpResponseBadRequest
+from django.http import Http404, HttpResponse, HttpResponseBadRequest, JsonResponse, HttpResponseServerError
+from django.shortcuts import get_object_or_404, render
 from django.views import generic
-from spinedb_api import DatabaseMapping, to_database, SpineIntegrityError, SpineDBVersionError
+from spinedb_api import DatabaseMapping, to_database, SpineIntegrityError, SpineDBVersionError, SpineDBAPIError
 from .models import Execution, Project, PROJECT_NAME_LENGTH
 from . import site
 from .exception import FlextoolException
@@ -28,9 +30,31 @@ class DetailView(LoginRequiredMixin, generic.DetailView):
     template_name = "flextool3/detail.html"
 
 
-class EditView(LoginRequiredMixin, generic.DetailView):
-    model = Project
-    template_name = "flextool3/edit.html"
+def edit(request, pk):
+    project = get_object_or_404(Project, pk=pk)
+    context = {"project": project}
+    db_url = "sqlite:///" + str(project.model_database_path())
+    try:
+        db_map = DatabaseMapping(db_url)
+    except SpineDBVersionError:
+        _backup_database(project.model_database_path())
+        try:
+            db_map = DatabaseMapping(db_url, upgrade=True)
+        except SpineDBAPIError as error:
+            return HttpResponseServerError(f"Failed to upgrade database: {error}")
+        else:
+            db_map.connection.close()
+            return render(request, "flextool3/database_upgraded.html", context)
+    except SpineDBAPIError as error:
+        return HttpResponseServerError(f"Failed to open database mapping: {error}", context)
+    else:
+        db_map.connection.close()
+        return render(request, "flextool3/edit.html", context)
+
+
+def _backup_database(database_path):
+    backup_path = database_path.parent / (database_path.name + ".backup")
+    copyfile(database_path, backup_path)
 
 
 class SolveView(LoginRequiredMixin, generic.DetailView):
@@ -62,8 +86,8 @@ def projects(request):
 
 
 def project_list(user_id):
-    response = json.dumps({"type": "project list", "projects": [project.project_list_data() for project in Project.objects.filter(user_id=user_id)]})
-    return HttpResponse(response, content_type="application/json")
+    response = {"type": "project list", "projects": [project.project_list_data() for project in Project.objects.filter(user_id=user_id)]}
+    return JsonResponse(response)
 
 
 def create_project(user, request_body):
@@ -79,7 +103,7 @@ def create_project(user, request_body):
     except FlextoolException as error:
         return HttpResponseBadRequest(str(error))
     new_project.save()
-    return HttpResponse(json.dumps({"type": "new project", "project": new_project.project_list_data()}), content_type="application/json")
+    return JsonResponse({"type": "new project", "project": new_project.project_list_data()})
 
 
 def destroy_project(user, request_body):
@@ -102,7 +126,7 @@ def destroy_project(user, request_body):
         return HttpResponseBadRequest("Project does not exist.")
     project.remove_project_dir()
     project.delete()
-    return HttpResponse(json.dumps({"type": "destroy project", "id": id_}), content_type="application/json")
+    return JsonResponse({"type": "destroy project", "id": id_})
 
 
 @login_required
@@ -138,7 +162,7 @@ def model(request):
                 return HttpResponseBadRequest(f"Missing '{missing}'")
             return update_parameter_values(project, updates)
     except SpineDBVersionError:
-        return HttpResponse(json.dumps({"type": "upgrade database?"}), content_type="application/json")
+        return JsonResponse({"type": "upgrade database?"})
     return HttpResponseBadRequest("Unknown 'type'.")
 
 
@@ -159,7 +183,7 @@ def _resolve_project(request, body):
 def get_object_classes(project):
     with model_database_map(project) as db_map:
         classes = [row._asdict() for row in db_map.query(db_map.object_class_sq)]
-        return HttpResponse(json.dumps({"type": "object classes", "classes": classes}), content_type="application/json")
+        return JsonResponse({"type": "object classes", "classes": classes})
 
 
 def get_objects(project, class_id=None):
@@ -168,7 +192,7 @@ def get_objects(project, class_id=None):
             objects = [row._asdict() for row in db_map.query(db_map.object_sq)]
         else:
             objects = [row._asdict() for row in db_map.query(db_map.object_sq).filter(db_map.object_sq.c.class_id == class_id)]
-        return HttpResponse(json.dumps({"type": "objects", "objects": objects}), content_type="application/json")
+        return JsonResponse({"type": "objects", "objects": objects})
 
 
 def get_object_parameter_values(project, class_id = None):
@@ -179,7 +203,7 @@ def get_object_parameter_values(project, class_id = None):
             values = [row._asdict() for row in db_map.query(db_map.object_parameter_value_sq).filter(db_map.object_parameter_value_sq.c.object_class_id == class_id)]
         for value in values:
             value["value"] = str(value["value"], encoding="utf-8")
-        return HttpResponse(json.dumps({"type": "object parameter values", "values": values}), content_type="application/json")
+        return JsonResponse({"type": "object parameter values", "values": values})
 
 
 def update_parameter_values(project, updates):
@@ -201,7 +225,7 @@ def update_parameter_values(project, updates):
         except SpineIntegrityError as e:
             return HttpResponseBadRequest(f"Database integrity error: {e}")
         db_map.commit_session("Update parameter values.")
-        return HttpResponse(json.dumps({"type": "values updated", "status": "ok"}), content_type="application/json")
+        return JsonResponse({"type": "values updated", "status": "ok"})
 
 
 @contextmanager
@@ -243,8 +267,8 @@ def execution_list(request, request_body):
         project = _resolve_project(request, request_body)
     except FlextoolException as error:
         return HttpResponseBadRequest(str(error))
-    response = json.dumps({"type": "execution list", "executions": [execution.execution_list_data() for execution in Execution.objects.filter(project_id=project.id)]})
-    return HttpResponse(response, content_type="application/json")
+    response = {"type": "execution list", "executions": [execution.execution_list_data() for execution in Execution.objects.filter(project_id=project.id)]}
+    return JsonResponse(response)
 
 
 def create_execution(request, request_body):
@@ -257,7 +281,7 @@ def create_execution(request, request_body):
     except FlextoolException as error:
         return HttpResponseBadRequest(str(error))
     new_execution.save()
-    return HttpResponse(json.dumps({"type": "new execution", "execution": new_execution.execution_list_data()}), content_type="application/json")
+    return JsonResponse({"type": "new execution", "execution": new_execution.execution_list_data()})
 
 
 def _resolve_execution(request, request_body):
@@ -281,7 +305,7 @@ def destroy_execution(request, request_body):
         return HttpResponseBadRequest(str(error))
     execution_id = execution.id
     execution.delete()
-    return HttpResponse(json.dumps({"type": "destroy execution", "id": execution_id}), content_type="application/json")
+    return JsonResponse({"type": "destroy execution", "id": execution_id})
 
 
 def execute(request, request_body):
@@ -290,7 +314,7 @@ def execute(request, request_body):
     except FlextoolException as error:
         return HttpResponseBadRequest(str(error))
     execution.start(sys.executable, ["--version"])
-    return HttpResponse(json.dumps({"type": "execute", "id": execution.id}), content_type="application/json")
+    return JsonResponse({"type": "execute", "id": execution.id})
 
 
 def log(request, request_body):
@@ -300,8 +324,8 @@ def log(request, request_body):
         return HttpResponseBadRequest(str(error))
     execution_log = execution.append_log()
     if execution_log is None:
-        return HttpResponse(json.dumps({"type": "log ended"}), content_type="application/json")
-    return HttpResponse(json.dumps({"type": "log", "lines": execution_log}), content_type="application/json")
+        return JsonResponse({"type": "log ended"})
+    return JsonResponse({"type": "log", "lines": execution_log})
 
 
 def status(request, request_body):
@@ -309,4 +333,4 @@ def status(request, request_body):
         execution = _resolve_execution(request, request_body)
     except FlextoolException as error:
         return HttpResponseBadRequest(str(error))
-    return HttpResponse(json.dumps({"type": "status", "status": execution.status}), content_type="application/json")
+    return JsonResponse({"type": "status", "status": execution.status})
