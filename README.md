@@ -10,6 +10,7 @@ from pathlib import Path
 
 FLEXTOOL_PROJECT_TEMPLATE = Path(r"<path to Flextool's Toolbox project template>")
 FLEXTOOL_PROJECTS_ROOT = Path(r"<path where to store projects>")
+SPINE_TOOLBOX_PYTHON = Path(r"<path to the Python executable of Spine Toolbox' Python environment>")
 ```
 2. Create local server database by running the following commands in project root:
 ```

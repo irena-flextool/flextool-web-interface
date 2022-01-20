@@ -128,3 +128,17 @@ class Execution(models.Model):
             dict: execution list data
         """
         return {"id": self.id}
+
+    def arguments(self):
+        return [
+            "-mspinetoolbox",
+            "--execute-only",
+            str(self.project.path),
+            "--select",
+            "FlexTool3_data",
+            "Param_update",
+            "ExportFlexTool3ToCSV",
+            "FlexTool3",
+            "Import_Flex3",
+            "Results_F3",
+        ]

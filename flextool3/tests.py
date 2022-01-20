@@ -108,6 +108,23 @@ class ExecutionModelTests(TestCase):
         cls.project = Project(user=cls.baron, name="my_test_project", path="/project/dir/")
         cls.project.save()
 
+    def test_arguments(self):
+        exec = Execution(project=self.project)
+        arguments = exec.arguments()
+        expected = [
+            "-mspinetoolbox",
+            "--execute-only",
+            str(self.project.path),
+            "--select",
+            "FlexTool3_data",
+            "Param_update",
+            "ExportFlexTool3ToCSV",
+            "FlexTool3",
+            "Import_Flex3",
+            "Results_F3",
+        ]
+        self.assertEqual(arguments, expected)
+
 
 class ProjectsInterfaceTests(TestCase):
     baron = None

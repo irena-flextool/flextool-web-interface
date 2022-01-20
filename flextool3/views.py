@@ -313,7 +313,7 @@ def execute(request, request_body):
         execution = _resolve_execution(request, request_body)
     except FlextoolException as error:
         return HttpResponseBadRequest(str(error))
-    execution.start(sys.executable, ["--version"])
+    execution.start(site.SPINE_TOOLBOX_PYTHON, execution.arguments())
     return JsonResponse({"type": "execute", "id": execution.id})
 
 
