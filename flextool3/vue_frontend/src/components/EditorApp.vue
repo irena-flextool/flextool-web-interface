@@ -52,11 +52,14 @@ class DatabaseUpdates {
         fetch(modelUlr, fetchInit).then(function(response) {
             instance.commitFinished();
             if (!response.ok) {
-              alert("Updating parameter values failed: server reported a bad request.");
-              return;
+              return response.text().then(function(message) {
+                throw new Error(`Failed to save parameter values: ${message}`);
+              });
             }
             instance.clearPendingUpdates();
             showMessage.success("Parameter values committed successfully.");
+        }).catch(function(error){
+            showMessage.error(error.message);
         });
     }
 
