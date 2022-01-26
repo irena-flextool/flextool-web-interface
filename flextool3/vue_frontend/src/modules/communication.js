@@ -133,7 +133,33 @@ function executeExecution(executionId, executionsUrl) {
     });
 }
 
-function fetchExecutionLogLines(executionId, executionsUrl) {
+function abortExecution(executionId, executionsUrl) {
+    const fetchInit = makeFetchInit();
+    fetchInit["body"] = JSON.stringify({type: "abort?", id: executionId});
+    return fetch(executionsUrl, fetchInit).then(function(response) {
+        if (!response.ok) {
+            return response.text().then(function(message) {
+                throw new Error(`Failed to abort execution: ${message}`);
+            });
+        }
+        return response.json();
+    });
+}
+
+function fetchExecutionUpdates(executionId, executionsUrl) {
+    const fetchInit = makeFetchInit();
+    fetchInit["body"] = JSON.stringify({type: "updates?", id: executionId});
+    return fetch(executionsUrl, fetchInit).then(function(response) {
+        if (!response.ok) {
+            return response.text().then(function(message) {
+                throw new Error(`Failed to execution updates: ${message}`);
+            });
+        }
+        return response.json();
+    });
+}
+
+function fetchExecutionLog(executionId, executionsUrl) {
     const fetchInit = makeFetchInit();
     fetchInit["body"] = JSON.stringify({type: "log?", id: executionId});
     return fetch(executionsUrl, fetchInit).then(function(response) {
@@ -170,6 +196,8 @@ export {
     createExecution,
     destroyExecution,
     executeExecution,
-    fetchExecutionLogLines,
+    abortExecution,
+    fetchExecutionLog,
+    fetchExecutionUpdates,
     fetchExecutionStatus
 };

@@ -7,11 +7,10 @@ import unittest
 from django.contrib.auth.models import User
 from django.test import TestCase
 from django.urls import reverse
-from django.utils import timezone
 from spinedb_api import DatabaseMapping, from_database, import_object_classes, import_object_parameter_values, import_object_parameters, import_objects
 
 from .exception import FlextoolException
-from . import execution
+from . import executor, task_loop
 from .models import Execution, Project
 
 
@@ -143,7 +142,7 @@ class ProjectsInterfaceTests(TestCase):
             response = self.client.post(self.projects_url, {"type": "project list?"}, content_type="application/json")
             self.assertEqual(response.status_code, 200)
             project_list_dict = json.loads(response.content)
-            self.assertEqual(project_list_dict, {"type": "project list", "projects": []})
+            self.assertEqual(project_list_dict, {"projects": []})
 
     def test_get_populated_project_list(self):
         """'ama' view responds to 'project list?' post properly with a list of user's projects."""
@@ -153,7 +152,7 @@ class ProjectsInterfaceTests(TestCase):
                 response = self.client.post(self.projects_url, {"type": "project list?"}, content_type="application/json")
                 self.assertEqual(response.status_code, 200)
                 project_list_dict = json.loads(response.content)
-                self.assertEqual(project_list_dict, {"type": "project list", "projects": [{"id": 1, "name": "my_test_project", "url": "/flextool3/1/"}]})
+                self.assertEqual(project_list_dict, {"projects": [{"id": 1, "name": "my_test_project", "url": "/flextool3/1/"}]})
 
     def test_delete_project(self):
         """'ama' view deletes the requested project."""
@@ -163,7 +162,7 @@ class ProjectsInterfaceTests(TestCase):
                 response = self.client.post(self.projects_url, {"type": "destroy project?", "id": 1}, content_type="application/json")
                 self.assertEqual(response.status_code, 200)
                 destroy_project_dict = json.loads(response.content)
-                self.assertEqual(destroy_project_dict, {"type": "destroy project", "id": 1})
+                self.assertEqual(destroy_project_dict, {"id": 1})
                 self.assertFalse(Project.objects.all())
                 self.assertFalse(project_dir.exists())
 
@@ -188,7 +187,7 @@ class ModelInterfaceTests(TestCase):
                 response = self.client.post(self.model_url, {"type": "object classes?", "projectId": 1}, content_type="application/json")
                 self.assertEqual(response.status_code, 200)
                 content = json.loads(response.content)
-                self.assertEqual(content, {"type": "object classes", "classes": []})
+                self.assertEqual(content, {"classes": []})
 
     def test_get_single_object_class(self):
         """'model' view responds with a dict containing object class name keyed by its id."""
@@ -202,7 +201,7 @@ class ModelInterfaceTests(TestCase):
                 response = self.client.post(self.model_url, {"type": "object classes?", "projectId": 1}, content_type="application/json")
                 self.assertEqual(response.status_code, 200)
                 content = json.loads(response.content)
-                self.assertEqual(content, {"type": "object classes", "classes": [{"commit_id": 2, "description": None, "display_icon": None, "display_order": 99, "hidden": 0, "id": 1, "name":"my_class"}]})
+                self.assertEqual(content, {"classes": [{"commit_id": 2, "description": None, "display_icon": None, "display_order": 99, "hidden": 0, "id": 1, "name":"my_class"}]})
 
     def test_get_all_objects(self):
         """'model' view responds with a dict containing all objects in the database."""
@@ -217,7 +216,7 @@ class ModelInterfaceTests(TestCase):
                 response = self.client.post(self.model_url, {"type": "objects?", "projectId": 1}, content_type="application/json")
                 self.assertEqual(response.status_code, 200)
                 content = json.loads(response.content)
-                self.assertEqual(content, {"type": "objects", "objects": [{"id": 1, "class_id": 1, "name": "object_11", "description": None, "commit_id": 2,}, {"id": 2, "class_id": 2, "name": "object_21", "description": None, "commit_id": 2,}]})
+                self.assertEqual(content, {"objects": [{"id": 1, "class_id": 1, "name": "object_11", "description": None, "commit_id": 2,}, {"id": 2, "class_id": 2, "name": "object_21", "description": None, "commit_id": 2,}]})
 
     def test_get_objects_of_given_class(self):
         """'model' view responds with a dict containing the objects of the object class with given id."""
@@ -232,7 +231,7 @@ class ModelInterfaceTests(TestCase):
                 response = self.client.post(self.model_url, {"type": "objects?", "projectId": 1, "object_class_id": 2}, content_type="application/json")
                 self.assertEqual(response.status_code, 200)
                 object_dicts = json.loads(response.content)
-                self.assertEqual(object_dicts, {"type": "objects", "objects": [{"id": 2, "class_id": 2, "name": "object_21", "description": None, "commit_id": 2,}]})
+                self.assertEqual(object_dicts, {"objects": [{"id": 2, "class_id": 2, "name": "object_21", "description": None, "commit_id": 2,}]})
 
     def test_get_objects_of_non_existing_class_returns_empty_results(self):
         """'model' view responds with empty objects list when queried for objects of a non-existing class."""
@@ -244,7 +243,7 @@ class ModelInterfaceTests(TestCase):
                 response = self.client.post(self.model_url, {"type": "objects?", "projectId": 1, "object_class_id": 1}, content_type="application/json")
                 self.assertEqual(response.status_code, 200)
                 content = json.loads(response.content)
-                self.assertEqual(content, {"type": "objects", "objects": []})
+                self.assertEqual(content, {"objects": []})
 
     def test_update_parameter_value(self):
         """'model' view updates a parameter value and responds with OK status."""
@@ -260,20 +259,42 @@ class ModelInterfaceTests(TestCase):
                 response = self.client.post(self.model_url, {"type": "update values", "projectId": 1, "updates": [{"id": 1, "value": -5.5}]}, content_type="application/json")
                 self.assertEqual(response.status_code, 200)
                 content = json.loads(response.content)
-                self.assertEqual(content, {"type": "values updated", "status": "ok"})
+                self.assertEqual(content, {"status": "ok"})
             parameter_values = db_map.query(db_map.object_parameter_value_sq).all()
             self.assertEqual(len(parameter_values), 1)
             self.assertEqual(from_database(parameter_values[0].value), -5.5)
             db_map.connection.close()
 
 
-class ExecutionTests(unittest.TestCase):
-    def tearDown(self):
-        execution.delete_all()
+class ExecutorTests(unittest.TestCase):
+    def setUp(self):
+        self._id = 0
 
-    def test_start(self):
-        execution.start(0, sys.executable, ["--version"])
-        self.assertIsNotNone(execution.get_process(0))
-        while execution.is_running(0):
+    def tearDown(self):
+        executor.remove(self._id)
+
+    def test_start_and_read_logs(self):
+        executor.start(self._id, sys.executable, ["-c" "print('my output')"])
+        while executor.execution_status(self._id) == task_loop.Status.RUNNING:
             pass
-        self.assertTrue(execution.read_line(0).startswith("Python"))
+        self.assertEqual(executor.execution_return_code(self._id), 0)
+        output = executor.read_lines(self._id)
+        self.assertEqual(len(output), 1)
+        self.assertEqual(output[0], "my output\n")
+
+    def test_get_return_code(self):
+        executor.start(self._id, sys.executable, ["-c", "exit(23)"])
+        while executor.execution_status(self._id) == task_loop.Status.RUNNING:
+            pass
+        self.assertEqual(executor.execution_return_code(self._id), 23)
+
+    def test_abort_process(self):
+        executor.start(self._id, sys.executable, ["-c", "import time; time.sleep(1000); exit(0)"])
+        executor.abort(self._id)
+        self.assertNotEqual(executor.execution_return_code(self._id), 0)
+        self.assertEqual(executor.execution_status(self._id), task_loop.Status.ABORTED)
+
+    def test_process_count(self):
+        self.assertEqual(executor.execution_count(), 0)
+        executor.start(self._id, sys.executable, ["--version"])
+        self.assertEqual(executor.execution_count(), 1)

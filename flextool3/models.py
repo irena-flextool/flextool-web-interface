@@ -8,7 +8,7 @@ from django.urls import reverse
 from django.utils import timezone
 from django.utils.translation import gettext_lazy
 from .exception import FlextoolException
-from . import execution
+from . import executor, task_loop
 
 PROJECT_NAME_LENGTH = 60
 
@@ -87,25 +87,33 @@ class Execution(models.Model):
     status = models.CharField(max_length=2, choices=Status.choices, default=Status.YET_TO_START)
     log = models.TextField(default="")
 
-    def append_log(self):
-        """Reads a line from process' stdout and appends it to log.
+    def updates(self):
+        """Updates executions current status.
 
         Returns:
-            list of str: log lines or None if no log is available
+            dict: updates
         """
         if self.status != self.Status.RUNNING:
-            return None
-        if not execution.is_running(self.id):
-            lines = execution.read_lines(self.id)
-            for line in lines:
-                self.log += line
-            self.status = self.Status.FINISHED
+            return {}
+        status = executor.execution_status(self.id)
+        if status == task_loop.Error.UNKNOWN_EXECUTION_ID:
+            self.status = Execution.Status.ABORTED
             self.save()
-            return lines
-        line = execution.read_line(self.id)
-        self.log += line
+            return {"newStatus": self.status}
+        logs = executor.read_lines(self.id)
+        self.log += "".join(logs)
+        updates = {"newLogLines": logs} if logs else {}
+        if status == task_loop.Status.FINISHED:
+            executor.remove(self.id)
+            return_code = executor.execution_return_code(self.id)
+            self.status = self.Status.FINISHED if return_code == 0 else self.Status.ERROR
+            updates.update(newStatus=self.status)
+        elif status == task_loop.Status.ABORTED:
+            executor.remove(self.id)
+            self.status = self.Status.ABORTED
+            updates.update(newStatus=self.status)
         self.save()
-        return [line]
+        return updates
 
     def start(self, command, arguments):
         """Starts executing given command.
@@ -114,11 +122,11 @@ class Execution(models.Model):
             command (str): command to execute
             arguments (list of str): command line arguments
         """
-        if self.status != self.Status.YET_TO_START:
+        if self.status == self.Status.RUNNING:
             return
         self.execution_time = timezone.now()
         self.status = self.Status.RUNNING
-        execution.start(self.id, command, arguments)
+        executor.start(self.id, command, arguments)
         self.save()
 
     def execution_list_data(self):
