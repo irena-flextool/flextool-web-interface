@@ -1,4 +1,5 @@
 {% extends "flextool3/base.html" %}
+{% load render_bundle from webpack_loader %}
 
 {% block title %} Results - Flextool 3{% endblock %}
 
@@ -11,6 +12,8 @@
 {% endblock %}
 
 {% block content %}
-    <h1>View results here</h1>
-
+    <div id="results-app">
+        <results-app index-url="{% url 'flextool3:index' %}" project-url="{% url 'flextool3:detail' project.id %}" project-name="{{ project.name }}"></results-app>
+    </div>
+    {% render_bundle 'results' %}
 {% endblock %}
