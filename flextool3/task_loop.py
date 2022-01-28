@@ -136,7 +136,8 @@ def loop(task_queue, out_connection):
     logs = {}
     while running:
         try:
-            message = task_queue.get(timeout=0.2)
+            timeout = 0.2 if processes else None
+            message = task_queue.get(timeout=timeout)
         except queue.Empty:
             processes = _update_logs_and_delete_finished(logs, processes)
         except KeyboardInterrupt:
