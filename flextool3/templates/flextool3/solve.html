@@ -15,7 +15,7 @@
 {% block content %}
     <div id="solve-app">
         <n-message-provider>
-            <solve-app executions-url="{% url 'flextool3:executions' %}" :project-id="{{ project.id }}"></solve-app>
+            <solve-app index-url="{% url 'flextool3:index' %}" project-url="{% url 'flextool3:detail' project.id %}" project-name="{{ project.name }}" :project-id="{{ project.id }}" executions-url="{% url 'flextool3:executions' %}"></solve-app>
         </n-message-provider>
     </div>
     {% render_bundle 'solve' %}

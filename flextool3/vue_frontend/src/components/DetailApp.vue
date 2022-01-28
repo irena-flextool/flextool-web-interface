@@ -1,5 +1,5 @@
 <template>
-    <n-h1>{{projectName}}</n-h1>
+    <page-path :index-url="indexUrl" :leaf-name="projectName"></page-path>
     <n-space vertical>
         <n-p>This is the navigation hub for the current FlexTool 3 project. Available actions:</n-p>
         <n-p><n-a :href="editUrl">Model editor</n-a> lets you to define the project's model.</n-p>
@@ -8,12 +8,17 @@
     </n-space>
 </template>
 <script>
+import PagePath from "./PagePath.vue";
 export default {
     props: {
         projectName: String,
+        indexUrl: String,
         editUrl: String,
         solveUrl: String,
         viewUrl: String
+    },
+    components: {
+        "page-path": PagePath
     }
 }
 </script>

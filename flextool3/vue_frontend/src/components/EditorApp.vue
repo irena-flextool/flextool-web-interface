@@ -1,4 +1,5 @@
 <template>
+    <page-path :index-url="indexUrl" :project-url="projectUrl" :project-name="projectName" leaf-name="Model editor"></page-path>
     <n-layout>
         <n-layout-header>
             <n-space justify="end">
@@ -19,6 +20,7 @@
 <script>
 import { ref } from "vue/dist/vue.esm-bundler.js";
 import {useMessage} from "naive-ui";
+import PagePath from "./PagePath.vue";
 import EntityTree from "./EntityTree.vue";
 import ParameterValueTable from "./ParameterValueTable.vue";
 import * as Communication from "../modules/communication.js";
@@ -79,6 +81,9 @@ const updates = new DatabaseUpdates();
 
 export default {
     props: {
+        indexUrl: String,
+        projectUrl: String,
+        projectName: String,
         modelUrl: String,
         projectId: Number
     },
@@ -99,6 +104,7 @@ export default {
         }
     },
     components: {
+        "page-path": PagePath,
         "object-tree": EntityTree,
         "parameter-value-table": ParameterValueTable
     }

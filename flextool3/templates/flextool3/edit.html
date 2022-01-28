@@ -4,7 +4,7 @@
 {% block content %}
     <div id="edit-app">
         <n-message-provider>
-            <editor-app model-url="{% url 'flextool3:model' %}" :project-id="{{ project.id }}"></editor-app>
+            <editor-app index-url="{% url 'flextool3:index' %}" project-url="{% url 'flextool3:detail' project.id %}" project-name="{{ project.name }}" :project-id="{{ project.id }}" model-url="{% url 'flextool3:model' %}" ></editor-app>
         </n-message-provider>
     </div>
     {% render_bundle 'edit' %}

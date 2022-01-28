@@ -13,7 +13,7 @@
 
 {% block content %}
     <div id="detail-app">
-        <detail-app edit-url="{% url 'flextool3:edit' project.id %}" solve-url="{% url 'flextool3:solve' project.id %}" view-url="{% url 'flextool3:view' project.id %}" project-name="{{ project.name }}"></detail-app>
+        <detail-app index-url="{% url 'flextool3:index' %}" edit-url="{% url 'flextool3:edit' project.id %}" solve-url="{% url 'flextool3:solve' project.id %}" view-url="{% url 'flextool3:view' project.id %}" project-name="{{ project.name }}"></detail-app>
     </div>
     {% render_bundle 'detail' %}
 {% endblock %}
