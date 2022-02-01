@@ -1,5 +1,10 @@
 <template>
-    <page-path :index-url="indexUrl" :project-url="projectUrl" :project-name="projectName" leaf-name="Model editor"></page-path>
+    <page-path
+        :index-url="indexUrl"
+        :project-url="projectUrl"
+        :project-name="projectName"
+        leaf-name="Model editor"
+    ></page-path>
     <n-layout>
         <n-layout-header>
             <n-space justify="end">
@@ -8,10 +13,19 @@
         </n-layout-header>
         <n-layout has-sider>
             <n-layout-sider>
-                <object-tree :model-url="modelUrl" :project-id="projectId" @object-class-selected="showParametersForObjectClass"></object-tree>
+                <object-tree
+                    :model-url="modelUrl"
+                    :project-id="projectId"
+                    @object-class-selected="showParametersForObjectClass"
+                ></object-tree>
             </n-layout-sider>
             <n-layout-content>
-                <parameter-value-table :model-url="modelUrl" :project-id="projectId" :class-id="currentObjectClassId" @value-updated="addUpdatedValue"></parameter-value-table>
+                <parameter-value-table
+                    :model-url="modelUrl"
+                    :project-id="projectId"
+                    :class-id="currentObjectClassId"
+                    @value-updated="addUpdatedValue"
+                ></parameter-value-table>
             </n-layout-content>
         </n-layout>
     </n-layout>

@@ -6,16 +6,26 @@
         :loading="loading"
         :row-key="rowKey"
         :max-height="400"
-    />
+    ></n-data-table>
+    <n-modal
+        :show="showMapEditor"
+        :mask-closable="false"
+        @afterEnter="sendMapToEditor"
+    >
+        <n-card closable @close="showMapEditor = false">
+            <map-editor :parameter-row="selectedMap"></map-editor>
+        </n-card>
+    </n-modal>
 </template>
 
 <script>
-import { h, ref, toRefs, watch } from "vue/dist/vue.esm-bundler.js"
-import { NInput, NInputNumber, NText } from 'naive-ui'
+import { h, ref, toRefs, watch } from "vue/dist/vue.esm-bundler.js";
+import { NButton, NInput, NInputNumber, NText } from "naive-ui";
+import MapEditor from "./MapEditor.vue";
 import * as Communication from "../modules/communication.js";
 
 
-function makeColumns(emit) {
+function makeColumns(emit, editMapRow, showMapEditor) {
     const entityClassColumn = {
         title: "Class",
         key: "object_class_name",
@@ -42,8 +52,14 @@ function makeColumns(emit) {
                     return h(NInputNumber, {showButton: false, defaultValue: rowData.value});
                 }
                 else {
-                    return h(NInput, {defaultValue: rowData.value, onChange: (value) => emit("valueUpdated", {value: value, id: rowData.id})});
+                    return h(NInput, {defaultValue: rowData.value, onUpdate: (value) => emit("valueUpdated", {value: value, id: rowData.id})});
                 }
+            }
+            else if (rowData.type === "map") {
+                return h(NButton, {onClick: function() {
+                    showMapEditor.value = true;
+                    editMapRow.rowData = rowData;
+                }}, () => "Edit");
             }
             return h(NText, {italic: true}, {default: () => rowData.type});
         }
@@ -73,11 +89,14 @@ export default {
         projectId: Number,
         classId: Number
     },
-    emit: ["valueUpdated:data"],
+    emits: ["valueUpdated"],
     setup (props, context) {
         const data = ref([]);
         const loading = ref(false);
-        const columns = ref(makeColumns(context.emit));
+        const editMapRow = {rowData: undefined}
+        const selectedMap = ref({});
+        const showMapEditor = ref(false);
+        const columns = ref(makeColumns(context.emit, editMapRow, showMapEditor));
         const classId = toRefs(props).classId;
         watch(classId, function() {
             data.value.length = 0;
@@ -91,10 +110,20 @@ export default {
             data: data,
             columns: columns,
             loading: loading,
+            selectedMap: selectedMap,
+            showMapEditor: showMapEditor,
             rowKey (rowData) {
                 return rowData.id;
+            },
+            sendMapToEditor() {
+                // This function is a hack that seems to be required to transfer the row data
+                // to map editor.
+                selectedMap.value = editMapRow.rowData;
             }
-        }
+        };
+    },
+    components: {
+        "map-editor": MapEditor,
     }
 }
 </script>
