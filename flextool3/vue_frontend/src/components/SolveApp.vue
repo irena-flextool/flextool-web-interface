@@ -1,5 +1,7 @@
 <template>
-    <page-path :index-url="indexUrl" :project-url="projectUrl" :project-name="projectName" leaf-name="Solve"></page-path>
+    <page-path
+        :path="[{name: 'Projects', url: indexUrl}, {name: projectName, url: projectUrl}]"
+        leaf-name="Solve"/>
     <n-list>
         <n-list-item v-for="execution in executions" :key="execution.id">
             <execution-row @destroyed="deleteExecution" :execution-id="execution.id" :executions-url="executionsUrl" results-url="https://www.google.com"></execution-row>
@@ -14,7 +16,7 @@ import { onMounted, ref } from "vue/dist/vue.esm-bundler.js";
 import { useMessage } from "naive-ui";
 import PagePath from "./PagePath.vue";
 import ExecutionRow from "./ExecutionRow.vue";
-import { fetchExecutionList, createExecution } from "../modules/communication.js";
+import { fetchExecutionList, createExecution } from "../modules/communication.mjs";
 
 export default {
     props: {

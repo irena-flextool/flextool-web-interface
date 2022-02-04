@@ -1,0 +1,24 @@
+{% extends "flextool3/edit_base.html" %}
+{% load render_bundle from webpack_loader %}
+
+{% block content %}
+    <div class="app-box" id="entities-app">
+        <n-dialog-provider>
+            <n-message-provider>
+                <entities-app
+                        index-url="{% url 'flextool3:index' %}"
+                        project-url="{% url 'flextool3:detail' project.id %}"
+                        project-name="{{ project.name }}"
+                        :project-id="{{ project.id }}"
+                        edit-url="{% url 'flextool3:edit' project.id %}"
+                        :class-id="{{ entity_class.id }}"
+                        class-name="{{ entity_class.name }}"
+                        :class-type="{{ entity_class.type_id }}"
+                        class-description="{{ entity_class.description}}"
+                        model-url="{% url 'flextool3:model' %}"
+                ></entities-app>
+            </n-message-provider>
+        </n-dialog-provider>
+    </div>
+    {% render_bundle 'entities' %}
+{% endblock %}

@@ -1,24 +1,18 @@
 <template>
-    <n-grid :cols="4">
-        <n-grid-item :span="3" :x-gap="12">
-            <n-data-table
-                size="small"
-                :columns="columns"
-                @update:checked-row-keys="updateCheckedRowKeys"
-                :data="data"
-                :loading="loading"
-                :row-key="rowKey"
-                :max-height="600"
-            ></n-data-table>
-        </n-grid-item>
-        <n-grid-item>
-            <n-space vertical>
-                <n-button @click="removeSelectedRows">Remove selected</n-button>
-            </n-space>
-        </n-grid-item>
-    </n-grid>
+    <n-space vertical>
+        <n-space>
+            <n-button @click="removeSelectedRows">Remove selected</n-button>
+        </n-space>
+        <n-data-table
+            size="small"
+            :columns="columns"
+            @update:checked-row-keys="updateCheckedRowKeys"
+            :data="data"
+            :row-key="rowKey"
+        ></n-data-table>
+    </n-space>
     <n-space justify="end">
-        <n-button @click="accept">OK</n-button>
+        <n-button @click="accept">Validate</n-button>
     </n-space>
 </template>
 <script>
@@ -45,6 +39,8 @@ function parseMap(map) {
     return rowDatas;
 }
 
+// TODO createMap() need to find a new home
+/*
 function createMap(data, columns) {
     const mapData = [];
     data.value.forEach(function(element) {
@@ -56,7 +52,7 @@ function createMap(data, columns) {
         data: mapData
     };
     return map;
-}
+}*/
 
 function mapIndexName(map) {
     if ("index_name" in map) {
@@ -76,9 +72,10 @@ function makeColumns(indexName, parameterName, insertRows, removeRows) {
             return h(
                 Dropdown,
                 {
-                rowKey: rowData.id,
-                onInsertRowsSelected: insertRows,
-                onRemoveRowSelected: removeRows
+                    rowKey: rowData.id,
+                    onInsertRowsSelected: insertRows,
+                    onRemoveRowSelected: removeRows,
+                    size: "small"
             });
         }
     };
@@ -89,6 +86,7 @@ function makeColumns(indexName, parameterName, insertRows, removeRows) {
             return h(NInput, {
                 defaultValue: rowData.x,
                 onUpdateValue: (value) => rowData.x = value,
+                size: "small"
             });
         }
     };
@@ -98,7 +96,8 @@ function makeColumns(indexName, parameterName, insertRows, removeRows) {
         render: function(rowData) {
             return h(NInputNumber, {showButton: false,
                 defaultValue: rowData.y,
-                onUpdateValue: function(value) {console.log("on update"); rowData.y = value}
+                onUpdateValue: (value) => rowData.y = value,
+                size: "small"
             });
         }
     };
@@ -107,14 +106,13 @@ function makeColumns(indexName, parameterName, insertRows, removeRows) {
 
 export default {
     props: {
-        parameterRow: Object
+        valueData: Object
     },
-    emits: ["valueChanged", "cancelled"],
-    setup(props, context) {
+    emits: ["valueChanged"],
+    setup(props) {
         const message = useMessage();
         const data = ref([]);
         const checkedRowKeys = ref([]);
-        const loading = ref(true);
         function insertRows(insertData) {
             const index = data.value.findIndex(function(element) {
                 return element.id === insertData.rowKey;
@@ -133,24 +131,24 @@ export default {
             data.value.splice(index, 1);
         }
         const columns = ref(makeColumns("x", "y", insertRows, removeRow));
-        const parameterRow = toRefs(props).parameterRow;
-        watch(parameterRow, function() {
-            if (!parameterRow.value) {
+        const valueData = toRefs(props).valueData;
+        watch(valueData, function() {
+            if (!valueData.value.parameterValue) {
+                data.value.length = 0;
+                checkedRowKeys.value.length = 0;
                 return;
             }
             rowCounter = 0;
-            const map = parameterRow.value.value;
+            const map = valueData.value.parameterValue;
             const indexName = mapIndexName(map);
             columns.value = makeColumns(
-                indexName, parameterRow.value.parameter_name, insertRows, removeRow);
+                indexName, valueData.value.parameterName, insertRows, removeRow);
             data.value = parseMap(map);
-            loading.value = false;
         });
         return {
             columns: columns,
             data: data,
             checkedRowKeys: checkedRowKeys,
-            loading: loading,
             rowKey(rowData) {
                 return rowData.id;
             },
@@ -170,6 +168,8 @@ export default {
                 });
             },
             accept: function() {
+                // This function exists solely to preserve the validation code.
+                // TODO: Remove the Validate button, validate Map when value is saved instead.
                 const validated = new Set();
                 let row = 0;
                 for (const element of data.value) {
@@ -186,7 +186,6 @@ export default {
                         validated.add(element.x);
                     }
                 }
-                context.emit("valueChanged", createMap(data, columns));
             }
         };
     }

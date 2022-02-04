@@ -1,13 +1,21 @@
 <template>
     <n-space justify="space-between">
-        <n-input type="text" placeholder="Enter project name..." clearable maxlength="60" @input="updateProjectName" :value="projectName" :disabled="busy"></n-input>
+        <n-input
+            type="text"
+            placeholder="Enter project name..."
+            clearable
+            maxlength="60"
+            @input="updateProjectName"
+            :value="projectName"
+            :disabled="busy"
+        />
         <n-button @click="create" :loading="busy" :disabled="buttonDisabled">Create</n-button>
     </n-space>
 </template>
 <script>
 import { computed, ref } from "vue/dist/vue.esm-bundler.js";
 import { useMessage } from "naive-ui";
-import { createProject } from "../modules/communication.js";
+import { createProject } from "../modules/communication.mjs";
 
 export default {
     props: {

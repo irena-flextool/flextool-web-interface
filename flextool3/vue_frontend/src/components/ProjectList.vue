@@ -10,7 +10,7 @@
 </template>
 <script>
 import { onMounted, ref } from "vue/dist/vue.esm-bundler.js";
-import { fetchProjectList } from "../modules/communication.js";
+import { fetchProjectList } from "../modules/communication.mjs";
 import NewProjectRow from "./NewProjectRow.vue";
 import ProjectRow from "./ProjectRow.vue";
 

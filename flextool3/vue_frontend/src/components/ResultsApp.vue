@@ -1,5 +1,8 @@
 <template>
-    <page-path :index-url="indexUrl" :project-url="projectUrl" :project-name="projectName" leaf-name="Results"></page-path>
+    <page-path
+        :path="[{name: 'Projects', url: indexUrl}, {name: projectName, url: projectUrl}]"
+        leaf-name="Results"
+    />
     <n-p>Results coming here in the near future.</n-p>
 </template>
 <script>

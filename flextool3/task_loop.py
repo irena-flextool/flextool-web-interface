@@ -8,6 +8,7 @@ import threading
 @unique
 class Task(Enum):
     """Task loop task identifiers."""
+
     QUIT = auto()
     """Terminate execution processes and quit the loop."""
     START_PROCESS = auto()
@@ -29,6 +30,7 @@ class Task(Enum):
 @unique
 class Field(Enum):
     """Task loop message keys."""
+
     TASK = auto()
     EXECUTION_ID = auto()
     PROCESS_COMMAND = auto()
@@ -38,6 +40,7 @@ class Field(Enum):
 @unique
 class Status(Enum):
     """Execution statuses."""
+
     RUNNING = auto()
     FINISHED = auto()
     ABORTED = auto()
@@ -46,6 +49,7 @@ class Status(Enum):
 @unique
 class Error(Enum):
     """Error codes."""
+
     UNKNOWN_EXECUTION_ID = auto()
 
 
@@ -66,7 +70,11 @@ class _ProcessLog:
         self.status = Status.RUNNING
         self._line_queue = queue.SimpleQueue()
         _ProcessLog._n += 1
-        self._listener = threading.Thread(target=_read_stream, args=(out, self._line_queue), name=f"fExecution logger {_ProcessLog._n}")
+        self._listener = threading.Thread(
+            target=_read_stream,
+            args=(out, self._line_queue),
+            name=f"fExecution logger {_ProcessLog._n}",
+        )
         self._listener.start()
 
     def merge(self):

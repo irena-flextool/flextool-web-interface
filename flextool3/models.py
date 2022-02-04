@@ -55,7 +55,13 @@ class Project(models.Model):
         Returns:
             Path: path to model database
         """
-        return Path(self.path) / "FlexTool3_data.sqlite"
+        return (
+            Path(self.path)
+            / ".spinetoolbox"
+            / "items"
+            / "flextool3_test_data"
+            / "FlexTool3_data.sqlite"
+        )
 
     def results_database_path(self):
         """Returns path to results database.
@@ -63,7 +69,13 @@ class Project(models.Model):
         Returns:
             Path: path to model database
         """
-        return Path(self.path) / ".spinetoolbox" / "items" / "results_f3" / "Results_F3.sqlite"
+        return (
+            Path(self.path)
+            / ".spinetoolbox"
+            / "items"
+            / "results_f3"
+            / "Results_F3.sqlite"
+        )
 
     def project_list_data(self):
         """Creates data dict for project index page's project list.
@@ -71,7 +83,11 @@ class Project(models.Model):
         Returns:
             dict: project list data
         """
-        return {"name": self.name, "id": self.id, "url": reverse("flextool3:detail", args=(self.id,))}
+        return {
+            "name": self.name,
+            "id": self.id,
+            "url": reverse("flextool3:detail", args=(self.id,)),
+        }
 
 
 class Execution(models.Model):
@@ -84,7 +100,9 @@ class Execution(models.Model):
 
     project = models.ForeignKey(Project, on_delete=models.CASCADE)
     execution_time = models.DateTimeField(null=True, default=None)
-    status = models.CharField(max_length=2, choices=Status.choices, default=Status.YET_TO_START)
+    status = models.CharField(
+        max_length=2, choices=Status.choices, default=Status.YET_TO_START
+    )
     log = models.TextField(default="")
 
     def updates(self):
@@ -106,7 +124,9 @@ class Execution(models.Model):
         if status == task_loop.Status.FINISHED:
             executor.remove(self.id)
             return_code = executor.execution_return_code(self.id)
-            self.status = self.Status.FINISHED if return_code == 0 else self.Status.ERROR
+            self.status = (
+                self.Status.FINISHED if return_code == 0 else self.Status.ERROR
+            )
             updates.update(newStatus=self.status)
         elif status == task_loop.Status.ABORTED:
             executor.remove(self.id)

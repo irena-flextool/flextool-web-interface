@@ -11,7 +11,9 @@ def _create_process():
     Returns:
         Process: message loop process
     """
-    return Process(target=loop, args=(_task_queue, _sending_connection), name="Execution task loop")
+    return Process(
+        target=loop, args=(_task_queue, _sending_connection), name="Execution task loop"
+    )
 
 
 _task_queue = Queue()
@@ -28,11 +30,13 @@ def _message_sender(func):
     Returns:
         Any: decorated function's return value
     """
+
     @functools.wraps(func)
     def ensure_loop_is_alive(*args, **kwargs):
         if not _message_loop_process.is_alive():
             _message_loop_process.start()
         return func(*args, **kwargs)
+
     return ensure_loop_is_alive
 
 
@@ -45,12 +49,15 @@ def start(execution_id, command, arguments):
         command (str): command to execute
         arguments (list of str): command's arguments
     """
-    _task_queue.put({
-        Field.TASK: Task.START_PROCESS,
-        Field.EXECUTION_ID: execution_id,
-        Field.PROCESS_COMMAND: command,
-        Field.PROCESS_ARGUMENTS: arguments
-    }, block=False)
+    _task_queue.put(
+        {
+            Field.TASK: Task.START_PROCESS,
+            Field.EXECUTION_ID: execution_id,
+            Field.PROCESS_COMMAND: command,
+            Field.PROCESS_ARGUMENTS: arguments,
+        },
+        block=False,
+    )
 
 
 @_message_sender
@@ -60,10 +67,13 @@ def abort(execution_id):
     Args:
         execution_id (int): execution id
     """
-    _task_queue.put({
-        Field.TASK: Task.ABORT_PROCESS,
-        Field.EXECUTION_ID: execution_id,
-    }, block=False)
+    _task_queue.put(
+        {
+            Field.TASK: Task.ABORT_PROCESS,
+            Field.EXECUTION_ID: execution_id,
+        },
+        block=False,
+    )
 
 
 @_message_sender
@@ -73,10 +83,9 @@ def remove(execution_id):
     Args:
         execution_id (int): execution id
     """
-    _task_queue.put({
-        Field.TASK: Task.REMOVE_PROCESS,
-        Field.EXECUTION_ID: execution_id
-    }, block=False)
+    _task_queue.put(
+        {Field.TASK: Task.REMOVE_PROCESS, Field.EXECUTION_ID: execution_id}, block=False
+    )
 
 
 @_message_sender
@@ -89,10 +98,12 @@ def read_lines(execution_id):
     Returns:
         list of str: list of lines
     """
-    _task_queue.put({
-        Field.TASK: Task.SEND_OUTPUT,
-        Field.EXECUTION_ID: execution_id,
-    })
+    _task_queue.put(
+        {
+            Field.TASK: Task.SEND_OUTPUT,
+            Field.EXECUTION_ID: execution_id,
+        }
+    )
     return _receiving_connection.recv()
 
 
@@ -106,10 +117,12 @@ def execution_status(execution_id):
     Returns:
         Status: process status
     """
-    _task_queue.put({
-        Field.TASK: Task.SEND_STATUS,
-        Field.EXECUTION_ID: execution_id,
-    })
+    _task_queue.put(
+        {
+            Field.TASK: Task.SEND_STATUS,
+            Field.EXECUTION_ID: execution_id,
+        }
+    )
     return _receiving_connection.recv()
 
 
@@ -123,10 +136,12 @@ def execution_return_code(execution_id):
     Returns:
         int: return code or None if process is still running
     """
-    _task_queue.put({
-        Field.TASK: Task.SEND_RETURN_CODE,
-        Field.EXECUTION_ID: execution_id,
-    })
+    _task_queue.put(
+        {
+            Field.TASK: Task.SEND_RETURN_CODE,
+            Field.EXECUTION_ID: execution_id,
+        }
+    )
     return _receiving_connection.recv()
 
 
@@ -137,9 +152,7 @@ def execution_count():
     Returns:
         int: number of executions
     """
-    _task_queue.put({
-        Field.TASK: Task.SEND_PROCESS_COUNT
-    })
+    _task_queue.put({Field.TASK: Task.SEND_PROCESS_COUNT})
     return _receiving_connection.recv()
 
 

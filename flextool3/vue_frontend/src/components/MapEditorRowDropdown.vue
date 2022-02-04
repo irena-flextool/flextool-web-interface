@@ -4,7 +4,7 @@
         @select="handleSelect"
         :options=options
         >
-        <n-button>&#8230;</n-button>
+        <n-button size="small">&#8230;</n-button>
     </n-dropdown>
 </template>
 <script>

@@ -12,7 +12,7 @@
 {% endblock %}
 
 {% block content %}
-    <div id="results-app">
+    <div class="app-box" id="results-app">
         <results-app index-url="{% url 'flextool3:index' %}" project-url="{% url 'flextool3:detail' project.id %}" project-name="{{ project.name }}"></results-app>
     </div>
     {% render_bundle 'results' %}

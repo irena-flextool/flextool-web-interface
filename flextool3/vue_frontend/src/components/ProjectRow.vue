@@ -9,7 +9,7 @@
 <script>
 import { ref } from "vue/dist/vue.esm-bundler.js";
 import { useMessage } from "naive-ui";
-import { destroyProject } from "../modules/communication.js";
+import { destroyProject } from "../modules/communication.mjs";
 
 export default {
     props: {

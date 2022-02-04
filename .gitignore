@@ -3,3 +3,4 @@ flextool3/site.py
 __pycache__/
 *.sqlite3
 .idea
+geckodriver.log

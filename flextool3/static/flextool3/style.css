@@ -31,3 +31,8 @@
 #index-app {
     max-width: 50em;
 }
+
+.app-box {
+  margin-left: 2em;
+  margin-right: 2em;
+}

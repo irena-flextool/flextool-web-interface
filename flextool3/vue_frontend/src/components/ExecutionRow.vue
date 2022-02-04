@@ -14,7 +14,7 @@
 <script>
 import { onMounted, ref } from "vue/dist/vue.esm-bundler.js";
 import { useMessage } from "naive-ui";
-import { destroyExecution, executeExecution, abortExecution, fetchExecutionUpdates, fetchExecutionLog, fetchExecutionStatus } from "../modules/communication.js";
+import { destroyExecution, executeExecution, abortExecution, fetchExecutionUpdates, fetchExecutionLog, fetchExecutionStatus } from "../modules/communication.mjs";
 
 function statusText(status) {
     switch(status) {
@@ -37,7 +37,6 @@ function followExecution(executionId, executionsUrl, logLines, status, busyExecu
     const timer = window.setInterval(function() {
         fetchExecutionUpdates(executionId, executionsUrl).then(function(data) {
             const updates = data.updates;
-            console.log(updates)
             if ("newLogLines" in updates) {
                 logLines.value.push(...updates.newLogLines);
             }
@@ -48,7 +47,6 @@ function followExecution(executionId, executionsUrl, logLines, status, busyExecu
                 window.clearInterval(timer);
             }
         }).catch(function(error) {
-            console.log("this is messed up");
             window.clearInterval(timer);
             busyExecuting.value = false;
             busyAborting.value = false;
@@ -81,7 +79,6 @@ export default {
                 status.value = statusText(data.status);
                 if (data.status === "RU") {
                     busyExecuting.value = true;
-                    console.log("Start following execution.")
                     followExecution(props.executionId, props.executionsUrl, logLines, status, busyExecuting, busyAborting, message);
                 }
             }).catch(function(error) {
