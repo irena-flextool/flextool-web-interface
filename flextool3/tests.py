@@ -22,6 +22,8 @@ from spinedb_api import (
     import_relationship_parameters,
     Map,
     Array,
+    import_scenarios,
+    import_scenario_alternatives,
 )
 
 from .exception import FlextoolException
@@ -233,6 +235,101 @@ class ModelInterfaceTests(TestCase):
         cls.baron.set_password("secretbaron")
         cls.baron.save()
 
+    def test_get_alternatives(self):
+        """'model' view responds correctly when requesting alternatives."""
+        with fake_project(self.baron) as project_dir:
+            db_map = DatabaseMapping(
+                "sqlite:///" + str(project_dir / PATH_TO_MODEL_DATABASE), create=True
+            )
+            db_map.connection.close()
+            with login_as_baron(self.client) as login_successful:
+                self.assertTrue(login_successful)
+                response = self.client.post(
+                    self.model_url,
+                    {"type": "alternatives?", "projectId": 1},
+                    content_type="application/json",
+                )
+                self.assertEqual(response.status_code, 200)
+                content = json.loads(response.content)
+                self.assertEqual(
+                    content,
+                    {
+                        "alternatives": [
+                            {
+                                "name": "Base",
+                                "id": 1,
+                                "description": "Base alternative",
+                                "commit_id": 1,
+                            }
+                        ]
+                    },
+                )
+
+    def test_get_scenarios(self):
+        """'model' view responds correctly when requesting scenarios."""
+        with fake_project(self.baron) as project_dir:
+            db_map = DatabaseMapping(
+                "sqlite:///" + str(project_dir / PATH_TO_MODEL_DATABASE), create=True
+            )
+            import_alternatives(db_map, ("my_alternative",))
+            import_scenarios(db_map, ("my_scenario",))
+            import_scenario_alternatives(db_map, (("my_scenario", "my_alternative"),))
+            import_scenario_alternatives(db_map, (("my_scenario", "Base"),))
+            db_map.commit_session("Add test data.")
+            db_map.connection.close()
+            with login_as_baron(self.client) as login_successful:
+                self.assertTrue(login_successful)
+                response = self.client.post(
+                    self.model_url,
+                    {"type": "scenarios?", "projectId": 1},
+                    content_type="application/json",
+                )
+                self.assertEqual(response.status_code, 200)
+                content = json.loads(response.content)
+                self.assertEqual(
+                    content,
+                    {
+                        "scenarios": [
+                            {
+                                "scenario_name": "my_scenario",
+                                "scenario_id": 1,
+                                "scenario_alternatives": ["my_alternative", "Base"],
+                            }
+                        ]
+                    },
+                )
+
+    def test_get_scenarios_without_alternatives(self):
+        """'model' view responds with empty alternative list when scenarios doesn't have any."""
+        with fake_project(self.baron) as project_dir:
+            db_map = DatabaseMapping(
+                "sqlite:///" + str(project_dir / PATH_TO_MODEL_DATABASE), create=True
+            )
+            import_scenarios(db_map, ("my_scenario",))
+            db_map.commit_session("Add test data.")
+            db_map.connection.close()
+            with login_as_baron(self.client) as login_successful:
+                self.assertTrue(login_successful)
+                response = self.client.post(
+                    self.model_url,
+                    {"type": "scenarios?", "projectId": 1},
+                    content_type="application/json",
+                )
+                self.assertEqual(response.status_code, 200)
+                content = json.loads(response.content)
+                self.assertEqual(
+                    content,
+                    {
+                        "scenarios": [
+                            {
+                                "scenario_name": "my_scenario",
+                                "scenario_id": 1,
+                                "scenario_alternatives": [],
+                            }
+                        ]
+                    },
+                )
+
     def test_get_emtpy_object_classes(self):
         """'model' view responds correctly even when there are not object classes in the database."""
         with fake_project(self.baron) as project_dir:
@@ -411,6 +508,7 @@ class ModelInterfaceTests(TestCase):
                                 "relationship_class_id": None,
                                 "name": "parameter_1",
                                 "parameter_value_list_id": None,
+                                "list_value_id": None,
                                 "default_value": None,
                                 "default_type": None,
                                 "description": None,
@@ -423,6 +521,7 @@ class ModelInterfaceTests(TestCase):
                                 "relationship_class_id": None,
                                 "name": "parameter_2",
                                 "parameter_value_list_id": None,
+                                "list_value_id": None,
                                 "default_value": None,
                                 "default_type": None,
                                 "description": None,
@@ -468,6 +567,7 @@ class ModelInterfaceTests(TestCase):
                                 "relationship_class_id": None,
                                 "name": "parameter_2",
                                 "parameter_value_list_id": None,
+                                "list_value_id": None,
                                 "default_value": None,
                                 "default_type": None,
                                 "description": None,
@@ -525,6 +625,7 @@ class ModelInterfaceTests(TestCase):
                                 "alternative_id": 1,
                                 "value": "5.0",
                                 "type": None,
+                                "list_value_id": None,
                                 "commit_id": 2,
                             },
                             {
@@ -539,6 +640,7 @@ class ModelInterfaceTests(TestCase):
                                 "alternative_id": 2,
                                 "value": "-5.0",
                                 "type": None,
+                                "list_value_id": None,
                                 "commit_id": 2,
                             },
                             {
@@ -553,6 +655,7 @@ class ModelInterfaceTests(TestCase):
                                 "alternative_id": 1,
                                 "value": "23.0",
                                 "type": None,
+                                "list_value_id": None,
                                 "commit_id": 2,
                             },
                             {
@@ -567,6 +670,7 @@ class ModelInterfaceTests(TestCase):
                                 "alternative_id": 2,
                                 "value": "-23.0",
                                 "type": None,
+                                "list_value_id": None,
                                 "commit_id": 2,
                             },
                         ]
@@ -625,6 +729,7 @@ class ModelInterfaceTests(TestCase):
                                 "alternative_id": 1,
                                 "value": "23.0",
                                 "type": None,
+                                "list_value_id": None,
                                 "commit_id": 2,
                             },
                             {
@@ -639,6 +744,7 @@ class ModelInterfaceTests(TestCase):
                                 "alternative_id": 2,
                                 "value": "-23.0",
                                 "type": None,
+                                "list_value_id": None,
                                 "commit_id": 2,
                             },
                         ]
@@ -695,6 +801,7 @@ class ModelInterfaceTests(TestCase):
                                 "alternative_id": 1,
                                 "value": "23.0",
                                 "type": None,
+                                "list_value_id": None,
                                 "commit_id": 2,
                             },
                             {
@@ -709,6 +816,7 @@ class ModelInterfaceTests(TestCase):
                                 "alternative_id": 2,
                                 "value": "-23.0",
                                 "type": None,
+                                "list_value_id": None,
                                 "commit_id": 2,
                             },
                         ]
@@ -767,6 +875,7 @@ class ModelInterfaceTests(TestCase):
                                 "alternative_id": 2,
                                 "value": "-5.0",
                                 "type": None,
+                                "list_value_id": None,
                                 "commit_id": 2,
                             },
                             {
@@ -781,6 +890,7 @@ class ModelInterfaceTests(TestCase):
                                 "alternative_id": 2,
                                 "value": "-23.0",
                                 "type": None,
+                                "list_value_id": None,
                                 "commit_id": 2,
                             },
                         ]
@@ -1383,6 +1493,157 @@ class ModelInterfaceTests(TestCase):
             self.assertEqual(commits[-1].comment, "Update value.")
             db_map.connection.close()
 
+    def test_commit_alternative_insertion(self):
+        """'model' view inserts an alternative and responds with OK status."""
+        with fake_project(self.baron) as project_dir:
+            db_map = DatabaseMapping(
+                "sqlite:///" + str(project_dir / PATH_TO_MODEL_DATABASE), create=True
+            )
+            with login_as_baron(self.client) as login_successful:
+                self.assertTrue(login_successful)
+                response = self.client.post(
+                    self.model_url,
+                    {
+                        "type": "commit",
+                        "projectId": 1,
+                        "insertions": {
+                            "alternative": [{"name": "my_alternative"}],
+                        },
+                        "message": "Insert alternative.",
+                    },
+                    content_type="application/json",
+                )
+                self.assertEqual(response.status_code, 200)
+                content = json.loads(response.content)
+                self.assertEqual(
+                    content, {"inserted": {"alternative": {"my_alternative": 2}}}
+                )
+            alternatives = db_map.query(db_map.alternative_sq).all()
+            self.assertEqual(len(alternatives), 2)
+            self.assertEqual(alternatives[1].name, "my_alternative")
+            commits = db_map.query(db_map.commit_sq).all()
+            self.assertEqual(commits[-1].comment, "Insert alternative.")
+            db_map.connection.close()
+
+    def test_commit_scenario_insertion(self):
+        """'model' view inserts a scenario and responds with OK status."""
+        with fake_project(self.baron) as project_dir:
+            db_map = DatabaseMapping(
+                "sqlite:///" + str(project_dir / PATH_TO_MODEL_DATABASE), create=True
+            )
+            with login_as_baron(self.client) as login_successful:
+                self.assertTrue(login_successful)
+                response = self.client.post(
+                    self.model_url,
+                    {
+                        "type": "commit",
+                        "projectId": 1,
+                        "insertions": {
+                            "scenario": [{"name": "my_scenario"}],
+                        },
+                        "message": "Insert scenario.",
+                    },
+                    content_type="application/json",
+                )
+                self.assertEqual(response.status_code, 200)
+                content = json.loads(response.content)
+                self.assertEqual(
+                    content, {"inserted": {"scenario": {"my_scenario": 1}}}
+                )
+            scenarios = db_map.query(db_map.scenario_sq).all()
+            self.assertEqual(len(scenarios), 1)
+            self.assertEqual(scenarios[0].name, "my_scenario")
+            commits = db_map.query(db_map.commit_sq).all()
+            self.assertEqual(commits[-1].comment, "Insert scenario.")
+            db_map.connection.close()
+
+    def test_commit_scenario_alternatives_insertion(self):
+        """'model' view inserts a scenario and responds with OK status."""
+        with fake_project(self.baron) as project_dir:
+            db_map = DatabaseMapping(
+                "sqlite:///" + str(project_dir / PATH_TO_MODEL_DATABASE), create=True
+            )
+            with login_as_baron(self.client) as login_successful:
+                self.assertTrue(login_successful)
+                import_alternatives(db_map, ("alternative_1", "alternative_2"))
+                import_scenarios(db_map, ("my_scenario",))
+                db_map.commit_session("Add test data.")
+                response = self.client.post(
+                    self.model_url,
+                    {
+                        "type": "commit",
+                        "projectId": 1,
+                        "insertions": {
+                            "scenario_alternative": [
+                                {
+                                    "scenario_name": "my_scenario",
+                                    "alternative_name": "alternative_1",
+                                    "rank": 0,
+                                },
+                                {
+                                    "scenario_name": "my_scenario",
+                                    "alternative_name": "Base",
+                                    "rank": 1,
+                                },
+                                {
+                                    "scenario_name": "my_scenario",
+                                    "alternative_name": "alternative_2",
+                                    "rank": 2,
+                                },
+                            ],
+                        },
+                        "message": "Insert scenario alternatives.",
+                    },
+                    content_type="application/json",
+                )
+                self.assertEqual(response.status_code, 200)
+                content = json.loads(response.content)
+                self.assertEqual(
+                    content,
+                    {
+                        "inserted": {
+                            "scenario_alternative": {
+                                "my_scenario": {"0": 1, "1": 2, "2": 3}
+                            }
+                        }
+                    },
+                )
+            scenario_alternatives = db_map.query(db_map.scenario_alternative_sq).all()
+            self.assertEqual(len(scenario_alternatives), 3)
+            self.assertEqual(
+                scenario_alternatives[0]._asdict(),
+                {
+                    "id": 1,
+                    "scenario_id": 1,
+                    "alternative_id": 2,
+                    "rank": 0,
+                    "commit_id": 3,
+                },
+            )
+            self.assertEqual(
+                scenario_alternatives[1]._asdict(),
+                {
+                    "id": 2,
+                    "scenario_id": 1,
+                    "alternative_id": 1,
+                    "rank": 1,
+                    "commit_id": 3,
+                },
+            )
+            self.assertEqual(
+                scenario_alternatives[2]._asdict(),
+                {
+                    "id": 3,
+                    "scenario_id": 1,
+                    "alternative_id": 3,
+                    "rank": 2,
+                    "commit_id": 3,
+                },
+            )
+            commits = db_map.query(db_map.commit_sq).all()
+            self.assertEqual(commits[-1].comment, "Insert scenario alternatives.")
+            db_map.connection.close()
+
     def test_commit_object_insertion(self):
         """'model' view inserts an object and responds with OK status."""
         with fake_project(self.baron) as project_dir:
@@ -1524,6 +1785,95 @@ class ModelInterfaceTests(TestCase):
                     ),
                 )
 
+    def test_commit_alternative_deletion(self):
+        """'model' view deletes given alternative and responds with OK status."""
+        with fake_project(self.baron) as project_dir:
+            db_map = DatabaseMapping(
+                "sqlite:///" + str(project_dir / PATH_TO_MODEL_DATABASE), create=True
+            )
+            import_alternatives(db_map, ("my_alternative",))
+            db_map.commit_session("Add test data.")
+            with login_as_baron(self.client) as login_successful:
+                self.assertTrue(login_successful)
+                response = self.client.post(
+                    self.model_url,
+                    {
+                        "type": "commit",
+                        "projectId": 1,
+                        "deletions": {"alternative": [2]},
+                        "message": "Delete alternative.",
+                    },
+                    content_type="application/json",
+                )
+                self.assertEqual(response.status_code, 200)
+                content = json.loads(response.content)
+                self.assertEqual(content, {})
+            alternatives = db_map.query(db_map.alternative_sq).all()
+            self.assertEqual(len(alternatives), 1)
+            self.assertEqual(alternatives[0].name, "Base")
+            commits = db_map.query(db_map.commit_sq).all()
+            self.assertEqual(commits[-1].comment, "Delete alternative.")
+            db_map.connection.close()
+
+    def test_commit_scenario_deletion(self):
+        """'model' view deletes given scenario and responds with OK status."""
+        with fake_project(self.baron) as project_dir:
+            db_map = DatabaseMapping(
+                "sqlite:///" + str(project_dir / PATH_TO_MODEL_DATABASE), create=True
+            )
+            import_scenarios(db_map, ("my_scenario",))
+            db_map.commit_session("Add test data.")
+            with login_as_baron(self.client) as login_successful:
+                self.assertTrue(login_successful)
+                response = self.client.post(
+                    self.model_url,
+                    {
+                        "type": "commit",
+                        "projectId": 1,
+                        "deletions": {"scenario": [1]},
+                        "message": "Delete scenario.",
+                    },
+                    content_type="application/json",
+                )
+                self.assertEqual(response.status_code, 200)
+                content = json.loads(response.content)
+                self.assertEqual(content, {})
+            scenarios = db_map.query(db_map.scenario_sq).all()
+            self.assertEqual(len(scenarios), 0)
+            commits = db_map.query(db_map.commit_sq).all()
+            self.assertEqual(commits[-1].comment, "Delete scenario.")
+            db_map.connection.close()
+
+    def test_commit_scenario_alternative_deletion(self):
+        """'model' view deletes given scenario alternative and responds with OK status."""
+        with fake_project(self.baron) as project_dir:
+            db_map = DatabaseMapping(
+                "sqlite:///" + str(project_dir / PATH_TO_MODEL_DATABASE), create=True
+            )
+            import_scenarios(db_map, ("my_scenario",))
+            import_scenario_alternatives(db_map, (("my_scenario", "Base"),))
+            db_map.commit_session("Add test data.")
+            with login_as_baron(self.client) as login_successful:
+                self.assertTrue(login_successful)
+                response = self.client.post(
+                    self.model_url,
+                    {
+                        "type": "commit",
+                        "projectId": 1,
+                        "deletions": {"scenario_alternative": [1]},
+                        "message": "Delete scenario alternative.",
+                    },
+                    content_type="application/json",
+                )
+                self.assertEqual(response.status_code, 200)
+                content = json.loads(response.content)
+                self.assertEqual(content, {})
+            scenario_alternatives = db_map.query(db_map.scenario_alternative_sq).all()
+            self.assertEqual(len(scenario_alternatives), 0)
+            commits = db_map.query(db_map.commit_sq).all()
+            self.assertEqual(commits[-1].comment, "Delete scenario alternative.")
+            db_map.connection.close()
+
     def test_commit_object_deletion(self):
         """'model' view deletes given object and responds with OK status."""
         with fake_project(self.baron) as project_dir:
@@ -1584,6 +1934,112 @@ class ModelInterfaceTests(TestCase):
             self.assertEqual(len(relationships), 0)
             commits = db_map.query(db_map.commit_sq).all()
             self.assertEqual(commits[-1].comment, "Delete relationship.")
+            db_map.connection.close()
+
+    def test_commit_alternative_update(self):
+        """'model' view updates alternative in model and responds with OK status."""
+        with fake_project(self.baron) as project_dir:
+            db_map = DatabaseMapping(
+                "sqlite:///" + str(project_dir / PATH_TO_MODEL_DATABASE), create=True
+            )
+            import_alternatives(db_map, ("my_alternative",))
+            db_map.commit_session("Add test data.")
+            with login_as_baron(self.client) as login_successful:
+                self.assertTrue(login_successful)
+                response = self.client.post(
+                    self.model_url,
+                    {
+                        "type": "commit",
+                        "projectId": 1,
+                        "updates": {"alternative": [{"id": 2, "name": "renamed"}]},
+                        "message": "Rename alternative.",
+                    },
+                    content_type="application/json",
+                )
+                self.assertEqual(response.status_code, 200)
+                content = json.loads(response.content)
+                self.assertEqual(content, {})
+            alternatives = db_map.query(db_map.alternative_sq).all()
+            self.assertEqual(len(alternatives), 2)
+            self.assertEqual(alternatives[0].name, "Base")
+            self.assertEqual(alternatives[1].name, "renamed")
+            commits = db_map.query(db_map.commit_sq).all()
+            self.assertEqual(commits[-1].comment, "Rename alternative.")
+            db_map.connection.close()
+
+    def test_commit_scenario_update(self):
+        """'model' view updates scenario in model and responds with OK status."""
+        with fake_project(self.baron) as project_dir:
+            db_map = DatabaseMapping(
+                "sqlite:///" + str(project_dir / PATH_TO_MODEL_DATABASE), create=True
+            )
+            import_scenarios(db_map, ("my_scenario",))
+            db_map.commit_session("Add test data.")
+            with login_as_baron(self.client) as login_successful:
+                self.assertTrue(login_successful)
+                response = self.client.post(
+                    self.model_url,
+                    {
+                        "type": "commit",
+                        "projectId": 1,
+                        "updates": {"scenario": [{"id": 1, "name": "renamed"}]},
+                        "message": "Rename scenario.",
+                    },
+                    content_type="application/json",
+                )
+                self.assertEqual(response.status_code, 200)
+                content = json.loads(response.content)
+                self.assertEqual(content, {})
+            scenarios = db_map.query(db_map.scenario_sq).all()
+            self.assertEqual(len(scenarios), 1)
+            self.assertEqual(scenarios[0].name, "renamed")
+            commits = db_map.query(db_map.commit_sq).all()
+            self.assertEqual(commits[-1].comment, "Rename scenario.")
+            db_map.connection.close()
+
+    def test_commit_scenario_alternative_update(self):
+        """'model' view updates scenario alternative in model and responds with OK status."""
+        with fake_project(self.baron) as project_dir:
+            db_map = DatabaseMapping(
+                "sqlite:///" + str(project_dir / PATH_TO_MODEL_DATABASE), create=True
+            )
+            import_scenarios(db_map, ("my_scenario",))
+            import_alternatives(db_map, ("alternative_1", "alternative_2"))
+            import_scenario_alternatives(db_map, (("my_scenario", "alternative_2"),))
+            db_map.commit_session("Add test data.")
+            with login_as_baron(self.client) as login_successful:
+                self.assertTrue(login_successful)
+                response = self.client.post(
+                    self.model_url,
+                    {
+                        "type": "commit",
+                        "projectId": 1,
+                        "updates": {
+                            "scenario_alternative": [
+                                {"id": 1, "alternative_name": "alternative_1"}
+                            ]
+                        },
+                        "message": "Change scenario alternative.",
+                    },
+                    content_type="application/json",
+                )
+                self.assertEqual(response.status_code, 200)
+                content = json.loads(response.content)
+                self.assertEqual(content, {})
+            scenario_alternatives = db_map.query(db_map.scenario_alternative_sq).all()
+            self.assertEqual(len(scenario_alternatives), 1)
+            self.assertEqual(
+                scenario_alternatives[0]._asdict(),
+                {
+                    "id": 1,
+                    "scenario_id": 1,
+                    "alternative_id": 2,
+                    "rank": 1,
+                    "commit_id": 3,
+                },
+            )
+            commits = db_map.query(db_map.commit_sq).all()
+            self.assertEqual(commits[-1].comment, "Change scenario alternative.")
             db_map.connection.close()
 
     def test_commit_object_update(self):

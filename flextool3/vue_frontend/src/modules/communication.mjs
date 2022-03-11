@@ -81,6 +81,27 @@ function fetchModelData(queryType, projectId, modelUrl, extraBody = {}) {
     });
 }
 
+/**
+ * Sends database commit data to server.
+ * @param {Object} commitData Commit contents.
+ * @param (string} message Commit message.
+ * @param {number} projectId Project's id.
+ * @param {string} modelUrl Model interface URL.
+ * @returns {Promise} Promise that resolves to server's response object.
+ */
+function commit(commitData, message, projectId, modelUlr) {
+    const fetchInit = makeFetchInit();
+    fetchInit.body = JSON.stringify({type: "commit", projectId: projectId, message: message, ...commitData});
+    return fetch(modelUlr, fetchInit).then(function(response) {
+        if (!response.ok) {
+            return response.text().then(function(message) {
+              throw new Error(message);
+            });
+        }
+        return response.json();
+    });
+}
+
 function fetchExecutionList(projectId, executionsUrl) {
     const fetchInit = makeFetchInit();
     fetchInit.body = JSON.stringify({type: "execution list?", projectId: projectId});
@@ -189,6 +210,7 @@ export {
     getScriptData,
     makeFetchInit,
     fetchModelData,
+    commit,
     fetchProjectList,
     createProject,
     destroyProject,

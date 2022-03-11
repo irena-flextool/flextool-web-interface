@@ -2,13 +2,12 @@
     <n-space>
         <n-input
         clearable
-        placeholder="Enter object name"
-        :value="currentName"
-        @update:value="nameChanged"
+        :placeholder="placeholder"
+        v-model:value="currentName"
         size="small"
         />
         <n-button
-            @click="emitCreateObject"
+            @click="emitCreate"
             size="small"
             >
             Create
@@ -17,33 +16,36 @@
 </template>
 
 <script>
-import {ref} from "vue/dist/vue.esm-bundler.js";
+import {computed, ref} from "vue/dist/vue.esm-bundler.js";
 import {useMessage} from "naive-ui";
 
 export default {
-    emits: ["objectCreate"],
+    props: {
+     itemName: {type: String, required: true},
+    },
+    emits: ["create"],
     setup(props, context) {
         const currentName = ref("");
+        const placeholder = computed(() => `Enter ${props.itemName} name`);
         const message = useMessage();
         return {
             currentName: currentName,
-            nameChanged(newName) {
-                currentName.value = newName;
-            },
-            emitCreateObject() {
+            placeholder: placeholder,
+            emitCreate() {
                 const proposedName = new String(currentName.value).trim();
                 if(!proposedName) {
-                    message.error("Please enter name for the new object.");
+                    message.error(`Please enter name for the new ${props.itemName}.`);
                     return;
                 }
                 const forbiddenCharacters = /[,]/
                 if(forbiddenCharacters.test(proposedName)) {
-                    message.error("Object name contains invalid special characters.");
+                    const upperCased = props.itemName.charAt(0).toUpperCase() + props.itemName.slice(1);
+                    message.error(`${upperCased} name contains invalid special characters.`);
                     return
                 }
-                context.emit("objectCreate", proposedName);
+                context.emit("create", proposedName);
                 currentName.value = "";
-            }
+            },
         };
     }
 }

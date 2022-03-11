@@ -4,7 +4,14 @@
 {% block content %}
     <div class="app-box" id="edit-app">
         <n-message-provider>
-            <editor-app index-url="{% url 'flextool3:index' %}" project-url="{% url 'flextool3:detail' project.id %}" project-name="{{ project.name }}" :project-id="{{ project.id }}" model-url="{% url 'flextool3:model' %}" ></editor-app>
+            <editor-app
+                index-url="{% url 'flextool3:index' %}"
+                project-url="{% url 'flextool3:detail' project.id %}"
+                project-name="{{ project.name }}"
+                :project-id="{{ project.id }}"
+                model-url="{% url 'flextool3:model' %}"
+                scenarios-url="{% url 'flextool3:scenarios' project.id %}"
+            ></editor-app>
         </n-message-provider>
     </div>
     {% render_bundle 'edit' %}

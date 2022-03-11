@@ -52,7 +52,7 @@ class Key(Enum):
         return self.value
 
 
-def _get_and_validate(dictionary, key, expected_type):
+def _get_and_validate(dictionary, key, expected_type, required=True):
     """Returns value with given key from dictionary.
 
     Raises if value doesn't exist or is of wrong type.
@@ -61,11 +61,17 @@ def _get_and_validate(dictionary, key, expected_type):
         dictionary (dict): a dictionary
         key (Any): dictionary key
         expected_type (Type): value's expected type
+        required (bool): If True, missing key raises an exception
+
+    Returns:
+        Any: value corresponding to key or None key is missing
     """
     try:
         x = dictionary[key]
     except KeyError as missing:
-        raise FlextoolException(f"Missing {missing}.")
+        if required:
+            raise FlextoolException(f"Missing {missing}.")
+        return None
     if not isinstance(x, expected_type):
         if isinstance(expected_type, tuple):
             raise FlextoolException(
@@ -182,6 +188,15 @@ def entities(request, pk, class_id):
         return render(request, "flextool3/entities.html", context)
 
     return _ensure_model_database_up_to_date(render_entities, request, pk)
+
+
+@login_required
+def scenarios(request, pk):
+    def render_scenarios(project, _):
+        context = {"project": project}
+        return render(request, "flextool3/scenarios.html", context)
+
+    return _ensure_model_database_up_to_date(render_scenarios, request, pk)
 
 
 class SolveView(LoginRequiredMixin, generic.DetailView):
@@ -310,6 +325,8 @@ def model(request):
             return get_physical_classes(project)
         if type_ == "alternatives?":
             return get_alternatives(project)
+        if type_ == "scenarios?":
+            return get_scenarios(project)
         if type_ == "commits?":
             return get_commits(project, body)
         if type_ == "commit":
@@ -675,7 +692,10 @@ def _update_model(db_map, request_body):
         return
     if not isinstance(updates, dict):
         raise FlextoolException(f"'updates' wasn't of expected type.")
-    class_id = request_body.get(Key.CLASS_ID.value)
+    class_id = _get_and_validate(request_body, Key.CLASS_ID.value, int, required=False)
+    _update_alternatives(db_map, updates)
+    _update_scenarios(db_map, updates)
+    _update_scenario_alternatives(db_map, updates)
     _update_objects(db_map, updates)
     _update_relationships(db_map, updates, class_id)
     _update_parameter_values(db_map, updates)
@@ -688,11 +708,9 @@ def _delete_from_model(db_map, request_body):
         db_map (DatabaseMapping): database mapping
         request_body (dict): request body
     """
-    deletions = request_body.get("deletions")
+    deletions = _get_and_validate(request_body, "deletions", dict, required=False)
     if deletions is None:
         return
-    if not isinstance(deletions, dict):
-        raise FlextoolException(f"'deletions' wasn't of expected type.")
     try:
         converted_deletions = {key: set(value) for key, value in deletions.items()}
     except TypeError:
@@ -710,13 +728,20 @@ def _insert_to_model(db_map, request_body):
     Returns:
         dict of dict: inserted item ids
     """
-    insertions = request_body.get("insertions")
+    insertions = _get_and_validate(request_body, "insertions", dict, required=False)
     if insertions is None:
         return
-    if not isinstance(insertions, dict):
-        raise FlextoolException(f"'insertions' wasn't of expected type.")
-    class_id = _get_and_validate(request_body, Key.CLASS_ID.value, int)
+    class_id = _get_and_validate(request_body, Key.CLASS_ID.value, int, required=False)
     inserted = {}
+    inserted_alternatives = _insert_alternatives(db_map, insertions)
+    if inserted_alternatives:
+        inserted["alternative"] = inserted_alternatives
+    inserted_scenarios = _insert_scenarios(db_map, insertions)
+    if inserted_scenarios:
+        inserted["scenario"] = inserted_scenarios
+    scenario_alternatives = _insert_scenario_alternatives(db_map, insertions)
+    if scenario_alternatives:
+        inserted["scenario_alternative"] = scenario_alternatives
     objects = _insert_objects(db_map, insertions, class_id)
     if objects:
         inserted["object"] = objects
@@ -727,6 +752,92 @@ def _insert_to_model(db_map, request_body):
     return inserted
 
 
+def _update_alternatives(db_map, updates):
+    """Updates alternatives in model database.
+
+    Args:
+        db_map (DatabaseMapping): database mapping
+        updates (dict): database updates
+    """
+    alternative_updates = _get_and_validate(
+        updates, "alternative", list, required=False
+    )
+    if not alternative_updates:
+        return
+    sterilized_updates = []
+    for update in alternative_updates:
+        sterilized = {
+            "id": _get_and_validate(update, "id", int),
+            "name": _get_and_validate(update, "name", str),
+        }
+        sterilized_updates.append(sterilized)
+    try:
+        _, errors = db_map.update_alternatives(*sterilized_updates, strict=True)
+        if errors:
+            raise FlextoolException("Errors while updating alternatives.")
+    except SpineIntegrityError as error:
+        raise FlextoolException(f"Database integrity error: {error}")
+
+
+def _update_scenarios(db_map, updates):
+    """Updates scenarios in model database.
+
+    Args:
+        db_map (DatabaseMapping): database mapping
+        updates (dict): database updates
+    """
+    scenario_updates = _get_and_validate(updates, "scenario", list, required=False)
+    if not scenario_updates:
+        return
+    sterilized_updates = []
+    for update in scenario_updates:
+        sterilized = {
+            "id": _get_and_validate(update, "id", int),
+            "name": _get_and_validate(update, "name", str),
+        }
+        sterilized_updates.append(sterilized)
+    try:
+        _, errors = db_map.update_scenarios(*sterilized_updates, strict=True)
+        if errors:
+            raise FlextoolException("Errors while updating scenarios.")
+    except SpineIntegrityError as error:
+        raise FlextoolException(f"Database integrity error: {error}")
+
+
+def _update_scenario_alternatives(db_map, updates):
+    """Updates scenario alternatives in model database.
+
+    Args:
+        db_map (DatabaseMapping): database mapping
+        updates (dict): database updates
+    """
+    scenario_alternative_updates = _get_and_validate(
+        updates, "scenario_alternative", list, required=False
+    )
+    if not scenario_alternative_updates:
+        return
+    alternative_ids = {
+        item.name: item.id for item in db_map.query(db_map.alternative_sq)
+    }
+    sterilized_updates = []
+    for update in scenario_alternative_updates:
+        sterilized = {
+            "id": _get_and_validate(update, "id", int),
+            "alternative_id": alternative_ids[
+                _get_and_validate(update, "alternative_name", str)
+            ],
+        }
+        sterilized_updates.append(sterilized)
+    try:
+        _, errors = db_map.update_scenario_alternatives(
+            *sterilized_updates, strict=True
+        )
+        if errors:
+            raise FlextoolException("Errors while updating scenario alternatives.")
+    except SpineIntegrityError as error:
+        raise FlextoolException(f"Database integrity error: {error}")
+
+
 def _update_objects(db_map, updates):
     """Updates objects in model database.
 
@@ -734,11 +845,9 @@ def _update_objects(db_map, updates):
         db_map (DatabaseMapping): database mapping
         updates (dict): database updates
     """
-    object_updates = updates.get("object")
+    object_updates = _get_and_validate(updates, "object", list, required=False)
     if not object_updates:
         return
-    if not isinstance(object_updates, list):
-        raise FlextoolException(f"'object' wasn't of expected type.")
     sterilized_updates = []
     for update in object_updates:
         sterilized = {
@@ -746,7 +855,6 @@ def _update_objects(db_map, updates):
             "name": _get_and_validate(update, "name", str),
         }
         sterilized_updates.append(sterilized)
-    del object_updates  # Don't use updates from this point onwards.
     try:
         _, errors = db_map.update_objects(*sterilized_updates, strict=True)
         if errors:
@@ -763,13 +871,13 @@ def _update_relationships(db_map, updates, class_id):
         updates (dict): database updates
         class_id (int): relationship class id
     """
-    relationship_updates = updates.get("relationship")
+    relationship_updates = _get_and_validate(
+        updates, "relationship", list, required=False
+    )
     if not relationship_updates:
         return
-    if not isinstance(relationship_updates, list):
-        raise FlextoolException(f"'relationship' wasn't of expected type.")
-    if not isinstance(class_id, int):
-        raise FlextoolException(f"'class_id' wasn't of expected type.")
+    if class_id is None:
+        raise FlextoolException(f"'class_id' is required when updating relationships.")
     sterilized_updates = []
     object_ids = _relationship_object_ids(db_map, class_id)
     for update in relationship_updates:
@@ -800,11 +908,9 @@ def _update_parameter_values(db_map, updates):
         db_map (DatabaseMapping): database mapping
         updates (dict): database updates
     """
-    value_updates = updates.get("parameter_value")
+    value_updates = _get_and_validate(updates, "parameter_value", list, required=False)
     if not value_updates:
         return
-    if not isinstance(value_updates, list):
-        raise FlextoolException(f"'parameter_value' wasn't of expected type.")
     sterilized_updates = []
     for update in value_updates:
         sterilized = {}
@@ -825,6 +931,110 @@ def _update_parameter_values(db_map, updates):
         raise FlextoolException(f"Database integrity error: {e}")
 
 
+def _insert_alternatives(db_map, insertions):
+    """Inserts alternatives into model database.
+
+    Args:
+        db_map (DatabaseMapping): database mapping
+        insertions (dict): database insertions
+
+    Returns:
+        dict: inserted alternative ids keyed by their names
+    """
+    alternative_insertions = _get_and_validate(
+        insertions, "alternative", list, required=False
+    )
+    if not alternative_insertions:
+        return {}
+    sterilized_insertions = [
+        {"name": _get_and_validate(insertion, "name", str)}
+        for insertion in alternative_insertions
+    ]
+    try:
+        inserted, errors = db_map.add_alternatives(
+            *sterilized_insertions, strict=True, return_items=True
+        )
+        if errors:
+            raise FlextoolException("Errors while inserting alternatives.")
+    except SpineIntegrityError as e:
+        raise FlextoolException(f"Database integrity error: {e}")
+    return {i["name"]: i["id"] for i in inserted}
+
+
+def _insert_scenarios(db_map, insertions):
+    """Inserts scenarios into model database.
+
+    Args:
+        db_map (DatabaseMapping): database mapping
+        insertions (dict): database insertions
+
+    Returns:
+        dict: inserted scenario ids keyed by their names
+    """
+    scenario_insertions = _get_and_validate(
+        insertions, "scenario", list, required=False
+    )
+    if not scenario_insertions:
+        return {}
+    sterilized_insertions = [
+        {"name": _get_and_validate(insertion, "name", str)}
+        for insertion in scenario_insertions
+    ]
+    try:
+        inserted, errors = db_map.add_scenarios(
+            *sterilized_insertions, strict=True, return_items=True
+        )
+        if errors:
+            raise FlextoolException("Errors while inserting scenarios.")
+    except SpineIntegrityError as e:
+        raise FlextoolException(f"Database integrity error: {e}")
+    return {i["name"]: i["id"] for i in inserted}
+
+
+def _insert_scenario_alternatives(db_map, insertions):
+    """Inserts scenario alternatives into model database.
+
+    Args:
+        db_map (DatabaseMapping): database mapping
+        insertions (dict): database insertions
+
+    Returns:
+        dict: inserted scenario alternative ids keyed by scenario names and ranks
+    """
+    scenario_alternative_insertions = _get_and_validate(
+        insertions, "scenario_alternative", list, required=False
+    )
+    if not scenario_alternative_insertions:
+        return {}
+    scenario_ids = {row.name: row.id for row in db_map.query(db_map.scenario_sq)}
+    scenario_names = {id_: name for name, id_ in scenario_ids.items()}
+    alternative_ids = {row.name: row.id for row in db_map.query(db_map.alternative_sq)}
+    sterilized_insertions = [
+        {
+            "scenario_id": scenario_ids[
+                _get_and_validate(insertion, "scenario_name", str)
+            ],
+            "alternative_id": alternative_ids[
+                _get_and_validate(insertion, "alternative_name", str)
+            ],
+            "rank": _get_and_validate(insertion, "rank", int),
+        }
+        for insertion in scenario_alternative_insertions
+    ]
+    try:
+        inserted, errors = db_map.add_scenario_alternatives(
+            *sterilized_insertions, strict=True, return_items=True
+        )
+        if errors:
+            raise FlextoolException("Errors while inserting scenario alternatives.")
+    except SpineIntegrityError as e:
+        raise FlextoolException(f"Database integrity error: {e}")
+    ids = {}
+    for i in inserted:
+        ids.setdefault(scenario_names[i["scenario_id"]], {})[i["rank"]] = i["id"]
+    return ids
+
+
 def _insert_objects(db_map, insertions, class_id):
     """Inserts objects into model database.
 
@@ -836,11 +1046,11 @@ def _insert_objects(db_map, insertions, class_id):
     Returns:
         dict: inserted object ids keyed by object names
     """
-    object_insertions = insertions.get("object")
+    object_insertions = _get_and_validate(insertions, "object", list, required=False)
     if not object_insertions:
         return {}
-    if not isinstance(object_insertions, list):
-        raise FlextoolException(f"'object' wasn't of expected type.")
+    if class_id is None:
+        raise FlextoolException(f"'class_id' is required for object insertions")
     sterilized_insertions = []
     for insertion in object_insertions:
         name = _get_and_validate(insertion, "name", str)
@@ -868,11 +1078,13 @@ def _insert_relationships(db_map, insertions, class_id):
     Returns:
         dict: inserted object ids keyed by object names
     """
-    relationship_insertions = insertions.get("relationship")
+    relationship_insertions = _get_and_validate(
+        insertions, "relationship", list, required=False
+    )
     if not relationship_insertions:
         return {}
-    if not isinstance(relationship_insertions, list):
-        raise FlextoolException(f"'relationship' wasn't of expected type.")
+    if class_id is None:
+        raise FlextoolException(f"'class_id' is required for relationship insertions")
     sterilized_insertions = []
     object_ids = _relationship_object_ids(db_map, class_id)
     for insertion in relationship_insertions:
@@ -907,11 +1119,15 @@ def _insert_parameter_values(db_map, insertions, class_id):
         insertions (dict): database insertions
         class_id (int): entity class id
     """
-    value_insertions = insertions.get("parameter_value")
+    value_insertions = _get_and_validate(
+        insertions, "parameter_value", list, required=False
+    )
     if not value_insertions:
         return {}
-    if not isinstance(value_insertions, list):
-        raise FlextoolException(f"'parameter_value' wasn't of expected type.")
+    if class_id is None:
+        raise FlextoolException(
+            f"'class_id' is required for parameter value insertions"
+        )
     sterilized_insertions = []
     definition_ids = set()
     for insertion in value_insertions:
@@ -1030,6 +1246,40 @@ def get_alternatives(project):
         )
 
 
+def get_scenarios(project):
+    """Queries scenarios and scenario alternatives in model database.
+
+    Args:
+        project (Project): target project
+
+    Returns:
+        HttpResponse: scenarios and scenario alternatives
+    """
+    with model_database_map(project) as db_map:
+        scenario_alternatives = {}
+        scenario_ids = {}
+        for row in db_map.query(db_map.ext_scenario_sq).order_by(
+            db_map.ext_scenario_sq.c.name, db_map.ext_scenario_sq.c.rank
+        ):
+            if row.alternative_name is not None:
+                scenario_alternatives.setdefault(row.name, []).append(
+                    row.alternative_name
+                )
+            else:
+                scenario_alternatives[row.name] = []
+            scenario_ids[row.name] = row.id
+        scenario_data = []
+        for scenario_name, alternatives in scenario_alternatives.items():
+            scenario_data.append(
+                {
+                    "scenario_id": scenario_ids[scenario_name],
+                    "scenario_name": scenario_name,
+                    "scenario_alternatives": alternatives,
+                }
+            )
+        return JsonResponse({"scenarios": scenario_data})
+
+
 @contextmanager
 def model_database_map(project):
     """Opens a database connection to project's model database."""
@@ -1046,9 +1296,9 @@ def executions(request):
         raise Http404()
     body = json.loads(request.body)
     try:
-        question = body["type"]
-    except KeyError as missing:
-        return HttpResponseBadRequest(f"Missing '{missing}'.")
+        question = _get_and_validate(body, "type", str)
+    except FlextoolException as error:
+        return HttpResponseBadRequest(str(error))
     if question == "execution list?":
         return execution_list(request, body)
     if question == "create execution?":
@@ -1096,10 +1346,7 @@ def create_execution(request, request_body):
 
 
 def _resolve_execution(request, request_body):
-    try:
-        execution_id = request_body["id"]
-    except KeyError as missing:
-        raise FlextoolException(f"missing '{missing}")
+    execution_id = _get_and_validate(request_body, "id", int)
     try:
         execution = Execution.objects.get(pk=execution_id)
     except Execution.DoesNotExist:

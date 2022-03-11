@@ -1,14 +1,12 @@
 <template>
     <n-space align="baseline">
-        <n-text v-if="!editing" @dblclick="showInput"> {{ objectName }}</n-text>
+        <n-text v-if="!editing" @dblclick="showInput"> {{ alternativeName }}</n-text>
         <item-name-input
             v-else
-            :name="objectName"
+            :name="alternativeName"
             @accept="emitRename"
             @cancel="hideInput"
         />
-        <n-text>―</n-text>
-        <n-text italic>{{ alternativeName }}</n-text>
     </n-space>
 </template>
 
@@ -18,9 +16,8 @@ import ItemNameInput from "./ItemNameInput.vue";
 
 export default {
     props: {
-        objectName: {type: String, required: true},
-        objectId: {type: Number, required: false},
         alternativeName: {type: String, required: true},
+        alternativeId: {type: Number, required: false},
     },
     emits: ["rename"],
     components: {
@@ -28,7 +25,7 @@ export default {
     },
     setup(props, context) {
         const editing = ref(false);
-        const editValue = ref(props.objectName);
+        const editValue = ref(props.alternativeName);
         const inputInstance = ref(null);
         return {
             editing: editing,
@@ -42,7 +39,7 @@ export default {
             },
             emitRename(name) {
                 editing.value = false;
-                context.emit("rename", {id: props.objectId, previousEmblem: props.objectName, entityEmblem: name});
+                context.emit("rename", {id: props.alternativeId, previousName: props.alternativeName, name: name});
             }
         };
     }

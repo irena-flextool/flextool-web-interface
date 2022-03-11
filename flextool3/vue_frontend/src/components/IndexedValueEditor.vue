@@ -11,6 +11,7 @@
             :value="content"
             type="textarea"
             placeholder="index value"
+            :rows=20
             @update:value="updateContent"
         />
     </n-space>

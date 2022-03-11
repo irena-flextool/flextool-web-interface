@@ -17,6 +17,10 @@ const pages = {
         entry: "./src/entities.js",
         chunks: ["chunk-vendors"]
     },
+    "scenarios": {
+        entry: "./src/scenarios.js",
+        chunks: ["chunk-vendors"]
+    },
     "solve": {
         entry: "./src/solve.js",
         chunks: ["chunk-vendors"]

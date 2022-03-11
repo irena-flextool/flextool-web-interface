@@ -1,6 +1,11 @@
 <template>
     <n-spin v-if="state === 'loading'"/>
-    <n-result v-else-if="state === 'error'" status="error" title="Error" :description="errorMessage"/>
+    <n-result
+        v-else-if="state === 'error'"
+        status="error"
+        title="Error"
+        :description="errorMessage"
+    />
     <n-space v-else vertical>
         <n-tree
             selectable
@@ -11,10 +16,11 @@
             :selected-keys="selectedKeys"
             @update:selected-keys="emitEntitySelect"
         />
-        <entity-list-new-object-row
+        <new-named-item-row
             v-if="classType === 1"
             v-show="alternatives"
-            @object-create="addObject"
+            item-name="object"
+            @create="addObject"
         />
         <entity-list-new-relationship-row
             v-else
@@ -29,11 +35,12 @@
 import {h, onMounted, ref, toRefs, watch} from "vue/dist/vue.esm-bundler.js";
 import {useDialog} from "naive-ui";
 import * as Communication from "../modules/communication.mjs";
+import {emblemToName} from "../modules/entityEmblem.mjs";
 import {emblemsEqual, relationshipEmblemsEqual} from "../modules/emblemComparison.mjs";
 import EntityListObjectLabel from "./EntityListObjectLabel.vue";
 import EntityListRelationshipLabel from "./EntityListRelationshipLabel.vue";
-import EntityListItemSuffix from "./EntityListItemSuffix.vue";
-import EntityListNewObjectRow from "./EntityListNewObjectRow.vue";
+import DeleteItemButton from "./DeleteItemButton.vue";
+import NewNamedItemRow from "./NewNamedItemRow.vue";
 import EntityListNewRelationshipRow from "./EntityListNewRelationshipRow.vue";
 
 /**
@@ -150,12 +157,13 @@ export default {
         projectId: {type: Number, required: true},
         modelUrl: {type: String, required: true},
         classId: {type: Number, required: true},
+        className: {type: String, required: true},
         classType: {type: Number, required: true},
         inserted: {type: Object, required: false},
     },
     emits: ["entitySelect", "entityInsert", "entityUpdate", "entityDelete"],
     components: {
-        "entity-list-new-object-row": EntityListNewObjectRow,
+        "new-named-item-row": NewNamedItemRow,
         "entity-list-new-relationship-row": EntityListNewRelationshipRow,
     },
     setup(props, context) {
@@ -243,13 +251,14 @@ export default {
                 return;
             }
             entityList.value.forEach(function(entity) {
-                const id = inserted[entity.entityEmblem];
+                const entityName = emblemToName(props.className, entity.entityEmblem);
+                const id = inserted[entityName];
                 if(id !== undefined) {
                     entity.entityId = id;
                 }
             });
             selectedKeys.value.length = 0;
-            context.emit("entitySelect", {});
+            context.emit("entitySelect", null);
         });
         return {
             state: state,
@@ -284,7 +293,7 @@ export default {
                 }
             },
             renderSuffix(info) {
-                return h(EntityListItemSuffix, {entityEmblem: info.option.entityEmblem, onDelete: deleteEntity});
+                return h(DeleteItemButton, {emblem: info.option.entityEmblem, onDelete: deleteEntity});
             },
             emitEntitySelect(newSelectedKeys, selectedNodes) {
                 const selected = selectedNodes.find(function(row) {

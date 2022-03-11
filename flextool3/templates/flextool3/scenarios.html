@@ -1,0 +1,20 @@
+{% extends "flextool3/edit_base.html" %}
+{% load render_bundle from webpack_loader %}
+
+{% block content %}
+    <div class="app-box" id="scenarios-app">
+        <n-dialog-provider>
+            <n-message-provider>
+                <scenarios-app
+                        index-url="{% url 'flextool3:index' %}"
+                        project-url="{% url 'flextool3:detail' project.id %}"
+                        project-name="{{ project.name }}"
+                        :project-id="{{ project.id }}"
+                        edit-url="{% url 'flextool3:edit' project.id %}"
+                        model-url="{% url 'flextool3:model' %}"
+                ></scenarios-app>
+            </n-message-provider>
+        </n-dialog-provider>
+    </div>
+    {% render_bundle 'scenarios' %}
+{% endblock %}

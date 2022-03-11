@@ -9,6 +9,7 @@ urlpatterns = [
     path("<int:pk>/", views.DetailView.as_view(), name="detail"),
     path("<int:pk>/edit/", views.edit, name="edit"),
     path("<int:pk>/edit/class/<int:class_id>", views.entities, name="entities"),
+    path("<int:pk>/edit/scenarios/", views.scenarios, name="scenarios"),
     path("<int:pk>/solve/", views.SolveView.as_view(), name="solve"),
     path("<int:pk>/results/", views.ResultsView.as_view(), name="view"),
     path("projects/", views.projects, name="projects"),

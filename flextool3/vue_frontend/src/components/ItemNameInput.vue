@@ -15,11 +15,11 @@
 import {onMounted, ref} from "vue/dist/vue.esm-bundler.js";
 export default {
     props: {
-        objectName: String
+        name: String
     },
     emits: ["accept", "cancel"],
     setup(props, context) {
-        const value = ref(props.objectName);
+        const value = ref(props.name);
         const instance = ref(null);
         onMounted(function() {
             instance.value?.select();
@@ -28,7 +28,7 @@ export default {
             instance: instance,
             value: value,
             cancel() {
-                value.value = props.objectName;
+                value.value = props.name;
                 context.emit("cancel");
             },
             updateValue(newValue) {
@@ -38,16 +38,16 @@ export default {
                 const sanitized = value.value.trim();
                 switch(keyInfo.key) {
                     case "Enter":
-                        if (sanitized && sanitized !== props.objectName) {
+                        if (sanitized && sanitized !== props.name) {
                             context.emit("accept", sanitized);
                         }
                         else {
-                            value.value = props.objectName;
+                            value.value = props.name;
                             context.emit("cancel");
                         }
                         break;
                     case "Escape":
-                        value.value = props.objectName;
+                        value.value = props.name;
                         context.emit("cancel");
                         break;
                 }
