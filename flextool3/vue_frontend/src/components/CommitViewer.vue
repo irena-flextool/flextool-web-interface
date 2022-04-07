@@ -44,7 +44,7 @@ export default {
         const loading = ref(true);
         const errorMessage = ref("");
         onMounted(function() {
-            Communication.fetchModelData("commits?", props.projectId, props.modelUrl).then(function(response) {
+            Communication.fetchData("commits?", props.projectId, props.modelUrl).then(function(response) {
                 data.value = response.commits;
             }).catch(function(error) {
                 errorMessage.value = error.message;

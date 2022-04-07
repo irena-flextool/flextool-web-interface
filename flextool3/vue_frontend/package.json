@@ -9,11 +9,12 @@
     "test": "mocha"
   },
   "dependencies": {
-    "core-js": "^3.6.5",
-    "vue": "^3.0.0",
-    "webpack-bundle-tracker": "^1.4.0",
     "@vicons/fa": "^0.12.0",
-    "naive-ui": "^2.22.0"
+    "core-js": "^3.6.5",
+    "naive-ui": "^2.22.0",
+    "plotly.js-cartesian-dist-min": "^2.11.1",
+    "vue": "^3.0.0",
+    "webpack-bundle-tracker": "^1.4.0"
   },
   "devDependencies": {
     "@vue/cli-plugin-babel": "~4.5.0",

@@ -2166,3 +2166,63 @@ class ExecutorTests(unittest.TestCase):
         self.assertEqual(executor.execution_count(), 0)
         executor.start(self._id, sys.executable, ["--version"])
         self.assertEqual(executor.execution_count(), 1)
+
+
+class AnalysisInterfaceTests(TestCase):
+    baron = None
+    model_url = reverse("flextool3:analysis")
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.baron = User(username="baron", password="")
+        cls.baron.set_password("secretbaron")
+        cls.baron.save()
+
+    def test_get_entity_classes(self):
+        """'analysis' view responses with object and relationship class information."""
+        with fake_project(self.baron) as project_dir:
+            db_map = DatabaseMapping(
+                "sqlite:///" + str(project_dir / PATH_TO_RESULT_DATABASE), create=True
+            )
+            import_object_classes(db_map, ("object_class",))
+            import_relationship_classes(
+                db_map, (("relationship_class", ("object_class",)),)
+            )
+            db_map.commit_session("Add test data.")
+            db_map.connection.close()
+            with login_as_baron(self.client) as login_successful:
+                self.assertTrue(login_successful)
+                response = self.client.post(
+                    self.model_url,
+                    {"type": "entity classes?", "projectId": 1},
+                    content_type="application/json",
+                )
+                self.assertEqual(response.status_code, 200)
+                content = json.loads(response.content)
+                self.assertEqual(
+                    content,
+                    {
+                        "classes": [
+                            {
+                                "commit_id": 2,
+                                "description": None,
+                                "display_icon": None,
+                                "display_order": 99,
+                                "hidden": 0,
+                                "id": 1,
+                                "name": "object_class",
+                                "type_id": 1,
+                            },
+                            {
+                                "commit_id": 2,
+                                "description": None,
+                                "display_icon": None,
+                                "display_order": 99,
+                                "hidden": 0,
+                                "id": 2,
+                                "name": "relationship_class",
+                                "type_id": 2,
+                            },
+                        ]
+                    },
+                )

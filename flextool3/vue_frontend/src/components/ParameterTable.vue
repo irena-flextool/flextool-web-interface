@@ -47,7 +47,7 @@
 
 <script>
 import {computed, h, ref, toRefs, watch} from "vue/dist/vue.esm-bundler.js";
-import {HandPaperRegular, HandPointLeftRegular} from '@vicons/fa'
+import {HandPaperRegular, HandPointLeftRegular} from '@vicons/fa';
 import * as Communication from "../modules/communication.mjs";
 import ParameterTableNameLabel from "./ParameterTableNameLabel.vue";
 import ParameterTableValueCell from "./ParameterTableValueCell.vue";
@@ -193,7 +193,7 @@ function applyPendingChangesToValues(entityEmblem, alternativeId, tableRows, dif
  * @returns {Promise} Promise that resolves to parameter definitions.
  */
 function fetchParameterDefinitions(projectId, modelUrl, classId) {
-    return Communication.fetchModelData(
+    return Communication.fetchData(
         "parameter definitions?",
         projectId, modelUrl,
         {"class_id": classId}
@@ -219,7 +219,7 @@ function fetchSkeletonData(projectId, modelUrl, classId) {
             skeleton.push(parameter);
         });
         if(valueListIds.size > 0) {
-             const valueLists = await Communication.fetchModelData(
+             const valueLists = await Communication.fetchData(
                 "parameter value lists?",
                 projectId, modelUrl,
                 {value_list_ids: [...valueListIds.values()]}
@@ -266,7 +266,7 @@ function fetchData(
             tableData.value = tableRows;
         }
         else {
-            Communication.fetchModelData(
+            Communication.fetchData(
                 "parameter values?",
                 projectId, modelUrl,
                 {"entity_id": entityId, "alternative_id": alternativeId}

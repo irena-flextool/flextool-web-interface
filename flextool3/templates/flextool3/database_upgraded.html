@@ -5,7 +5,7 @@
 
 {% block content %}
     <div class="app-box" id="upgrade-notification-app">
-        <upgrade-notification-app></upgrade-notification-app>
+        <upgrade-notification-app database="{{ database }}"></upgrade-notification-app>
     </div>
     {% render_bundle 'upgrade-notification' %}
 {% endblock %}

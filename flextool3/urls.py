@@ -11,8 +11,9 @@ urlpatterns = [
     path("<int:pk>/edit/class/<int:class_id>", views.entities, name="entities"),
     path("<int:pk>/edit/scenarios/", views.scenarios, name="scenarios"),
     path("<int:pk>/solve/", views.SolveView.as_view(), name="solve"),
-    path("<int:pk>/results/", views.ResultsView.as_view(), name="view"),
+    path("<int:pk>/results/", views.results, name="view"),
     path("projects/", views.projects, name="projects"),
     path("model/", views.model, name="model"),
     path("executions/", views.executions, name="executions"),
+    path("analysis/", views.analysis, name="analysis"),
 ]

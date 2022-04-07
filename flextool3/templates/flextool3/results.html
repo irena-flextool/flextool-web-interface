@@ -13,7 +13,14 @@
 
 {% block content %}
     <div class="app-box" id="results-app">
-        <results-app index-url="{% url 'flextool3:index' %}" project-url="{% url 'flextool3:detail' project.id %}" project-name="{{ project.name }}"></results-app>
+        <results-app
+            index-url="{% url 'flextool3:index' %}"
+            project-url="{% url 'flextool3:detail' project.id %}"
+            project-name="{{ project.name }}"
+            :project-id="{{ project.id }}"
+            analysis-url="{% url 'flextool3:analysis' %}"
+        ></results-app>
     </div>
+    <script src="https://cdn.plot.ly/plotly-2.9.0.min.js"></script>
     {% render_bundle 'results' %}
 {% endblock %}

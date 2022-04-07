@@ -18,7 +18,7 @@ export default {
         url: String,
         projectsUrl: String
     },
-    emits: ["destroyed:projectId"],
+    emits: ["destroyed"],
     setup(props, context) {
         const busy = ref(false);
         const message = useMessage();

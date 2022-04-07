@@ -1,34 +1,29 @@
 <template>
-    <n-spin v-if="state === 'loading'"/>
-    <n-result
-        v-else-if="state === 'error'"
-        status="error"
-        title="Error"
-        :description="errorMessage"
-    />
-    <n-space v-else vertical>
-        <n-tree
-            selectable
-            block-node
-            :data="entityList"
-            :render-label="renderLabel"
-            :render-suffix="renderSuffix"
-            :selected-keys="selectedKeys"
-            @update:selected-keys="emitEntitySelect"
-        />
-        <new-named-item-row
-            v-if="classType === 1"
-            v-show="alternatives"
-            item-name="object"
-            @create="addObject"
-        />
-        <entity-list-new-relationship-row
-            v-else
-            v-show="alternatives"
-            :available-objects="availableObjects"
-            @relationship-create="addRelationship"
-        />
-    </n-space>
+    <fetchable :state="state" :error-message="errorMessage">
+        <n-space vertical>
+            <n-tree
+                selectable
+                block-node
+                :data="entityList"
+                :render-label="renderLabel"
+                :render-suffix="renderSuffix"
+                :selected-keys="selectedKeys"
+                @update:selected-keys="emitEntitySelect"
+            />
+            <new-named-item-row
+                v-if="classType === 1"
+                v-show="alternatives"
+                item-name="object"
+                @create="addObject"
+            />
+            <entity-list-new-relationship-row
+                v-else
+                v-show="alternatives"
+                :available-objects="availableObjects"
+                @relationship-create="addRelationship"
+            />
+        </n-space>
+    </fetchable>
 </template>
 
 <script>
@@ -37,6 +32,7 @@ import {useDialog} from "naive-ui";
 import * as Communication from "../modules/communication.mjs";
 import {emblemToName} from "../modules/entityEmblem.mjs";
 import {emblemsEqual, relationshipEmblemsEqual} from "../modules/emblemComparison.mjs";
+import Fetchable from "./Fetchable.vue";
 import EntityListObjectLabel from "./EntityListObjectLabel.vue";
 import EntityListRelationshipLabel from "./EntityListRelationshipLabel.vue";
 import DeleteItemButton from "./DeleteItemButton.vue";
@@ -50,7 +46,7 @@ import EntityListNewRelationshipRow from "./EntityListNewRelationshipRow.vue";
  * @returns {Promise} Promise object that resolves to a list of alternatives.
  */
 function fetchAlternatives(projectId, modelUrl) {
-    return Communication.fetchModelData(
+    return Communication.fetchData(
         "alternatives?", projectId, modelUrl
     ).then(async function(data) {
         return data.alternatives;
@@ -60,7 +56,7 @@ function fetchAlternatives(projectId, modelUrl) {
 function fetchObjects(projectId, modelUrl, classId, entityList, alternatives, state, errorMessage) {
     const alternativesPromise = fetchAlternatives(projectId, modelUrl);
     const extraBody = {object_class_id: classId};
-    Communication.fetchModelData(
+    Communication.fetchData(
         "objects?", projectId, modelUrl, extraBody
     ).then(async function(data) {
         const objects = data.objects;
@@ -94,7 +90,7 @@ function fetchObjects(projectId, modelUrl, classId, entityList, alternatives, st
  */
 function fetchAvailableObjects(projectId, modelUrl, classId) {
     const extraBody = {relationship_class_id: classId};
-    return Communication.fetchModelData(
+    return Communication.fetchData(
         "available relationship objects?", projectId, modelUrl, extraBody
     ).then(function(data) {
         return data.available_objects;
@@ -105,7 +101,7 @@ function fetchRelationships(
         projectId, modelUrl, classId , entityList, availableObjects, alternatives, state, errorMessage) {
     const alternativesPromise = fetchAlternatives(projectId, modelUrl);
     const extraBody = {relationship_class_id: classId};
-    Communication.fetchModelData(
+    Communication.fetchData(
         "relationships?", projectId, modelUrl, extraBody
     ).then(async function(data) {
         const relationships = data.relationships;
@@ -163,6 +159,7 @@ export default {
     },
     emits: ["entitySelect", "entityInsert", "entityUpdate", "entityDelete"],
     components: {
+        "fetchable": Fetchable,
         "new-named-item-row": NewNamedItemRow,
         "entity-list-new-relationship-row": EntityListNewRelationshipRow,
     },

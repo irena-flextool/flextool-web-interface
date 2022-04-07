@@ -68,10 +68,18 @@ function destroyProject(projectId, projectsUrl) {
     });
 }
 
-function fetchModelData(queryType, projectId, modelUrl, extraBody = {}) {
+/**
+ * Fetches model or analysis data from server.
+ * @param {string} queryType Fetch query type.
+ * @param {number} projectId Project id.
+ * @param {string} url URL to server's interface.
+ * @param {object} extraBody Additional fields for fetch query.
+ * @returns {Promise} A promise that resolves to server's response.
+ */
+function fetchData(queryType, projectId, url, extraBody = {}) {
     const fetchInit = makeFetchInit();
     fetchInit["body"] = JSON.stringify({"type": queryType, "projectId": projectId, ...extraBody});
-    return fetch(modelUrl, fetchInit).then(function(response) {
+    return fetch(url, fetchInit).then(function(response) {
         if (!response.ok) {
             return response.text().then(function(message) {
                 throw new Error(`Failed to fetch ${queryType}: ${message}`);
@@ -209,7 +217,7 @@ function fetchExecutionStatus(executionId, executionsUrl) {
 export {
     getScriptData,
     makeFetchInit,
-    fetchModelData,
+    fetchData,
     commit,
     fetchProjectList,
     createProject,

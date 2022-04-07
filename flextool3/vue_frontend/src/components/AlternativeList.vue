@@ -1,35 +1,31 @@
 <template>
-    <n-spin v-if="state === 'loading'"/>
-    <n-result
-        v-else-if="state === 'error'"
-        status="error"
-        title="Error"
-        :description="errorMessage"
-    />
-    <n-space v-else vertical>
-        <n-tree
-            block-line
-            :data="alternativeList"
-            :render-label="renderLabel"
-            :render-suffix="renderSuffix"
-        />
-        <new-named-item-row
-            item-name="alternative"
-            @create="addAlternative"
-        />
-    </n-space>
+    <fetchable :state="state" :error-message="errorMessage">
+        <n-space vertical>
+            <n-tree
+                block-line
+                :data="alternativeList"
+                :render-label="renderLabel"
+                :render-suffix="renderSuffix"
+            />
+            <new-named-item-row
+                item-name="alternative"
+                @create="addAlternative"
+            />
+        </n-space>
+    </fetchable>
 </template>
 
 <script>
 import {h, onMounted, ref, toRefs, watch} from "vue/dist/vue.esm-bundler.js";
 import {useDialog} from "naive-ui";
+import Fetchable from "./Fetchable.vue";
 import AlternativeListLabel from "./AlternativeListLabel.vue";
 import DeleteItemButton from "./DeleteItemButton.vue"
 import NewNamedItemRow from "./NewNamedItemRow.vue";
 import * as Communication from "../modules/communication.mjs";
 
 function fetchAlternatives(projectId, modelUrl, alternativeList, state, errorMessage, emit) {
-    Communication.fetchModelData(
+    Communication.fetchData(
         "alternatives?", projectId, modelUrl
     ).then(function(data) {
         const alternatives = data.alternatives;
@@ -63,6 +59,7 @@ export default {
     },
     emits: ["availableAlternativesChange", "alternativeInsert", "alternativeUpdate", "alternativeDelete"],
     components: {
+        "fetchable": Fetchable,
         "new-named-item-row": NewNamedItemRow,
     },
     setup(props, context) {

@@ -1,21 +1,15 @@
 <template>
     <n-space vertical>
         <n-text>scenario alternative_1 alternative_2…</n-text>
-        <n-spin v-if="state === 'loading'"/>
-        <n-result
-            v-else-if="state === 'error'"
-            status="error"
-            title="Error"
-            :description="errorMessage"
-        />
-        <n-input
-            v-else
-            type="textarea"
-            :value="text"
-            placeholder="Input scenarios and scenario alternatives"
-            :rows="rowCount"
-            @update:value="parseUpdatedText"
-        />
+        <fetchable :state="state" :error-message="errorMessage">
+            <n-input
+                type="textarea"
+                :value="text"
+                placeholder="Input scenarios and scenario alternatives"
+                :rows="rowCount"
+                @update:value="parseUpdatedText"
+            />
+        </fetchable>
     </n-space>
 </template>
 
@@ -23,9 +17,10 @@
 import {ref, onMounted} from "vue/dist/vue.esm-bundler.js";
 import {makeScenarioAlternativesTable, parseScenarioAlternatives} from "../modules/scenarioAlternativeTextTable.mjs";
 import * as Communication from "../modules/communication.mjs";
+import Fetchable from "./Fetchable.vue";
 
 function fetchScenarios(projectId, modelUrl, tableText, rowCount, state, errorMessage, emit) {
-        Communication.fetchModelData(
+        Communication.fetchData(
         "scenarios?", projectId, modelUrl
     ).then(function(data) {
         const scenarios = [];
@@ -52,6 +47,9 @@ export default {
         modelUrl: {type: String, required: true},
     },
     emits: ["scenarioFetch", "scenarioUpdate", "duplicateScenario"],
+    components: {
+        "fetchable": Fetchable
+    },
     setup(props, context) {
         const text = ref("");
         const rowCount = ref(10);
