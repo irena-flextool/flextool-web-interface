@@ -33,6 +33,9 @@ python manage.py runserve
 2. Point your browser to ``http://localhost:8000/flextool3/``
 3. If asked, log in with the credentials created in Setup.
 
-## Frontend development
+## Development
+
+Install `dev-requirements.txt` to get the Python packages needed for development.
 
 [node.js](nodejs.org) and [yarn](yarnpkg.com) package manager are needed to build the browser app.
+It is possible to dynamically build and load the front-end using `yarn serve` command.

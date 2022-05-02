@@ -1,0 +1,3 @@
+black
+pylint
+-r "docs/requirements.txt"
