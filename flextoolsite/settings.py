@@ -37,7 +37,6 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    "webpack_loader",
 ]
 
 MIDDLEWARE = [
@@ -82,7 +81,7 @@ DATABASES = {
     }
 }
 
-VUE_FRONTEND_DIR = Path(BASE_DIR, "flextool3", "vue_frontend")
+VUE_FRONTEND_DIR = BASE_DIR / "flextool3" / "vue_frontend"
 
 WEBPACK_LOADER = {
     "DEFAULT": {

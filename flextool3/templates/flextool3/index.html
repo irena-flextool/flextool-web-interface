@@ -1,5 +1,5 @@
 {% extends "flextool3/base.html" %}
-{% load render_bundle from webpack_loader %}
+{% load static %}
 
 {% block title %} Projects {% endblock %}
 
@@ -13,5 +13,6 @@
             <index-app projects-url="{% url 'flextool3:projects' %}"></index-app>
         </n-message-provider>
     </div>
-    {% render_bundle 'index' %}
+    <script src="{% static 'flextool3/apps/js/chunk-vendors.js' %}"></script>
+    <script src="{% static 'flextool3/apps/js/index.js' %}"></script>
 {% endblock %}

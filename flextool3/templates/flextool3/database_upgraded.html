@@ -1,5 +1,5 @@
 {% extends "flextool3/base.html" %}
-{% load render_bundle from webpack_loader %}
+{% load static %}
 
 {% block title %} Database updated - FlexTool 3{% endblock %}
 
@@ -7,5 +7,6 @@
     <div class="app-box" id="upgrade-notification-app">
         <upgrade-notification-app database="{{ database }}"></upgrade-notification-app>
     </div>
-    {% render_bundle 'upgrade-notification' %}
+    <script src="{% static 'flextool3/apps/js/chunk-vendors.js' %}"></script>
+    <script src="{% static 'flextool3/apps/js/upgrade-notification.js' %}"></script>
 {% endblock %}

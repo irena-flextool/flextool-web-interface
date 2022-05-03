@@ -1,5 +1,5 @@
 {% extends "flextool3/edit_base.html" %}
-{% load render_bundle from webpack_loader %}
+{% load static %}
 
 {% block content %}
     <div class="app-box" id="scenarios-app">
@@ -16,5 +16,6 @@
             </n-message-provider>
         </n-dialog-provider>
     </div>
-    {% render_bundle 'scenarios' %}
+    <script src="{% static 'flextool3/apps/js/chunk-vendors.js' %}"></script>
+    <script src="{% static 'flextool3/apps/js/scenarios.js' %}"></script>
 {% endblock %}

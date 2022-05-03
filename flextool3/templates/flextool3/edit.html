@@ -1,5 +1,5 @@
 {% extends "flextool3/edit_base.html" %}
-{% load render_bundle from webpack_loader %}
+{% load static %}
 
 {% block content %}
     <div class="app-box" id="edit-app">
@@ -14,5 +14,6 @@
             ></editor-app>
         </n-message-provider>
     </div>
-    {% render_bundle 'edit' %}
+    <script src="{% static 'flextool3/apps/js/chunk-vendors.js' %}"></script>
+    <script src="{% static 'flextool3/apps/js/edit.js' %}"></script>
 {% endblock %}

@@ -1,3 +1,2 @@
 django[argon2]
-django-webpack-loader
 -e git+https://github.com/Spine-project/Spine-Database-API.git@master#egg=spinedb_api

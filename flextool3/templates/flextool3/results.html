@@ -1,5 +1,5 @@
 {% extends "flextool3/base.html" %}
-{% load render_bundle from webpack_loader %}
+{% load static %}
 
 {% block title %} Results - Flextool 3{% endblock %}
 
@@ -21,6 +21,6 @@
             analysis-url="{% url 'flextool3:analysis' %}"
         ></results-app>
     </div>
-    <script src="https://cdn.plot.ly/plotly-2.9.0.min.js"></script>
-    {% render_bundle 'results' %}
+    <script src="{% static 'flextool3/apps/js/chunk-vendors.js' %}"></script>
+    <script src="{% static 'flextool3/apps/js/results.js' %}"></script>
 {% endblock %}

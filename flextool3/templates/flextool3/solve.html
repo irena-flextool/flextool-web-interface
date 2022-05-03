@@ -1,5 +1,5 @@
 {% extends "flextool3/base.html" %}
-{% load render_bundle from webpack_loader %}
+{% load static %}
 
 {% block title %} Solve model - Flextool 3{% endblock %}
 
@@ -18,5 +18,6 @@
             <solve-app index-url="{% url 'flextool3:index' %}" project-url="{% url 'flextool3:detail' project.id %}" project-name="{{ project.name }}" :project-id="{{ project.id }}" executions-url="{% url 'flextool3:executions' %}"></solve-app>
         </n-message-provider>
     </div>
-    {% render_bundle 'solve' %}
+    <script src="{% static 'flextool3/apps/js/chunk-vendors.js' %}"></script>
+    <script src="{% static 'flextool3/apps/js/solve.js' %}"></script>
 {% endblock %}
