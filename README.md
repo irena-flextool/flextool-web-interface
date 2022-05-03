@@ -28,7 +28,7 @@ python manage.py createsuperuser
 
 1. Start local web server:
 ```
-python manage.py runserve
+python manage.py runserver
 ```
 2. Point your browser to ``http://localhost:8000/flextool3/``
 3. If asked, log in with the credentials created in Setup.

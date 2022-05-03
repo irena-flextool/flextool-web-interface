@@ -1,5 +1,6 @@
 from enum import auto, Enum, unique
 import json
+from pathlib import Path
 import re
 from shutil import copyfile
 from contextlib import contextmanager
@@ -26,6 +27,9 @@ from spinedb_api import (
 from .models import Execution, Project, PROJECT_NAME_LENGTH
 from . import executor, site
 from .exception import FlextoolException
+
+FLEXTOOL_PROJECT_TEMPLATE = Path(__file__).parent / "master_project"
+FLEXTOOL_PROJECTS_ROOT = Path(__file__).parent / "user_projects"
 
 PHYSICAL_OBJECT_CLASS_NAMES = {
     "commodity",
@@ -265,8 +269,8 @@ def create_project(user, request_body):
         new_project = Project.create(
             user,
             project_name,
-            site.FLEXTOOL_PROJECTS_ROOT,
-            site.FLEXTOOL_PROJECT_TEMPLATE,
+            FLEXTOOL_PROJECTS_ROOT,
+            FLEXTOOL_PROJECT_TEMPLATE,
         )
     except FlextoolException as error:
         return HttpResponseBadRequest(str(error))

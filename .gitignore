@@ -1,4 +1,5 @@
 flextool3/migrations/
+flextool3/user_projects/
 flextool3/site.py
 __pycache__/
 *.sqlite3
