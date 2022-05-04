@@ -1,2 +1,2 @@
 [tool.black]
-exclude = '\.git|migrations|static|templates|vue_frontend|manage.py|master_project|user_projects'
+exclude = '\.git|migrations|static|templates|vue_frontend|manage.py|master_project|user_projects|src'

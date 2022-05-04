@@ -147,11 +147,15 @@ def _ensure_database_up_to_date(func, database, request, pk):
     project = get_object_or_404(Project, pk=pk)
     if database == Database.MODEL:
         db_path = project.model_database_path()
+        create_database = False
     else:
         db_path = project.results_database_path()
+        create_database = not db_path.exists()
+        if create_database:
+            db_path.parent.mkdir(parents=True, exist_ok=True)
     db_url = "sqlite:///" + str(db_path)
     try:
-        db_map = DatabaseMapping(db_url)
+        db_map = DatabaseMapping(db_url, create=create_database)
     except SpineDBVersionError:
         _backup_database(db_path)
         try:
