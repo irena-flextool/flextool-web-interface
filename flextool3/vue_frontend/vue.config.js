@@ -21,8 +21,8 @@ const pages = {
         entry: "./src/scenarios.js",
         chunks: ["chunk-vendors"]
     },
-    "solve": {
-        entry: "./src/solve.js",
+    "run": {
+        entry: "./src/run.js",
         chunks: ["chunk-vendors"]
     },
     "results": {

@@ -219,9 +219,10 @@ def scenarios(request, pk):
     return _ensure_database_up_to_date(render_scenarios, Database.MODEL, request, pk)
 
 
-class SolveView(LoginRequiredMixin, generic.DetailView):
+class RunView(LoginRequiredMixin, generic.DetailView):
+    """View to generate the Run page."""
     model = Project
-    template_name = "flextool3/solve.html"
+    template_name = "flextool3/run.html"
 
 
 @login_required

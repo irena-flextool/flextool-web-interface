@@ -1,8 +1,8 @@
 import * as Vue from "vue/dist/vue.esm-bundler.js";
 import naive from "naive-ui";
-import SolveApp from "./components/SolveApp.vue";
+import RunApp from "./components/RunApp.vue";
 
 const app = Vue.createApp({});
 app.use(naive);
-app.component("solve-app", SolveApp);
-app.mount("#solve-app");
+app.component("run-app", RunApp);
+app.mount("#run-app");

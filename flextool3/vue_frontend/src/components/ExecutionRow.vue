@@ -1,6 +1,6 @@
 <template>
     <n-space vertical>
-        <n-h1>Solve {{executionId}} </n-h1>
+        <n-h1>Run {{executionId}} </n-h1>
         <n-p> {{status}} </n-p>
         <n-space>
             <n-button @click="execute" :loading="busyExecuting" :disabled="busyDestroying || busyExecuting">Execute</n-button>
@@ -21,7 +21,7 @@ function statusText(status) {
         case "YS":
             return "Click 'Execute' to start.";
         case "OK":
-            return "Solved successfully.";
+            return "Finished successfully.";
         case "RU":
             return "In progress...";
         case "ER":

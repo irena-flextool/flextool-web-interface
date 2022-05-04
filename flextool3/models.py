@@ -150,7 +150,7 @@ class Execution(models.Model):
         self.save()
 
     def execution_list_data(self):
-        """Creates data dict for solve page's execution list.
+        """Creates data dict for Run page's execution list.
 
         Returns:
             dict: execution list data

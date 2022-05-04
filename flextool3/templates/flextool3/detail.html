@@ -7,7 +7,7 @@
     <li><a href="{% url 'flextool3:index' %}">Projects</a></li>
     <li><p>Project details</p></li>
     <li><a href="{% url 'flextool3:edit' project.id %}">Model editor</a></li>
-    <li><a href="{% url 'flextool3:solve' project.id %}">Solve</a></li>
+    <li><a href="{% url 'flextool3:run' project.id %}">Run</a></li>
     <li><a href="{% url 'flextool3:view' project.id %}">Results</a></li>
 {% endblock %}
 
@@ -16,7 +16,7 @@
         <detail-app
             index-url="{% url 'flextool3:index' %}"
             edit-url="{% url 'flextool3:edit' project.id %}"
-            solve-url="{% url 'flextool3:solve' project.id %}"
+            run-url="{% url 'flextool3:run' project.id %}"
             view-url="{% url 'flextool3:view' project.id %}"
             project-name="{{ project.name }}"
         ></detail-app>

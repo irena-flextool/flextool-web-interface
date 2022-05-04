@@ -1,23 +1,23 @@
 {% extends "flextool3/base.html" %}
 {% load static %}
 
-{% block title %} Solve model - Flextool 3{% endblock %}
+{% block title %} Run model - Flextool 3{% endblock %}
 
 {% block top-bar %}
     <li><a href="{% url 'flextool3:index' %}">Projects</a></li>
     <li><a href="{% url 'flextool3:detail' project.id %}">Project details</a></li>
     <li><a href="{% url 'flextool3:edit' project.id %}">Model editor</a></li>
-    <li><p>Solve</p></li>
+    <li><p>Run</p></li>
     <li><a href="{% url 'flextool3:view' project.id %}">Results</a></li>
 {% endblock %}
 
 
 {% block content %}
-    <div class="app-box" id="solve-app">
+    <div class="app-box" id="run-app">
         <n-message-provider>
-            <solve-app index-url="{% url 'flextool3:index' %}" project-url="{% url 'flextool3:detail' project.id %}" project-name="{{ project.name }}" :project-id="{{ project.id }}" executions-url="{% url 'flextool3:executions' %}"></solve-app>
+            <run-app index-url="{% url 'flextool3:index' %}" project-url="{% url 'flextool3:detail' project.id %}" project-name="{{ project.name }}" :project-id="{{ project.id }}" executions-url="{% url 'flextool3:executions' %}"></run-app>
         </n-message-provider>
     </div>
     <script src="{% static 'flextool3/apps/js/chunk-vendors.js' %}"></script>
-    <script src="{% static 'flextool3/apps/js/solve.js' %}"></script>
+    <script src="{% static 'flextool3/apps/js/run.js' %}"></script>
 {% endblock %}

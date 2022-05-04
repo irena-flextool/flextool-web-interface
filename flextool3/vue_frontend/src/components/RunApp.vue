@@ -1,22 +1,29 @@
 <template>
     <page-path
         :path="[{name: 'Projects', url: indexUrl}, {name: projectName, url: projectUrl}]"
-        leaf-name="Solve"/>
+        leaf-name="Run"/>
     <n-list>
         <n-list-item v-for="execution in executions" :key="execution.id">
-            <execution-row @destroyed="deleteExecution" :execution-id="execution.id" :executions-url="executionsUrl" results-url="https://www.google.com"></execution-row>
+            <execution-row
+                @destroyed="deleteExecution"
+                :execution-id="execution.id"
+                :executions-url="executionsUrl"
+                results-url="https://www.google.com"
+            />
         </n-list-item>
         <template #footer>
-            <n-button @click="createSolve" :loading="newSolveButtonBusy" :disabled="newSolveButtonBusy">New solve</n-button>
+            <n-button @click="createRun" :loading="newRunButtonBusy" :disabled="newRunButtonBusy">
+                New run
+            </n-button>
         </template>
     </n-list>
 </template>
 <script>
-import { onMounted, ref } from "vue/dist/vue.esm-bundler.js";
-import { useMessage } from "naive-ui";
+import {onMounted, ref} from "vue/dist/vue.esm-bundler.js";
+import {useMessage} from "naive-ui";
 import PagePath from "./PagePath.vue";
 import ExecutionRow from "./ExecutionRow.vue";
-import { fetchExecutionList, createExecution } from "../modules/communication.mjs";
+import {fetchExecutionList, createExecution} from "../modules/communication.mjs";
 
 export default {
     props: {
@@ -28,7 +35,7 @@ export default {
     },
     setup (props) {
         const executions = ref([]);
-        const newSolveButtonBusy = ref(false);
+        const newRunButtonBusy = ref(false);
         const message = useMessage();
         onMounted(function() {
             fetchExecutionList(props.projectId, String(props.executionsUrl)).then(function(data) {
@@ -39,15 +46,15 @@ export default {
         });
         return {
             executions: executions,
-            newSolveButtonBusy: newSolveButtonBusy,
-            createSolve () {
-                newSolveButtonBusy.value = true;
+            newRunButtonBusy: newRunButtonBusy,
+            createRun () {
+                newRunButtonBusy.value = true;
                 createExecution(props.projectId, String(props.executionsUrl)).then(function(data) {
                     executions.value.push(data.execution);
                 }).catch(function(error) {
                     message.error(error.message);
                 }).finally(function() {
-                    newSolveButtonBusy.value = false;
+                    newRunButtonBusy.value = false;
                 });
             },
             deleteExecution: function(executionId) {

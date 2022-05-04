@@ -116,7 +116,7 @@ function fetchExecutionList(projectId, executionsUrl) {
     return fetch(executionsUrl, fetchInit).then(function(response) {
         if (!response.ok) {
             return response.text().then(function(message) {
-                throw new Error(`Failed to load solve list: ${message}`);
+                throw new Error(`Failed to load run list: ${message}`);
             });
         }
         return response.json()
@@ -129,7 +129,7 @@ function createExecution(projectId, executionsUrl) {
     return fetch(executionsUrl, fetchInit).then(function(response) {
         if (!response.ok) {
             return response.text().then(function(message) {
-                throw new Error(`Failed to create solve: ${message}`);
+                throw new Error(`Failed to create run: ${message}`);
             });
         }
         return response.json();
