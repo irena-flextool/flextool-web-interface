@@ -122,8 +122,8 @@ class Execution(models.Model):
         self.log += "".join(logs)
         updates = {"newLogLines": logs} if logs else {}
         if status == task_loop.Status.FINISHED:
-            executor.remove(self.id)
             return_code = executor.execution_return_code(self.id)
+            executor.remove(self.id)
             self.status = (
                 self.Status.FINISHED if return_code == 0 else self.Status.ERROR
             )
