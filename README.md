@@ -4,24 +4,15 @@ This package contains the web interface for Flextool 3.
 
 ## Setup
 
-1. Create a ``flextool3/site.py`` file which contains local directory information:
+1. Create a ``flextool3/site.py`` file which contains information required to run Spine Toolbox locally:
 ```python
 from pathlib import Path
 
-FLEXTOOL_PROJECT_TEMPLATE = Path(r"<path to Flextool's Toolbox project template>")
-FLEXTOOL_PROJECTS_ROOT = Path(r"<path where to store projects>")
 SPINE_TOOLBOX_PYTHON = Path(r"<path to the Python executable of Spine Toolbox' Python environment>")
 ```
-2. Create local server database by running the following commands in project root:
+2. Initialize server database and create a (super) user account:
 ```
-python manage.py makemigrations flextool3
-```
-```
-python manage.py migrate
-```
-3. Create an (administrator) account:
-```
-python manage.py createsuperuser
+python init.py
 ```
 
 ## Run
@@ -31,11 +22,10 @@ python manage.py createsuperuser
 python manage.py runserver
 ```
 2. Point your browser to ``http://localhost:8000/flextool3/``
-3. If asked, log in with the credentials created in Setup.
+3. If asked, log in with the account created in Setup.
 
 ## Development
 
 Install `dev-requirements.txt` to get the Python packages needed for development.
 
 [node.js](nodejs.org) and [yarn](yarnpkg.com) package manager are needed to build the browser app.
-It is possible to dynamically build and load the front-end using `yarn serve` command.
