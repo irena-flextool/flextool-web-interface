@@ -15,7 +15,15 @@
 {% block content %}
     <div class="app-box" id="run-app">
         <n-message-provider>
-            <run-app index-url="{% url 'flextool3:index' %}" project-url="{% url 'flextool3:detail' project.id %}" project-name="{{ project.name }}" :project-id="{{ project.id }}" executions-url="{% url 'flextool3:executions' %}"></run-app>
+            <run-app
+                index-url="{% url 'flextool3:index' %}"
+                project-url="{% url 'flextool3:detail' project.id %}"
+                project-name="{{ project.name }}"
+                :project-id="{{ project.id }}"
+                view-url="{% url 'flextool3:view' project.id %}"
+                executions-url="{% url 'flextool3:executions' %}"
+            >
+            </run-app>
         </n-message-provider>
     </div>
     <script src="{% static 'flextool3/apps/js/chunk-vendors.js' %}"></script>

@@ -7,8 +7,8 @@
             <execution-row
                 @destroyed="deleteExecution"
                 :execution-id="execution.id"
+                :view-url="viewUrl"
                 :executions-url="executionsUrl"
-                results-url="https://www.google.com"
             />
         </n-list-item>
         <template #footer>
@@ -27,11 +27,12 @@ import {fetchExecutionList, createExecution} from "../modules/communication.mjs"
 
 export default {
     props: {
-        indexUrl: String,
-        projectUrl: String,
-        projectName: String,
-        projectId: Number,
-        executionsUrl: String
+        indexUrl: {type: String, required: true},
+        projectUrl: {type: String, required: true},
+        projectName: {type: String, required: true},
+        projectId: {type: Number, required: true},
+        viewUrl: {type: String, required: true},
+        executionsUrl: {type: String, required: true},
     },
     setup (props) {
         const executions = ref([]);

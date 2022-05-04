@@ -3,18 +3,24 @@
         <n-h1>Run {{executionId}} </n-h1>
         <n-p> {{status}} </n-p>
         <n-space>
-            <n-button @click="execute" :loading="busyExecuting" :disabled="busyDestroying || busyExecuting">Execute</n-button>
-            <n-button @click="abort" :loading="busyAborting" :disabled="!busyExecuting || busyAborting">Abort</n-button>
-            <n-button @click="destroy" :loading="busyDestroying" :disabled="busyDestroying || busyExecuting">Delete</n-button>
-            <n-a :href="resultsUrl">View results</n-a>
+            <n-button @click="execute" :loading="busyExecuting" :disabled="busyDestroying || busyExecuting">
+                Execute
+            </n-button>
+            <n-button @click="abort" :loading="busyAborting" :disabled="!busyExecuting || busyAborting">
+                Abort
+            </n-button>
+            <n-button @click="destroy" :loading="busyDestroying" :disabled="busyDestroying || busyExecuting">
+                Delete
+            </n-button>
+            <n-a :href="viewUrl">View results</n-a>
         </n-space>
         <n-log :lines="logLines" :rows="20"></n-log>
     </n-space>
 </template>
 <script>
-import { onMounted, ref } from "vue/dist/vue.esm-bundler.js";
-import { useMessage } from "naive-ui";
-import { destroyExecution, executeExecution, abortExecution, fetchExecutionUpdates, fetchExecutionLog, fetchExecutionStatus } from "../modules/communication.mjs";
+import {onMounted, ref} from "vue/dist/vue.esm-bundler.js";
+import {useMessage} from "naive-ui";
+import {destroyExecution, executeExecution, abortExecution, fetchExecutionUpdates, fetchExecutionLog, fetchExecutionStatus} from "../modules/communication.mjs";
 
 function statusText(status) {
     switch(status) {
@@ -57,9 +63,9 @@ function followExecution(executionId, executionsUrl, logLines, status, busyExecu
 
 export default {
     props: {
-        executionId: Number,
-        executionsUrl: String,
-        resultsUrl: String
+        executionId: {type: Number, required: true},
+        executionsUrl: {type: String, required: true},
+        viewUrl: {type: String, required: true},
     },
     emits: ["destroyed"],
     setup(props, context) {
