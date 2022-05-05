@@ -1,2 +1,2 @@
 django[argon2]
--e git+https://github.com/Spine-project/Spine-Database-API.git@master#egg=spinedb_api
+spinetoolbox

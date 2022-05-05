@@ -1,3 +1,4 @@
+import sys
 from enum import auto, Enum, unique
 import json
 from pathlib import Path
@@ -25,7 +26,7 @@ from spinedb_api import (
     SpineDBAPIError,
 )
 from .models import Execution, Project, PROJECT_NAME_LENGTH
-from . import executor, site
+from . import executor
 from .exception import FlextoolException
 
 FLEXTOOL_PROJECT_TEMPLATE = Path(__file__).parent / "master_project"
@@ -1461,7 +1462,7 @@ def execute(request, request_body):
         execution = _resolve_execution(request, request_body)
     except FlextoolException as error:
         return HttpResponseBadRequest(str(error))
-    execution.start(site.SPINE_TOOLBOX_PYTHON, execution.arguments())
+    execution.start(sys.executable, execution.arguments())
     return JsonResponse({"id": execution.id})
 
 
