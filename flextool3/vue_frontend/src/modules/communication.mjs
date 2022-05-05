@@ -175,39 +175,13 @@ function abortExecution(executionId, executionsUrl) {
     });
 }
 
-function fetchExecutionUpdates(executionId, executionsUrl) {
+function fetchExecutionBriefing(executionId, executionsUrl) {
     const fetchInit = makeFetchInit();
-    fetchInit["body"] = JSON.stringify({type: "updates?", id: executionId});
+    fetchInit["body"] = JSON.stringify({type: "briefing?", id: executionId});
     return fetch(executionsUrl, fetchInit).then(function(response) {
         if (!response.ok) {
             return response.text().then(function(message) {
-                throw new Error(`Failed to execution updates: ${message}`);
-            });
-        }
-        return response.json();
-    });
-}
-
-function fetchExecutionLog(executionId, executionsUrl) {
-    const fetchInit = makeFetchInit();
-    fetchInit["body"] = JSON.stringify({type: "log?", id: executionId});
-    return fetch(executionsUrl, fetchInit).then(function(response) {
-        if (!response.ok) {
-            return response.text().then(function(message) {
-                throw new Error(`Failed to get log: ${message}`);
-            });
-        }
-        return response.json();
-    });
-}
-
-function fetchExecutionStatus(executionId, executionsUrl) {
-    const fetchInit = makeFetchInit();
-    fetchInit["body"] = JSON.stringify({type: "status?", id: executionId});
-    return fetch(executionsUrl, fetchInit).then(function(response) {
-        if (!response.ok) {
-            return response.text().then(function(message) {
-                throw new Error(`Failed to get execution status: ${message}`);
+                throw new Error(`Failed to fetch execution status: ${message}`);
             });
         }
         return response.json();
@@ -227,7 +201,5 @@ export {
     destroyExecution,
     executeExecution,
     abortExecution,
-    fetchExecutionLog,
-    fetchExecutionUpdates,
-    fetchExecutionStatus
+    fetchExecutionBriefing,
 };

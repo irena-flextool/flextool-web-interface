@@ -154,8 +154,7 @@ class ExecutionModelTests(TestCase):
             "--execute-only",
             str(self.project.path),
             "--select",
-            "FlexTool3_data",
-            "Param_update",
+            "FlexTool3_test_data",
             "ExportFlexTool3ToCSV",
             "FlexTool3",
             "Import_Flex3",
@@ -2166,6 +2165,30 @@ class ExecutorTests(unittest.TestCase):
         self.assertEqual(executor.execution_count(), 0)
         executor.start(self._id, sys.executable, ["--version"])
         self.assertEqual(executor.execution_count(), 1)
+
+
+class ExecutionsInterfaceTests(TestCase):
+    baron = None
+    executions_url = reverse("flextool3:executions")
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.baron = User(username="baron", password="")
+        cls.baron.set_password("secretbaron")
+        cls.baron.save()
+
+    def test_empty_execution_list(self):
+        with fake_project(self.baron):
+            with login_as_baron(self.client) as login_successful:
+                self.assertTrue(login_successful)
+                response = self.client.post(
+                    self.executions_url,
+                    {"type": "execution list?", "projectId": 1},
+                    content_type="application/json",
+                )
+                self.assertEqual(response.status_code, 200)
+                content = json.loads(response.content)
+                self.assertEqual(content, {"executions": []})
 
 
 class AnalysisInterfaceTests(TestCase):

@@ -20,7 +20,12 @@
 <script>
 import {onMounted, ref} from "vue/dist/vue.esm-bundler.js";
 import {useMessage} from "naive-ui";
-import {destroyExecution, executeExecution, abortExecution, fetchExecutionUpdates, fetchExecutionLog, fetchExecutionStatus} from "../modules/communication.mjs";
+import {
+    destroyExecution,
+    executeExecution,
+    abortExecution,
+    fetchExecutionBriefing
+} from "../modules/communication.mjs";
 
 function statusText(status) {
     switch(status) {
@@ -41,13 +46,11 @@ function statusText(status) {
 
 function followExecution(executionId, executionsUrl, logLines, status, busyExecuting, busyAborting, message) {
     const timer = window.setInterval(function() {
-        fetchExecutionUpdates(executionId, executionsUrl).then(function(data) {
-            const updates = data.updates;
-            if ("newLogLines" in updates) {
-                logLines.value.push(...updates.newLogLines);
-            }
-            if ("newStatus" in updates) {
-                status.value = statusText(updates.newStatus);
+        fetchExecutionBriefing(executionId, executionsUrl).then(function(data) {
+            const briefing = data.briefing;
+            logLines.value = briefing.log;
+            if(briefing.status !== "RU") {
+                status.value = statusText(briefing.status);
                 busyExecuting.value = false;
                 busyAborting.value = false;
                 window.clearInterval(timer);
@@ -76,16 +79,15 @@ export default {
         const logLines = ref([]);
         const message = useMessage();
         onMounted(function() {
-            fetchExecutionLog(props.executionId, props.executionsUrl).then(function(data) {
-                logLines.value = data.log;
-            }).catch(function(error) {
-                message.error(error.message);
-            });
-            fetchExecutionStatus(props.executionId, props.executionsUrl).then(function(data) {
-                status.value = statusText(data.status);
-                if (data.status === "RU") {
+            fetchExecutionBriefing(props.executionId, props.executionsUrl).then(function(data) {
+                const briefing = data.briefing;
+                logLines.value = briefing.log;
+                status.value = statusText(briefing.status);
+                if (briefing.status === "RU") {
                     busyExecuting.value = true;
-                    followExecution(props.executionId, props.executionsUrl, logLines, status, busyExecuting, busyAborting, message);
+                    followExecution(
+                        props.executionId, props.executionsUrl, logLines, status, busyExecuting, busyAborting, message
+                    );
                 }
             }).catch(function(error) {
                 status.value = "Failed to fetch status."
@@ -103,7 +105,9 @@ export default {
                 logLines.value.length = 0;
                 status.value = statusText("RU");
                 executeExecution(props.executionId, props.executionsUrl).then(function() {
-                    followExecution(props.executionId, props.executionsUrl, logLines, status, busyExecuting, busyAborting, message);
+                    followExecution(
+                        props.executionId, props.executionsUrl, logLines, status, busyExecuting, busyAborting, message
+                    );
                 }).catch(function(error){
                     message.error(error.message);
                 });

@@ -1361,6 +1361,14 @@ def database_map(project, database):
 
 @login_required
 def executions(request):
+    """Responds to execution requests.
+
+    Args:
+        request (HTTPRequest): client's request
+
+    Returns:
+        HTTPResponse: response
+    """
     if request.method != "POST":
         raise Http404()
     body = json.loads(request.body)
@@ -1378,10 +1386,8 @@ def executions(request):
         return execute(request, body)
     if question == "abort?":
         return abort_execution(request, body)
-    if question == "updates?":
-        return execution_updates(request, body)
-    if question == "log?":
-        return execution_log(request, body)
+    if question == "briefing?":
+        return execution_briefing(request, body)
     if question == "status?":
         return execution_status(request, body)
     return HttpResponseBadRequest("Unknown 'type'.")
@@ -1454,30 +1460,22 @@ def execute(request, request_body):
     return JsonResponse({"id": execution.id})
 
 
-def execution_updates(request, request_body):
+def execution_briefing(request, request_body):
+    """Generates execution briefing response.
+
+    Args:
+        request (HTTPRequest): client's request
+        request_body (dict): request body
+
+    Returns:
+        HTTPResponse: execution briefing
+    """
     try:
         execution = _resolve_execution(request, request_body)
     except FlextoolException as error:
         return HttpResponseBadRequest(str(error))
-    updates = execution.updates()
-    return JsonResponse({"updates": updates})
-
-
-def execution_log(request, request_body):
-    try:
-        execution = _resolve_execution(request, request_body)
-    except FlextoolException as error:
-        return HttpResponseBadRequest(str(error))
-    log = execution.log.split("\n")
-    return JsonResponse({"log": log})
-
-
-def execution_status(request, request_body):
-    try:
-        execution = _resolve_execution(request, request_body)
-    except FlextoolException as error:
-        return HttpResponseBadRequest(str(error))
-    return JsonResponse({"status": execution.status})
+    briefing = execution.briefing()
+    return JsonResponse({"briefing": briefing})
 
 
 @login_required

@@ -105,35 +105,32 @@ class Execution(models.Model):
     )
     log = models.TextField(default="")
 
-    def updates(self):
-        """Updates executions current status.
+    def briefing(self):
+        """Checks execution and returns its status and log.
 
         Returns:
-            dict: updates
+            dict: execution briefing
         """
-        if self.status != self.Status.RUNNING:
-            return {}
-        status = executor.execution_status(self.id)
-        if status == task_loop.Error.UNKNOWN_EXECUTION_ID:
-            self.status = Execution.Status.ABORTED
-            self.save()
-            return {"newStatus": self.status}
-        logs = executor.read_lines(self.id)
-        self.log += "".join(logs)
-        updates = {"newLogLines": logs} if logs else {}
-        if status == task_loop.Status.FINISHED:
-            return_code = executor.execution_return_code(self.id)
-            executor.remove(self.id)
-            self.status = (
-                self.Status.FINISHED if return_code == 0 else self.Status.ERROR
-            )
-            updates.update(newStatus=self.status)
-        elif status == task_loop.Status.ABORTED:
-            executor.remove(self.id)
-            self.status = self.Status.ABORTED
-            updates.update(newStatus=self.status)
-        self.save()
-        return updates
+        if self.status == self.Status.RUNNING:
+            execution_status = executor.execution_status(self.id)
+            if execution_status != task_loop.Error.UNKNOWN_EXECUTION_ID:
+                logs = executor.read_lines(self.id)
+                if logs:
+                    self.log += "".join(logs)
+                if execution_status == task_loop.Status.FINISHED:
+                    return_code = executor.execution_return_code(self.id)
+                    executor.remove(self.id)
+                    self.status = (
+                        self.Status.FINISHED if return_code == 0 else self.Status.ERROR
+                    )
+                elif execution_status == task_loop.Status.ABORTED:
+                    executor.remove(self.id)
+                    self.status = self.Status.ABORTED
+                self.save()
+            else:
+                self.status = self.Status.ABORTED
+                self.save()
+        return {"status": self.status, "log": self.log.split("\n")}
 
     def start(self, command, arguments):
         """Starts executing given command.
@@ -145,6 +142,7 @@ class Execution(models.Model):
         if self.status == self.Status.RUNNING:
             return
         self.execution_time = timezone.now()
+        self.log = ""
         self.status = self.Status.RUNNING
         executor.start(self.id, command, arguments)
         self.save()
