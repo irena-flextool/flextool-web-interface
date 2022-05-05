@@ -221,6 +221,7 @@ def scenarios(request, pk):
 
 class RunView(LoginRequiredMixin, generic.DetailView):
     """View to generate the Run page."""
+
     model = Project
     template_name = "flextool3/run.html"
 
@@ -974,7 +975,10 @@ def _update_parameter_values(db_map, updates):
             sterilized["id"] = update["id"]
             value = update["value"]
             value = _convert_ints_to_floats(value)
-            sterilized["value"], sterilized["type"] = to_database(value)
+            sterilized["type"] = (
+                None if not isinstance(value, dict) else value.pop("type")
+            )
+            sterilized["value"], _ = to_database(value)
         except KeyError as missing:
             raise FlextoolException(f"Missing'{missing}'.")
         sterilized_updates.append(sterilized)
@@ -1191,7 +1195,8 @@ def _insert_parameter_values(db_map, insertions, class_id):
         definition_ids.add(definition_id)
         value = _get_and_validate(insertion, "value", (str, float, int, dict))
         value = _convert_ints_to_floats(value)
-        database_value, value_type = to_database(value)
+        value_type = None if not isinstance(value, dict) else value.pop("type")
+        database_value, _ = to_database(value)
         sterilized = {
             "entity_class_id": class_id,
             "entity_name": _get_and_validate(insertion, "entity_name", str),

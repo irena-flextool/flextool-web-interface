@@ -1386,10 +1386,16 @@ class ModelInterfaceTests(TestCase):
                 self.assertEqual(content, {})
             parameter_values = db_map.query(db_map.object_parameter_value_sq).all()
             self.assertEqual(len(parameter_values), 2)
+            self.assertEqual(parameter_values[0].type, "map")
             self.assertEqual(
-                from_database(parameter_values[0].value), Map(["a"], [99.0])
+                from_database(parameter_values[0].value, parameter_values[0].type),
+                Map(["a"], [99.0]),
             )
-            self.assertEqual(from_database(parameter_values[1].value), Array([99.0]))
+            self.assertEqual(parameter_values[1].type, "array")
+            self.assertEqual(
+                from_database(parameter_values[1].value, parameter_values[1].type),
+                Array([99.0]),
+            )
             commits = db_map.query(db_map.commit_sq).all()
             self.assertEqual(commits[-1].comment, "Insert new parameter values.")
             db_map.connection.close()
@@ -1484,10 +1490,16 @@ class ModelInterfaceTests(TestCase):
                 self.assertEqual(content, {})
             parameter_values = db_map.query(db_map.object_parameter_value_sq).all()
             self.assertEqual(len(parameter_values), 2)
+            self.assertEqual(parameter_values[0].type, "map")
             self.assertEqual(
-                from_database(parameter_values[0].value), Map(["a"], [99.0])
+                from_database(parameter_values[0].value, parameter_values[0].type),
+                Map(["a"], [99.0]),
             )
-            self.assertEqual(from_database(parameter_values[1].value), Array([99.0]))
+            self.assertEqual(parameter_values[1].type, "array")
+            self.assertEqual(
+                from_database(parameter_values[1].value, parameter_values[1].type),
+                Array([99.0]),
+            )
             commits = db_map.query(db_map.commit_sq).all()
             self.assertEqual(commits[-1].comment, "Update value.")
             db_map.connection.close()
