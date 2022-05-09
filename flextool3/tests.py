@@ -1,3 +1,5 @@
+import csv
+from io import StringIO
 import json
 from contextlib import contextmanager
 from pathlib import Path
@@ -17,7 +19,6 @@ from spinedb_api import (
     import_objects,
     import_parameter_value_lists,
     import_relationship_classes,
-    to_database,
     import_relationships,
     import_relationship_parameters,
     Map,
@@ -130,6 +131,39 @@ class ProjectModelTests(TestCase):
             project = Project.objects.get(name="my_test_project")
             project.remove_project_dir()
             self.assertFalse(existing_project_dir.exists())
+
+    def test_summary_path(self):
+        user = User(username="baron", password="it's a secret")
+        user.save()
+        with fake_project(user) as existing_project_dir:
+            output_dir = (
+                existing_project_dir
+                / ".spinetoolbox"
+                / "items"
+                / "flextool3"
+                / "output"
+            )
+            failed_dir = output_dir / "failed"
+            failed_dir.mkdir(parents=True)
+            run_dir = output_dir / "dc03f1ea3aebbee9146b9cf380472f6045c0927d"
+            run_dir.mkdir(parents=True)
+            with open(run_dir / ".filter_id", "w") as filter_id_file:
+                filter_id_file.writelines(["my_filter_id\n"])
+            runs = ["2023-05-23T14.05.23", "2023-05-23T15.23.05"]
+            for run in runs:
+                run_output_dir = run_dir / run
+                run_output_dir.mkdir(parents=True)
+                (run_output_dir / "r_summary_solve.csv").touch()
+            project = Project.objects.get(name="my_test_project")
+            summaries = project.summary_path()
+            self.assertEqual(
+                summaries,
+                {
+                    "my_filter_id": run_dir
+                    / "2023-05-23T15.23.05"
+                    / "r_summary_solve.csv"
+                },
+            )
 
 
 class ExecutionModelTests(TestCase):
@@ -2201,6 +2235,83 @@ class ExecutionsInterfaceTests(TestCase):
                 self.assertEqual(response.status_code, 200)
                 content = json.loads(response.content)
                 self.assertEqual(content, {"executions": []})
+
+
+class SummaryInterfaceTests(TestCase):
+    baron = None
+    summary_url = reverse("flextool3:summary")
+
+    _SUMMARY = """"Diagnostic results from all solves. Output at (UTC): 2022-05-04T11:00:25Z"
+
+"Solve",y2020
+"Total cost obj. function (M CUR)",59546.4047356,"Minimized total system cost as given by the solver (includes all penalty costs)"
+"Total cost calculated full horizon (M CUR)",59546.4047356,"Annualized operational, penalty and investment costs"
+"Total cost calculated realized periods (M CUR)",29773.5447224
+"Time in use in years",0.00547945205479,"The amount of time the solve includes - calculated in years"
+
+Emissions
+"CO2 (Mt)",0.59568,"System-wide annualized CO2 emissions for all periods"
+"CO2 (Mt)",0.29784,"System-wide annualized CO2 emissions for realized periods"
+
+"Possible issues (creating or removing energy/matter, creating inertia, changing non-synchronous generation to synchronous)"
+Created, NodeA, p2020, 6259.3
+Created, NodeA, p2025, 6259.3
+Created, NodeB, p2020, 79.569
+Created, NodeB, p2025, 79.569
+NonSync, JustA, p2020, 3298.2
+NonSync, JustA, p2025, 3298.2
+"""
+
+    @classmethod
+    def summary_rows(cls):
+        with StringIO(cls._SUMMARY) as summary:
+            reader = csv.reader(summary)
+            return [[views.number_to_float(x) for x in row] for row in reader]
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.baron = User(username="baron", password="")
+        cls.baron.set_password("secretbaron")
+        cls.baron.save()
+
+    def test_get_summary(self):
+        with fake_project(self.baron) as project_dir:
+            filter_id_path = (
+                project_dir
+                / ".spinetoolbox"
+                / "items"
+                / "flextool3"
+                / "output"
+                / "dc03f1ea3aebbee9146b9cf380472f6045c0927d"
+                / ".filter_id"
+            )
+            filter_id_path.parent.mkdir(parents=True)
+            with open(filter_id_path, "w") as filter_id_file:
+                filter_id_file.writelines(["my_filter_id"])
+            summary_path = (
+                project_dir
+                / ".spinetoolbox"
+                / "items"
+                / "flextool3"
+                / "output"
+                / "dc03f1ea3aebbee9146b9cf380472f6045c0927d"
+                / "2022-05-05T13.00.00"
+                / "r_summary_solve.csv"
+            )
+            summary_path.parent.mkdir(parents=True)
+            with open(summary_path, "w") as summary_file:
+                summary_file.write(self._SUMMARY)
+            with login_as_baron(self.client) as login_successful:
+                self.assertTrue(login_successful)
+                response = self.client.post(
+                    self.summary_url,
+                    {"type": "summary?", "projectId": 1},
+                    content_type="application/json",
+                )
+                self.assertEqual(response.status_code, 200)
+                content = json.loads(response.content)
+                expected = {"summary": self.summary_rows()}
+                self.assertEqual(content, expected)
 
 
 class AnalysisInterfaceTests(TestCase):

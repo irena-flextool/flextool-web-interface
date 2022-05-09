@@ -3,6 +3,7 @@
         :path="[{name: 'Projects', url: indexUrl}, {name: projectName, url: projectUrl}]"
         leaf-name="Results"
     />
+    <results-summary :project-id="projectId" :summary-url="summaryUrl"/>
     <fetchable :state="state" :error-message="errorMessage">
         <n-grid :cols="3">
             <n-grid-item v-for="(plotBox, index) in plotBoxes" :key="index">
@@ -25,7 +26,6 @@
             </n-grid-item>
         </n-grid>
     </fetchable>
-    <div id="plot"></div>
 </template>
 
 <script>
@@ -38,6 +38,7 @@ import Fetchable from "./Fetchable.vue";
 import KeyedCard from "./KeyedCard.vue";
 import NewPlot from "./NewPlot.vue";
 import PlotFigure from "./PlotFigure.vue";
+import ResultsSummary from "./ResultsSummary.vue";
 
 function truncateAlternativeName(name) {
     const lastActualCharacterIndex = name.indexOf("__");
@@ -119,11 +120,12 @@ async function completeFetch(
 
 export default {
     props: {
-        indexUrl: String,
-        projectName: String,
-        projectUrl: String,
-        projectId: Number,
-        analysisUrl: String,
+        indexUrl: {type: String, required: true},
+        projectName: {type: String, required: true},
+        projectUrl: {type: String, required: true},
+        projectId: {type: Number, required:true},
+        analysisUrl: {type: String, required: true},
+        summaryUrl: {type: String, required: true},
     },
     components: {
         "fetchable": Fetchable,
@@ -131,6 +133,7 @@ export default {
         "new-plot": NewPlot,
         "page-path": PagePath,
         "plot-figure": PlotFigure,
+        "results-summary": ResultsSummary,
     },
     setup(props) {
         const state = ref("loading");

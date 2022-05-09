@@ -1,8 +1,3 @@
-function getScriptData() {
-    const dataElement = document.querySelector("#script-data");
-    return JSON.parse(dataElement.textContent);
-}
-
 function getCookie(name) {
     let cookieValue = null;
     if (document.cookie && document.cookie !== "") {
@@ -21,6 +16,10 @@ function getCookie(name) {
 
 const csrftoken = getCookie('csrftoken');
 
+/**
+ * Creates skeleton settings for fetching.
+ * @returns {object}: Common fetch settings.
+ */
 function makeFetchInit() {
     return {
         method: "POST",
@@ -29,6 +28,11 @@ function makeFetchInit() {
     };
 }
 
+/**
+ * Fetches a list of available projects.
+ * @param {string} projectsUrl URL to server's interface.
+ * @returns {Promise} A promise that resolves to server's response.
+ */
 function fetchProjectList(projectsUrl) {
     const fetchInit = makeFetchInit();
     fetchInit["body"] = JSON.stringify({"type": "project list?"});
@@ -42,6 +46,12 @@ function fetchProjectList(projectsUrl) {
     });
 }
 
+/**
+ * Creates a new project.
+ * @param {string} projectName Project name.
+ * @param {string} projectsUrl URL to server's interface.
+ * @returns {Promise} A promise that resolves to server's response.
+ */
 function createProject(projectName, projectsUrl) {
     const fetchInit = makeFetchInit();
     fetchInit["body"] = JSON.stringify({type: "create project?", name: projectName});
@@ -55,6 +65,12 @@ function createProject(projectName, projectsUrl) {
     });
 }
 
+/**
+ * Deletes a project.
+ * @param {number} projectId Project id.
+ * @param {string} projectsUrl URL to server's interface.
+ * @returns {Promise} A promise that resolves to server's response.
+ */
 function destroyProject(projectId, projectsUrl) {
     const fetchInit = makeFetchInit();
     fetchInit["body"] = JSON.stringify({type: "destroy project?", id: projectId});
@@ -110,6 +126,12 @@ function commit(commitData, message, projectId, modelUlr) {
     });
 }
 
+/**
+ * Fetches project's execution list.
+ * @param {number} projectId Project id.
+ * @param {string} executionsUrl URL to server's interface.
+ * @returns {Promise} A promise that resolves to server's response.
+ */
 function fetchExecutionList(projectId, executionsUrl) {
     const fetchInit = makeFetchInit();
     fetchInit.body = JSON.stringify({type: "execution list?", projectId: projectId});
@@ -123,6 +145,12 @@ function fetchExecutionList(projectId, executionsUrl) {
     });
 }
 
+/**
+ * Creates a new execution.
+ * @param {number} projectId Project id.
+ * @param {string} executionsUrl URL to server's interface.
+ * @returns {Promise} A promise that resolves to server's response.
+ */
 function createExecution(projectId, executionsUrl) {
     const fetchInit = makeFetchInit();
     fetchInit.body = JSON.stringify({type: "create execution?", projectId: projectId});
@@ -136,6 +164,12 @@ function createExecution(projectId, executionsUrl) {
     });
 }
 
+/**
+ * Stops and deletes an execution.
+ * @param {number} executionId Execution id.
+ * @param {string} executionsUrl URL to server's interface.
+ * @returns {Promise} A promise that resolves to server's response.
+ */
 function destroyExecution(executionId, executionsUrl) {
     const fetchInit = makeFetchInit();
     fetchInit["body"] = JSON.stringify({type: "destroy execution?", id: executionId});
@@ -149,6 +183,12 @@ function destroyExecution(executionId, executionsUrl) {
     });
 }
 
+/**
+ * Starts execution.
+ * @param {number} executionId Execution id.
+ * @param {string} executionsUrl URL to server's interface.
+ * @returns {Promise} A promise that resolves to server's response.
+ */
 function executeExecution(executionId, executionsUrl) {
     const fetchInit = makeFetchInit();
     fetchInit["body"] = JSON.stringify({type: "execute?", id: executionId});
@@ -162,6 +202,12 @@ function executeExecution(executionId, executionsUrl) {
     });
 }
 
+/**
+ * Aborts execution.
+ * @param {number} executionId Execution id.
+ * @param {string} executionsUrl URL to server's interface.
+ * @returns {Promise} A promise that resolves to server's response.
+ */
 function abortExecution(executionId, executionsUrl) {
     const fetchInit = makeFetchInit();
     fetchInit["body"] = JSON.stringify({type: "abort?", id: executionId});
@@ -175,6 +221,12 @@ function abortExecution(executionId, executionsUrl) {
     });
 }
 
+/**
+ * Fetches execution status from server.
+ * @param {number} executionId Execution id.
+ * @param {string} executionsUrl URL to server's interface.
+ * @returns {Promise} A promise that resolves to server's response.
+ */
 function fetchExecutionBriefing(executionId, executionsUrl) {
     const fetchInit = makeFetchInit();
     fetchInit["body"] = JSON.stringify({type: "briefing?", id: executionId});
@@ -188,8 +240,26 @@ function fetchExecutionBriefing(executionId, executionsUrl) {
     });
 }
 
+/**
+ * Fetches summary data from server.
+ * @param {number} projectId Project id.
+ * @param {string} summaryUrl URL to server's interface.
+ * @returns {Promise} A promise that resolves to server's response.
+ */
+function fetchSummary(projectId, summaryUrl) {
+    const fetchInit = makeFetchInit();
+    fetchInit.body = JSON.stringify({type: "summary?", projectId: projectId});
+    return fetch(summaryUrl, fetchInit).then(function(response) {
+        if (!response.ok) {
+            return response.text().then(function(message) {
+                throw new Error(`Failed to load summary: ${message}`);
+            });
+        }
+        return response.json()
+    });
+}
+
 export {
-    getScriptData,
     makeFetchInit,
     fetchData,
     commit,
@@ -202,4 +272,5 @@ export {
     executeExecution,
     abortExecution,
     fetchExecutionBriefing,
+    fetchSummary,
 };

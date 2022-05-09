@@ -19,6 +19,7 @@
             project-name="{{ project.name }}"
             :project-id="{{ project.id }}"
             analysis-url="{% url 'flextool3:analysis' %}"
+            summary-url="{% url 'flextool3:summary' %}"
         ></results-app>
     </div>
     <script src="{% static 'flextool3/apps/js/chunk-vendors.js' %}"></script>

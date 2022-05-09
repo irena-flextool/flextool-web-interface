@@ -1,5 +1,7 @@
+from datetime import datetime
 import os
 from pathlib import Path
+import re
 from shutil import copytree, rmtree
 import stat
 from django.contrib.auth.models import User
@@ -76,6 +78,46 @@ class Project(models.Model):
             / "results_f3"
             / "Results_F3.sqlite"
         )
+
+    def summary_path(self):
+        """Returns paths to the latest summary files.
+
+        Returns:
+            dict: paths to summary files keyed by Spine filter id
+        """
+        output_directory = (
+            Path(self.path) / ".spinetoolbox" / "items" / "flextool3" / "output"
+        )
+        time_stamp = re.compile(
+            "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}\.[0-9]{2}\.[0-9]{2}$"
+        )
+        summaries = {}
+        for subdir in output_directory.iterdir():
+            if not subdir.is_dir():
+                continue
+            filter_id_path = subdir / ".filter_id"
+            if not filter_id_path.exists():
+                continue
+            with open(filter_id_path) as filter_id_file:
+                filter_id = filter_id_file.readline().strip()
+            if not filter_id:
+                continue
+            summary_files = []
+            for results_dir in subdir.iterdir():
+                if time_stamp.match(results_dir.name) is None:
+                    continue
+                summary_path = results_dir / "r_summary_solve.csv"
+                if not summary_path.exists() or not summary_path.is_file():
+                    continue
+                execution_time = datetime.fromisoformat(
+                    results_dir.name.replace(".", ":")
+                )
+                summary_files.append((execution_time, summary_path))
+            if not summary_files:
+                continue
+            latest_summary_path = sorted(summary_files, key=lambda x: x[0])[-1][1]
+            summaries[filter_id] = latest_summary_path
+        return summaries
 
     def project_list_data(self):
         """Creates data dict for project index page's project list.

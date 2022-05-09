@@ -1,3 +1,4 @@
+import csv
 import sys
 from enum import auto, Enum, unique
 import json
@@ -1394,8 +1395,6 @@ def executions(request):
         return abort_execution(request, body)
     if question == "briefing?":
         return execution_briefing(request, body)
-    if question == "status?":
-        return execution_status(request, body)
     return HttpResponseBadRequest("Unknown 'type'.")
 
 
@@ -1482,6 +1481,66 @@ def execution_briefing(request, request_body):
         return HttpResponseBadRequest(str(error))
     briefing = execution.briefing()
     return JsonResponse({"briefing": briefing})
+
+
+@login_required
+def summary(request):
+    """Serves execution summaries.
+
+    Args:
+        request(HTTPRequest): client's request
+
+    Returns:
+        HTTPResponse: execution summary
+    """
+    if request.method != "POST":
+        raise Http404()
+    body = json.loads(request.body)
+    try:
+        project = _resolve_project(request, body)
+    except FlextoolException as error:
+        return HttpResponseBadRequest(str(error))
+    try:
+        type_ = body["type"]
+    except KeyError as missing:
+        return HttpResponseBadRequest(f"Missing '{missing}'.")
+    if type_ == "summary?":
+        return _get_summary(project)
+    return HttpResponseBadRequest("Unknown 'type'.")
+
+
+def number_to_float(x):
+    """Converts x to float if possible.
+
+    Args:
+        x (Any): a value
+
+    Returns:
+        float or Any: float or x if conversion was unsuccessful
+    """
+    try:
+        return float(x)
+    except ValueError:
+        return x
+
+
+def _get_summary(project):
+    """Generates a response that contains project's latest execution summary.
+
+    Args:
+        project (Project): a project
+
+    Returns:
+        HTTPResponse: a response object
+    """
+    summaries = project.summary_path()
+    if not summaries:
+        return JsonResponse({})
+    summary_path = next(iter(summaries.values()))
+    with open(summary_path) as summary_file:
+        reader = csv.reader(summary_file)
+        summary_rows = [[number_to_float(i) for i in row] for row in reader]
+    return JsonResponse({"summary": summary_rows})
 
 
 @login_required
