@@ -147,7 +147,7 @@ class ProjectModelTests(TestCase):
             failed_dir.mkdir(parents=True)
             run_dir = output_dir / "dc03f1ea3aebbee9146b9cf380472f6045c0927d"
             run_dir.mkdir(parents=True)
-            with open(run_dir / ".filter_id", "w") as filter_id_file:
+            with open(run_dir / ".filter_id", "w", encoding="utf-8") as filter_id_file:
                 filter_id_file.writelines(["my_filter_id\n"])
             runs = ["2023-05-23T14.05.23", "2023-05-23T15.23.05"]
             for run in runs:
@@ -181,8 +181,8 @@ class ExecutionModelTests(TestCase):
         cls.project.save()
 
     def test_arguments(self):
-        exec = Execution(project=self.project)
-        arguments = exec.arguments()
+        execution = Execution(project=self.project)
+        arguments = execution.arguments()
         expected = [
             "-mspinetoolbox",
             "--execute-only",
@@ -1958,7 +1958,7 @@ class ModelInterfaceTests(TestCase):
             import_object_classes(db_map, ("my_object_class",))
             import_objects(db_map, (("my_object_class", "my_object"),))
             import_relationship_classes(db_map, (("my_class", ("my_object_class",)),))
-            a = import_relationships(db_map, (("my_class", ("my_object",)),))
+            import_relationships(db_map, (("my_class", ("my_object",)),))
             db_map.commit_session("Add test data.")
             with login_as_baron(self.client) as login_successful:
                 self.assertTrue(login_successful)
@@ -2185,7 +2185,7 @@ class ExecutorTests(unittest.TestCase):
         executor.remove(self._id)
 
     def test_start_and_read_logs(self):
-        executor.start(self._id, sys.executable, ["-c" "print('my output')"])
+        executor.start(self._id, sys.executable, ["-c", "print('my output')"])
         while executor.execution_status(self._id) == task_loop.Status.RUNNING:
             pass
         self.assertEqual(executor.execution_return_code(self._id), 0)
@@ -2286,7 +2286,7 @@ NonSync, JustA, p2025, 3298.2
                 / ".filter_id"
             )
             filter_id_path.parent.mkdir(parents=True)
-            with open(filter_id_path, "w") as filter_id_file:
+            with open(filter_id_path, "w", encoding="utf-8") as filter_id_file:
                 filter_id_file.writelines(["my_filter_id"])
             summary_path = (
                 project_dir
@@ -2299,7 +2299,7 @@ NonSync, JustA, p2025, 3298.2
                 / "r_summary_solve.csv"
             )
             summary_path.parent.mkdir(parents=True)
-            with open(summary_path, "w") as summary_file:
+            with open(summary_path, "w", encoding="utf-8") as summary_file:
                 summary_file.write(self._SUMMARY)
             with login_as_baron(self.client) as login_successful:
                 self.assertTrue(login_successful)

@@ -89,10 +89,9 @@ def _get_and_validate(dictionary, key, expected_type, required=True):
             raise FlextoolException(
                 f"'{key}' is of wrong type, expected one of {expected_type}"
             )
-        else:
-            raise FlextoolException(
-                f"'{key}' is of wrong type '{type(x).__name__}', expected {expected_type.__name__}"
-            )
+        raise FlextoolException(
+            f"'{key}' is of wrong type '{type(x).__name__}', expected {expected_type.__name__}"
+        )
     return x
 
 
@@ -660,15 +659,15 @@ def get_parameter_value_lists(project, request_body):
                 .subquery()
             )
         value_list_items = db_map.query(sq).all()
-        collected_values = dict()
-        collected_types = dict()
+        collected_values = {}
+        collected_types = {}
         for list_item in value_list_items:
             bag_of_values = collected_values.setdefault(
-                list_item.parameter_value_list_id, dict()
+                list_item.parameter_value_list_id, {}
             )
             bag_of_values[list_item.index] = str(list_item.value, encoding="utf-8")
             bag_of_types = collected_types.setdefault(
-                list_item.parameter_value_list_id, dict()
+                list_item.parameter_value_list_id, {}
             )
             bag_of_types[list_item.index] = list_item.type
         concatenated_values = {
@@ -750,7 +749,7 @@ def _update_model(db_map, request_body):
     if updates is None:
         return
     if not isinstance(updates, dict):
-        raise FlextoolException(f"'updates' wasn't of expected type.")
+        raise FlextoolException("'updates' wasn't of expected type.")
     class_id = _get_and_validate(request_body, Key.CLASS_ID.value, int, required=False)
     _update_alternatives(db_map, updates)
     _update_scenarios(db_map, updates)
@@ -789,7 +788,7 @@ def _insert_to_model(db_map, request_body):
     """
     insertions = _get_and_validate(request_body, "insertions", dict, required=False)
     if insertions is None:
-        return
+        return {}
     class_id = _get_and_validate(request_body, Key.CLASS_ID.value, int, required=False)
     inserted = {}
     inserted_alternatives = _insert_alternatives(db_map, insertions)
@@ -936,7 +935,7 @@ def _update_relationships(db_map, updates, class_id):
     if not relationship_updates:
         return
     if class_id is None:
-        raise FlextoolException(f"'class_id' is required when updating relationships.")
+        raise FlextoolException("'class_id' is required when updating relationships.")
     sterilized_updates = []
     object_ids = _relationship_object_ids(db_map, class_id)
     for update in relationship_updates:
@@ -1146,7 +1145,7 @@ def _insert_relationships(db_map, insertions, class_id):
     if not relationship_insertions:
         return {}
     if class_id is None:
-        raise FlextoolException(f"'class_id' is required for relationship insertions")
+        raise FlextoolException("'class_id' is required for relationship insertions")
     sterilized_insertions = []
     object_ids = _relationship_object_ids(db_map, class_id)
     for insertion in relationship_insertions:
@@ -1185,10 +1184,10 @@ def _insert_parameter_values(db_map, insertions, class_id):
         insertions, "parameter_value", list, required=False
     )
     if not value_insertions:
-        return {}
+        return
     if class_id is None:
         raise FlextoolException(
-            f"'class_id' is required for parameter value insertions"
+            "'class_id' is required for parameter value insertions"
         )
     sterilized_insertions = []
     definition_ids = set()
@@ -1537,7 +1536,7 @@ def _get_summary(project):
     if not summaries:
         return JsonResponse({})
     summary_path = next(iter(summaries.values()))
-    with open(summary_path) as summary_file:
+    with open(summary_path, encoding="utf-8") as summary_file:
         reader = csv.reader(summary_file)
         summary_rows = [[number_to_float(i) for i in row] for row in reader]
     return JsonResponse({"summary": summary_rows})

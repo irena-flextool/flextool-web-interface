@@ -21,7 +21,7 @@ class Project(models.Model):
     path = models.CharField(max_length=500)
 
     def __str__(self):
-        return self.name
+        return str(self.name)
 
     @staticmethod
     def create(user, project_name, projects_root_dir, template_dir):
@@ -89,7 +89,7 @@ class Project(models.Model):
             Path(self.path) / ".spinetoolbox" / "items" / "flextool3" / "output"
         )
         time_stamp = re.compile(
-            "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}\.[0-9]{2}\.[0-9]{2}$"
+            r"^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}\.[0-9]{2}\.[0-9]{2}$"
         )
         summaries = {}
         for subdir in output_directory.iterdir():
@@ -98,7 +98,7 @@ class Project(models.Model):
             filter_id_path = subdir / ".filter_id"
             if not filter_id_path.exists():
                 continue
-            with open(filter_id_path) as filter_id_file:
+            with open(filter_id_path, encoding="utf-8") as filter_id_file:
                 filter_id = filter_id_file.readline().strip()
             if not filter_id:
                 continue
