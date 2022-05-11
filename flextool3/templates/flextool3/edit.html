@@ -11,6 +11,7 @@
                 :project-id="{{ project.id }}"
                 model-url="{% url 'flextool3:model' %}"
                 scenarios-url="{% url 'flextool3:scenarios' project.id %}"
+                solves-url="{% url 'flextool3:solves' project.id %}"
             ></editor-app>
         </n-message-provider>
     </div>

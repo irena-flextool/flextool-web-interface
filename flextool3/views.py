@@ -220,6 +220,15 @@ def scenarios(request, pk):
     return _ensure_database_up_to_date(render_scenarios, Database.MODEL, request, pk)
 
 
+@login_required
+def solves(request, pk):
+    def render_solves(project, _):
+        context = {"project": project}
+        return render(request, "flextool3/solves.html", context)
+
+    return _ensure_database_up_to_date(render_solves, Database.MODEL, request, pk)
+
+
 class RunView(LoginRequiredMixin, generic.DetailView):
     """View to generate the Run page."""
 

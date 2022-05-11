@@ -12,9 +12,16 @@
             />
         </n-grid-item>
         <n-grid-item>
-            <n-a :href="scenariosUrl">
-                Edit alternatives and scenarios
-            </n-a>
+            <n-p>
+                <n-a :href="scenariosUrl">
+                    Edit alternatives and scenarios
+                </n-a>
+            </n-p>
+            <n-p>
+                <n-a :href="solvesUrl">
+                    Edit solves and timelines
+                </n-a>
+            </n-p>
         </n-grid-item>
         <n-grid-item>
             <n-h1>Commits</n-h1>
@@ -36,6 +43,7 @@ export default {
         modelUrl: {type: String, required: true},
         projectId: {type: Number, required: true},
         scenariosUrl: {type: String, required: true},
+        solvesUrl: {type: String, required: true},
     },
     components: {
         "class-list": ClassList,
