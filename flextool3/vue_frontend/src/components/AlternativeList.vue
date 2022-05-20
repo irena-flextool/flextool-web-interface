@@ -38,11 +38,11 @@ function fetchAlternatives(projectId, modelUrl, alternativeList, state, errorMes
             });
         });
         alternativeList.value = list;
-        state.value = "ready";
+        state.value = Fetchable.state.ready;
         emitAvailableAlternativesChange(alternativeList, emit);
     }).catch(function(error) {
         errorMessage.value = error.message;
-        state.value = "error";
+        state.value = Fetchable.state.error;
     });
 }
 
@@ -63,7 +63,7 @@ export default {
         "new-named-item-row": NewNamedItemRow,
     },
     setup(props, context) {
-        const state = ref("loading");
+        const state = ref(Fetchable.state.loading);
         const errorMessage = ref("");
         const alternativeList = ref([]);
         const dialog = useDialog();

@@ -1,4 +1,5 @@
 import csv
+from datetime import datetime
 from io import StringIO
 import json
 from contextlib import contextmanager
@@ -29,7 +30,9 @@ from spinedb_api import (
 
 from .exception import FlextoolException
 from . import executor, task_loop, views
-from .models import Execution, Project
+from .models import Project, Scenario, ScenarioExecution, SUMMARY_FILE_NAME
+from .summary_view import number_to_float
+from . import executions_view
 
 
 PATH_TO_MODEL_DATABASE = Path(
@@ -70,7 +73,7 @@ def fake_project(user):
         projects_root = Path(temp_dir, "projects")
         project = Project.create(user, "my_test_project", projects_root, template_dir)
         project.save()
-        yield Path(project.path)
+        yield project
 
 
 @contextmanager
@@ -110,8 +113,8 @@ class ProjectModelTests(TestCase):
         """create() raises an exception if user already has a project under the same name."""
         user = User(username="baron", password="it's a secret")
         user.save()
-        with fake_project(user) as existing_project_dir:
-            projects_root_dir = existing_project_dir.parent.parent
+        with fake_project(user) as project:
+            projects_root_dir = Path(project.path).parent.parent
             template_dir = projects_root_dir.parent / "template"
             self.assertTrue(template_dir.exists())
             self.assertRaises(
@@ -127,74 +130,53 @@ class ProjectModelTests(TestCase):
         """remove_project_dir() removes project directory."""
         user = User(username="baron", password="it's a secret")
         user.save()
-        with fake_project(user) as existing_project_dir:
+        with fake_project(user) as project:
             project = Project.objects.get(name="my_test_project")
             project.remove_project_dir()
-            self.assertFalse(existing_project_dir.exists())
-
-    def test_summary_path(self):
-        user = User(username="baron", password="it's a secret")
-        user.save()
-        with fake_project(user) as existing_project_dir:
-            output_dir = (
-                existing_project_dir
-                / ".spinetoolbox"
-                / "items"
-                / "flextool3"
-                / "output"
-            )
-            failed_dir = output_dir / "failed"
-            failed_dir.mkdir(parents=True)
-            run_dir = output_dir / "dc03f1ea3aebbee9146b9cf380472f6045c0927d"
-            run_dir.mkdir(parents=True)
-            with open(run_dir / ".filter_id", "w", encoding="utf-8") as filter_id_file:
-                filter_id_file.writelines(["my_filter_id\n"])
-            runs = ["2023-05-23T14.05.23", "2023-05-23T15.23.05"]
-            for run in runs:
-                run_output_dir = run_dir / run
-                run_output_dir.mkdir(parents=True)
-                (run_output_dir / "r_summary_solve.csv").touch()
-            project = Project.objects.get(name="my_test_project")
-            summaries = project.summary_path()
-            self.assertEqual(
-                summaries,
-                {
-                    "my_filter_id": run_dir
-                    / "2023-05-23T15.23.05"
-                    / "r_summary_solve.csv"
-                },
-            )
+            self.assertFalse(Path(project.path).exists())
 
 
-class ExecutionModelTests(TestCase):
+class ScenarioExecutionModelTests(TestCase):
     baron = None
-    project = None
 
     @classmethod
     def setUpTestData(cls):
         cls.baron = User(username="baron", password="")
         cls.baron.set_password("secretbaron")
         cls.baron.save()
-        cls.project = Project(
-            user=cls.baron, name="my_test_project", path="/project/dir/"
-        )
-        cls.project.save()
 
-    def test_arguments(self):
-        execution = Execution(project=self.project)
-        arguments = execution.arguments()
-        expected = [
-            "-mspinetoolbox",
-            "--execute-only",
-            str(self.project.path),
-            "--select",
-            "FlexTool3_test_data",
-            "ExportFlexTool3ToCSV",
-            "FlexTool3",
-            "Import_Flex3",
-            "Results_F3",
-        ]
-        self.assertEqual(arguments, expected)
+    def test_summary_path(self):
+        with fake_project(self.baron) as project:
+            scenario = Scenario(project=project, name="my_scenario")
+            scenario.save()
+            scenario_execution = ScenarioExecution(
+                scenario=scenario,
+                execution_time=datetime.fromisoformat("2023-05-23T15:23:00+03:00"),
+                execution_time_offset=3 * 3600,
+                log="",
+            )
+            scenario_execution.save()
+            output_dir = (
+                Path(project.path) / ".spinetoolbox" / "items" / "flextool3" / "output"
+            )
+            failed_dir = output_dir / "failed"
+            failed_dir.mkdir(parents=True)
+            run_dir = output_dir / "dc03f1ea3aebbee9146b9cf380472f6045c0927d"
+            run_dir.mkdir(parents=True)
+            with open(run_dir / ".filter_id", "w", encoding="utf-8") as filter_id_file:
+                filter_id_file.writelines(
+                    ["my_scenario, FlexTool3 - FlexTool3_test_data\n"]
+                )
+            runs = ["2023-05-23T14.05.23", "2023-05-23T15.23.05"]
+            for run in runs:
+                run_output_dir = run_dir / run / "output"
+                run_output_dir.mkdir(parents=True)
+                (run_output_dir / SUMMARY_FILE_NAME).touch()
+            summary_path = scenario_execution.summary_path()
+            self.assertEqual(
+                summary_path,
+                run_dir / "2023-05-23T15.23.05" / "output" / SUMMARY_FILE_NAME,
+            )
 
 
 class ProjectsInterfaceTests(TestCase):
@@ -243,7 +225,7 @@ class ProjectsInterfaceTests(TestCase):
 
     def test_delete_project(self):
         """'ama' view deletes the requested project."""
-        with fake_project(self.baron) as project_dir:
+        with fake_project(self.baron) as project:
             with login_as_baron(self.client) as login_successful:
                 self.assertTrue(login_successful)
                 response = self.client.post(
@@ -255,7 +237,7 @@ class ProjectsInterfaceTests(TestCase):
                 destroy_project_dict = json.loads(response.content)
                 self.assertEqual(destroy_project_dict, {"id": 1})
                 self.assertFalse(Project.objects.all())
-                self.assertFalse(project_dir.exists())
+                self.assertFalse(Path(project.path).exists())
 
 
 class ModelInterfaceTests(TestCase):
@@ -270,9 +252,10 @@ class ModelInterfaceTests(TestCase):
 
     def test_get_alternatives(self):
         """'model' view responds correctly when requesting alternatives."""
-        with fake_project(self.baron) as project_dir:
+        with fake_project(self.baron) as project:
             db_map = DatabaseMapping(
-                "sqlite:///" + str(project_dir / PATH_TO_MODEL_DATABASE), create=True
+                "sqlite:///" + str(Path(project.path) / PATH_TO_MODEL_DATABASE),
+                create=True,
             )
             db_map.connection.close()
             with login_as_baron(self.client) as login_successful:
@@ -300,9 +283,10 @@ class ModelInterfaceTests(TestCase):
 
     def test_get_scenarios(self):
         """'model' view responds correctly when requesting scenarios."""
-        with fake_project(self.baron) as project_dir:
+        with fake_project(self.baron) as project:
             db_map = DatabaseMapping(
-                "sqlite:///" + str(project_dir / PATH_TO_MODEL_DATABASE), create=True
+                "sqlite:///" + str(Path(project.path) / PATH_TO_MODEL_DATABASE),
+                create=True,
             )
             import_alternatives(db_map, ("my_alternative",))
             import_scenarios(db_map, ("my_scenario",))
@@ -334,9 +318,10 @@ class ModelInterfaceTests(TestCase):
 
     def test_get_scenarios_without_alternatives(self):
         """'model' view responds with empty alternative list when scenarios doesn't have any."""
-        with fake_project(self.baron) as project_dir:
+        with fake_project(self.baron) as project:
             db_map = DatabaseMapping(
-                "sqlite:///" + str(project_dir / PATH_TO_MODEL_DATABASE), create=True
+                "sqlite:///" + str(Path(project.path) / PATH_TO_MODEL_DATABASE),
+                create=True,
             )
             import_scenarios(db_map, ("my_scenario",))
             db_map.commit_session("Add test data.")
@@ -365,9 +350,10 @@ class ModelInterfaceTests(TestCase):
 
     def test_get_emtpy_object_classes(self):
         """'model' view responds correctly even when there are not object classes in the database."""
-        with fake_project(self.baron) as project_dir:
+        with fake_project(self.baron) as project:
             db_map = DatabaseMapping(
-                "sqlite:///" + str(project_dir / PATH_TO_MODEL_DATABASE), create=True
+                "sqlite:///" + str(Path(project.path) / PATH_TO_MODEL_DATABASE),
+                create=True,
             )
             db_map.connection.close()
             with login_as_baron(self.client) as login_successful:
@@ -383,9 +369,10 @@ class ModelInterfaceTests(TestCase):
 
     def test_get_single_object_class(self):
         """'model' view responds with a dict containing a single object class in a list."""
-        with fake_project(self.baron) as project_dir:
+        with fake_project(self.baron) as project:
             db_map = DatabaseMapping(
-                "sqlite:///" + str(project_dir / PATH_TO_MODEL_DATABASE), create=True
+                "sqlite:///" + str(Path(project.path) / PATH_TO_MODEL_DATABASE),
+                create=True,
             )
             import_object_classes(db_map, ("my_class",))
             db_map.commit_session("Add test data.")
@@ -418,9 +405,10 @@ class ModelInterfaceTests(TestCase):
 
     def test_get_all_objects(self):
         """'model' view responds with a dict containing all objects in the database."""
-        with fake_project(self.baron) as project_dir:
+        with fake_project(self.baron) as project:
             db_map = DatabaseMapping(
-                "sqlite:///" + str(project_dir / PATH_TO_MODEL_DATABASE), create=True
+                "sqlite:///" + str(Path(project.path) / PATH_TO_MODEL_DATABASE),
+                create=True,
             )
             import_object_classes(db_map, ("class_1", "class_2"))
             import_objects(db_map, (("class_1", "object_11"), ("class_2", "object_21")))
@@ -459,9 +447,10 @@ class ModelInterfaceTests(TestCase):
 
     def test_get_objects_of_given_class(self):
         """'model' view responds with a dict containing the objects of the object class with given id."""
-        with fake_project(self.baron) as project_dir:
+        with fake_project(self.baron) as project:
             db_map = DatabaseMapping(
-                "sqlite:///" + str(project_dir / PATH_TO_MODEL_DATABASE), create=True
+                "sqlite:///" + str(Path(project.path) / PATH_TO_MODEL_DATABASE),
+                create=True,
             )
             import_object_classes(db_map, ("class_1", "class_2"))
             import_objects(db_map, (("class_1", "object_11"), ("class_2", "object_21")))
@@ -493,9 +482,10 @@ class ModelInterfaceTests(TestCase):
 
     def test_get_objects_of_non_existing_class_returns_empty_results(self):
         """'model' view responds with empty objects list when queried for objects of a non-existing class."""
-        with fake_project(self.baron) as project_dir:
+        with fake_project(self.baron) as project:
             db_map = DatabaseMapping(
-                "sqlite:///" + str(project_dir / PATH_TO_MODEL_DATABASE), create=True
+                "sqlite:///" + str(Path(project.path) / PATH_TO_MODEL_DATABASE),
+                create=True,
             )
             db_map.connection.close()
             with login_as_baron(self.client) as login_successful:
@@ -511,9 +501,10 @@ class ModelInterfaceTests(TestCase):
 
     def test_get_all_object_parameter_definitions(self):
         """without filtering, 'model' view responds with all parameter definitions."""
-        with fake_project(self.baron) as project_dir:
+        with fake_project(self.baron) as project:
             db_map = DatabaseMapping(
-                "sqlite:///" + str(project_dir / PATH_TO_MODEL_DATABASE), create=True
+                "sqlite:///" + str(Path(project.path) / PATH_TO_MODEL_DATABASE),
+                create=True,
             )
             import_object_classes(db_map, ("class_1", "class_2"))
             import_object_parameters(
@@ -566,9 +557,10 @@ class ModelInterfaceTests(TestCase):
 
     def test_get_parameter_definitions_for_given_class_id(self):
         """'model' view responds with correct parameter definitions when filtering by object class id."""
-        with fake_project(self.baron) as project_dir:
+        with fake_project(self.baron) as project:
             db_map = DatabaseMapping(
-                "sqlite:///" + str(project_dir / PATH_TO_MODEL_DATABASE), create=True
+                "sqlite:///" + str(Path(project.path) / PATH_TO_MODEL_DATABASE),
+                create=True,
             )
             import_object_classes(db_map, ("class_1", "class_2"))
             import_object_parameters(
@@ -612,9 +604,10 @@ class ModelInterfaceTests(TestCase):
 
     def test_get_all_parameter_values(self):
         """without filtering, 'model' view responds with all parameter values."""
-        with fake_project(self.baron) as project_dir:
+        with fake_project(self.baron) as project:
             db_map = DatabaseMapping(
-                "sqlite:///" + str(project_dir / PATH_TO_MODEL_DATABASE), create=True
+                "sqlite:///" + str(Path(project.path) / PATH_TO_MODEL_DATABASE),
+                create=True,
             )
             import_alternatives(db_map, ("alternative",))
             import_object_classes(db_map, ("class_1", "class_2"))
@@ -712,9 +705,10 @@ class ModelInterfaceTests(TestCase):
 
     def test_get_parameter_values_for_given_class(self):
         """'model' view responds with parameter values filtered by object class id."""
-        with fake_project(self.baron) as project_dir:
+        with fake_project(self.baron) as project:
             db_map = DatabaseMapping(
-                "sqlite:///" + str(project_dir / PATH_TO_MODEL_DATABASE), create=True
+                "sqlite:///" + str(Path(project.path) / PATH_TO_MODEL_DATABASE),
+                create=True,
             )
             import_alternatives(db_map, ("alternative",))
             import_object_classes(db_map, ("class_1", "class_2"))
@@ -786,9 +780,10 @@ class ModelInterfaceTests(TestCase):
 
     def test_get_parameter_values_for_given_object(self):
         """'model' view responds with parameter values filtered by object id."""
-        with fake_project(self.baron) as project_dir:
+        with fake_project(self.baron) as project:
             db_map = DatabaseMapping(
-                "sqlite:///" + str(project_dir / PATH_TO_MODEL_DATABASE), create=True
+                "sqlite:///" + str(Path(project.path) / PATH_TO_MODEL_DATABASE),
+                create=True,
             )
             import_alternatives(db_map, ("alternative",))
             import_object_classes(db_map, ("class_1",))
@@ -858,9 +853,10 @@ class ModelInterfaceTests(TestCase):
 
     def test_get_parameter_values_for_given_alternative(self):
         """'model' view responds with parameter values filtered by alternative id."""
-        with fake_project(self.baron) as project_dir:
+        with fake_project(self.baron) as project:
             db_map = DatabaseMapping(
-                "sqlite:///" + str(project_dir / PATH_TO_MODEL_DATABASE), create=True
+                "sqlite:///" + str(Path(project.path) / PATH_TO_MODEL_DATABASE),
+                create=True,
             )
             import_alternatives(db_map, ("alternative",))
             import_object_classes(db_map, ("class_1", "class_2"))
@@ -932,9 +928,10 @@ class ModelInterfaceTests(TestCase):
 
     def test_get_emtpy_relationship_classes(self):
         """'model' view responds correctly even when there are not relationship classes in the database."""
-        with fake_project(self.baron) as project_dir:
+        with fake_project(self.baron) as project:
             db_map = DatabaseMapping(
-                "sqlite:///" + str(project_dir / PATH_TO_MODEL_DATABASE), create=True
+                "sqlite:///" + str(Path(project.path) / PATH_TO_MODEL_DATABASE),
+                create=True,
             )
             db_map.connection.close()
             with login_as_baron(self.client) as login_successful:
@@ -950,9 +947,10 @@ class ModelInterfaceTests(TestCase):
 
     def test_get_single_relationship_class(self):
         """'model' view responds with a dict containing single relationship class in a list."""
-        with fake_project(self.baron) as project_dir:
+        with fake_project(self.baron) as project:
             db_map = DatabaseMapping(
-                "sqlite:///" + str(project_dir / PATH_TO_MODEL_DATABASE), create=True
+                "sqlite:///" + str(Path(project.path) / PATH_TO_MODEL_DATABASE),
+                create=True,
             )
             import_object_classes(db_map, ("my_class_1", "my_class_2"))
             import_relationship_classes(
@@ -999,9 +997,10 @@ class ModelInterfaceTests(TestCase):
 
     def test_get_relationships_of_given_class(self):
         """'model' view responds with a dict containing the relationships of the relationship class with given id."""
-        with fake_project(self.baron) as project_dir:
+        with fake_project(self.baron) as project:
             db_map = DatabaseMapping(
-                "sqlite:///" + str(project_dir / PATH_TO_MODEL_DATABASE), create=True
+                "sqlite:///" + str(Path(project.path) / PATH_TO_MODEL_DATABASE),
+                create=True,
             )
             import_object_classes(db_map, ("class_1", "class_2"))
             import_objects(db_map, (("class_1", "object_11"), ("class_2", "object_21")))
@@ -1070,9 +1069,10 @@ class ModelInterfaceTests(TestCase):
 
     def test_get_available_relationship_objects(self):
         """'model' view responds with a list containing available relationship's objects."""
-        with fake_project(self.baron) as project_dir:
+        with fake_project(self.baron) as project:
             db_map = DatabaseMapping(
-                "sqlite:///" + str(project_dir / PATH_TO_MODEL_DATABASE), create=True
+                "sqlite:///" + str(Path(project.path) / PATH_TO_MODEL_DATABASE),
+                create=True,
             )
             import_object_classes(db_map, ("class_1", "class_2"))
             import_objects(
@@ -1115,9 +1115,10 @@ class ModelInterfaceTests(TestCase):
 
     def test_get_all_parameter_value_lists(self):
         """'model' view responds with all parameter value lists and the lists are concatenated correctly."""
-        with fake_project(self.baron) as project_dir:
+        with fake_project(self.baron) as project:
             db_map = DatabaseMapping(
-                "sqlite:///" + str(project_dir / PATH_TO_MODEL_DATABASE), create=True
+                "sqlite:///" + str(Path(project.path) / PATH_TO_MODEL_DATABASE),
+                create=True,
             )
             import_parameter_value_lists(
                 db_map,
@@ -1159,9 +1160,10 @@ class ModelInterfaceTests(TestCase):
 
     def test_get_parameter_value_lists_for_specific_ids(self):
         """'model' view responds with parameter value lists filtered by ids."""
-        with fake_project(self.baron) as project_dir:
+        with fake_project(self.baron) as project:
             db_map = DatabaseMapping(
-                "sqlite:///" + str(project_dir / PATH_TO_MODEL_DATABASE), create=True
+                "sqlite:///" + str(Path(project.path) / PATH_TO_MODEL_DATABASE),
+                create=True,
             )
             import_parameter_value_lists(
                 db_map,
@@ -1207,9 +1209,10 @@ class ModelInterfaceTests(TestCase):
 
     def test_get_commits(self):
         """'model' view responds with all commits."""
-        with fake_project(self.baron) as project_dir:
+        with fake_project(self.baron) as project:
             db_map = DatabaseMapping(
-                "sqlite:///" + str(project_dir / PATH_TO_MODEL_DATABASE), create=True
+                "sqlite:///" + str(Path(project.path) / PATH_TO_MODEL_DATABASE),
+                create=True,
             )
             import_object_classes(db_map, ("class_1",))  # Must have some data to commit
             db_map.commit_session("My commit message.")
@@ -1247,9 +1250,10 @@ class ModelInterfaceTests(TestCase):
 
     def test_commit_parameter_value_deletion(self):
         """'model' view deletes given parameter value and responds with OK status."""
-        with fake_project(self.baron) as project_dir:
+        with fake_project(self.baron) as project:
             db_map = DatabaseMapping(
-                "sqlite:///" + str(project_dir / PATH_TO_MODEL_DATABASE), create=True
+                "sqlite:///" + str(Path(project.path) / PATH_TO_MODEL_DATABASE),
+                create=True,
             )
             import_object_classes(db_map, ("my_class",))
             import_objects(db_map, (("my_class", "my_object"),))
@@ -1281,9 +1285,10 @@ class ModelInterfaceTests(TestCase):
 
     def test_commit_object_parameter_value_insertion(self):
         """'model' view inserts an object parameter value and responds with OK status."""
-        with fake_project(self.baron) as project_dir:
+        with fake_project(self.baron) as project:
             db_map = DatabaseMapping(
-                "sqlite:///" + str(project_dir / PATH_TO_MODEL_DATABASE), create=True
+                "sqlite:///" + str(Path(project.path) / PATH_TO_MODEL_DATABASE),
+                create=True,
             )
             import_object_classes(db_map, ("my_class",))
             import_object_parameters(db_map, (("my_class", "my_parameter"),))
@@ -1323,9 +1328,10 @@ class ModelInterfaceTests(TestCase):
 
     def test_commit_relationship_parameter_value_insertion(self):
         """'model' view inserts a relationship parameter value and responds with OK status."""
-        with fake_project(self.baron) as project_dir:
+        with fake_project(self.baron) as project:
             db_map = DatabaseMapping(
-                "sqlite:///" + str(project_dir / PATH_TO_MODEL_DATABASE), create=True
+                "sqlite:///" + str(Path(project.path) / PATH_TO_MODEL_DATABASE),
+                create=True,
             )
             import_object_classes(db_map, ("my_object_class",))
             import_objects(db_map, (("my_object_class", "my_object"),))
@@ -1369,9 +1375,10 @@ class ModelInterfaceTests(TestCase):
 
     def test_commit_parameter_value_insertion_converts_ints_to_floats(self):
         """inserting indexed parameter value converts ints to floats."""
-        with fake_project(self.baron) as project_dir:
+        with fake_project(self.baron) as project:
             db_map = DatabaseMapping(
-                "sqlite:///" + str(project_dir / PATH_TO_MODEL_DATABASE), create=True
+                "sqlite:///" + str(Path(project.path) / PATH_TO_MODEL_DATABASE),
+                create=True,
             )
             import_object_classes(db_map, ("my_class",))
             import_object_parameters(
@@ -1436,9 +1443,10 @@ class ModelInterfaceTests(TestCase):
 
     def test_commit_parameter_value_update(self):
         """'model' view updates a parameter value and responds with OK status."""
-        with fake_project(self.baron) as project_dir:
+        with fake_project(self.baron) as project:
             db_map = DatabaseMapping(
-                "sqlite:///" + str(project_dir / PATH_TO_MODEL_DATABASE), create=True
+                "sqlite:///" + str(Path(project.path) / PATH_TO_MODEL_DATABASE),
+                create=True,
             )
             import_object_classes(db_map, ("my_class",))
             import_object_parameters(db_map, (("my_class", "my_parameter"),))
@@ -1471,9 +1479,10 @@ class ModelInterfaceTests(TestCase):
 
     def test_commit_parameter_value_update_converts_int_to_floats(self):
         """int type values in indexes values get converted to floats upon update commit."""
-        with fake_project(self.baron) as project_dir:
+        with fake_project(self.baron) as project:
             db_map = DatabaseMapping(
-                "sqlite:///" + str(project_dir / PATH_TO_MODEL_DATABASE), create=True
+                "sqlite:///" + str(Path(project.path) / PATH_TO_MODEL_DATABASE),
+                create=True,
             )
             import_object_classes(db_map, ("my_class",))
             import_object_parameters(
@@ -1540,9 +1549,10 @@ class ModelInterfaceTests(TestCase):
 
     def test_commit_alternative_insertion(self):
         """'model' view inserts an alternative and responds with OK status."""
-        with fake_project(self.baron) as project_dir:
+        with fake_project(self.baron) as project:
             db_map = DatabaseMapping(
-                "sqlite:///" + str(project_dir / PATH_TO_MODEL_DATABASE), create=True
+                "sqlite:///" + str(Path(project.path) / PATH_TO_MODEL_DATABASE),
+                create=True,
             )
             with login_as_baron(self.client) as login_successful:
                 self.assertTrue(login_successful)
@@ -1572,9 +1582,10 @@ class ModelInterfaceTests(TestCase):
 
     def test_commit_scenario_insertion(self):
         """'model' view inserts a scenario and responds with OK status."""
-        with fake_project(self.baron) as project_dir:
+        with fake_project(self.baron) as project:
             db_map = DatabaseMapping(
-                "sqlite:///" + str(project_dir / PATH_TO_MODEL_DATABASE), create=True
+                "sqlite:///" + str(Path(project.path) / PATH_TO_MODEL_DATABASE),
+                create=True,
             )
             with login_as_baron(self.client) as login_successful:
                 self.assertTrue(login_successful)
@@ -1604,9 +1615,10 @@ class ModelInterfaceTests(TestCase):
 
     def test_commit_scenario_alternatives_insertion(self):
         """'model' view inserts a scenario and responds with OK status."""
-        with fake_project(self.baron) as project_dir:
+        with fake_project(self.baron) as project:
             db_map = DatabaseMapping(
-                "sqlite:///" + str(project_dir / PATH_TO_MODEL_DATABASE), create=True
+                "sqlite:///" + str(Path(project.path) / PATH_TO_MODEL_DATABASE),
+                create=True,
             )
             with login_as_baron(self.client) as login_successful:
                 self.assertTrue(login_successful)
@@ -1691,9 +1703,10 @@ class ModelInterfaceTests(TestCase):
 
     def test_commit_object_insertion(self):
         """'model' view inserts an object and responds with OK status."""
-        with fake_project(self.baron) as project_dir:
+        with fake_project(self.baron) as project:
             db_map = DatabaseMapping(
-                "sqlite:///" + str(project_dir / PATH_TO_MODEL_DATABASE), create=True
+                "sqlite:///" + str(Path(project.path) / PATH_TO_MODEL_DATABASE),
+                create=True,
             )
             import_object_classes(db_map, ("my_class",))
             db_map.commit_session("Add test data.")
@@ -1724,9 +1737,10 @@ class ModelInterfaceTests(TestCase):
 
     def test_commit_relationship_insertion(self):
         """'model' view inserts a relationship and responds with OK status."""
-        with fake_project(self.baron) as project_dir:
+        with fake_project(self.baron) as project:
             db_map = DatabaseMapping(
-                "sqlite:///" + str(project_dir / PATH_TO_MODEL_DATABASE), create=True
+                "sqlite:///" + str(Path(project.path) / PATH_TO_MODEL_DATABASE),
+                create=True,
             )
             import_object_classes(db_map, ("my_object_class",))
             import_objects(db_map, (("my_object_class", "my_object"),))
@@ -1766,9 +1780,10 @@ class ModelInterfaceTests(TestCase):
             db_map.connection.close()
 
     def test_get_physical_classes(self):
-        with fake_project(self.baron) as project_dir:
+        with fake_project(self.baron) as project:
             db_map = DatabaseMapping(
-                "sqlite:///" + str(project_dir / PATH_TO_MODEL_DATABASE), create=True
+                "sqlite:///" + str(Path(project.path) / PATH_TO_MODEL_DATABASE),
+                create=True,
             )
             import_object_classes(
                 db_map, ("non_physical",) + tuple(views.PHYSICAL_OBJECT_CLASS_NAMES)
@@ -1832,9 +1847,10 @@ class ModelInterfaceTests(TestCase):
 
     def test_commit_alternative_deletion(self):
         """'model' view deletes given alternative and responds with OK status."""
-        with fake_project(self.baron) as project_dir:
+        with fake_project(self.baron) as project:
             db_map = DatabaseMapping(
-                "sqlite:///" + str(project_dir / PATH_TO_MODEL_DATABASE), create=True
+                "sqlite:///" + str(Path(project.path) / PATH_TO_MODEL_DATABASE),
+                create=True,
             )
             import_alternatives(db_map, ("my_alternative",))
             db_map.commit_session("Add test data.")
@@ -1862,9 +1878,10 @@ class ModelInterfaceTests(TestCase):
 
     def test_commit_scenario_deletion(self):
         """'model' view deletes given scenario and responds with OK status."""
-        with fake_project(self.baron) as project_dir:
+        with fake_project(self.baron) as project:
             db_map = DatabaseMapping(
-                "sqlite:///" + str(project_dir / PATH_TO_MODEL_DATABASE), create=True
+                "sqlite:///" + str(Path(project.path) / PATH_TO_MODEL_DATABASE),
+                create=True,
             )
             import_scenarios(db_map, ("my_scenario",))
             db_map.commit_session("Add test data.")
@@ -1891,9 +1908,10 @@ class ModelInterfaceTests(TestCase):
 
     def test_commit_scenario_alternative_deletion(self):
         """'model' view deletes given scenario alternative and responds with OK status."""
-        with fake_project(self.baron) as project_dir:
+        with fake_project(self.baron) as project:
             db_map = DatabaseMapping(
-                "sqlite:///" + str(project_dir / PATH_TO_MODEL_DATABASE), create=True
+                "sqlite:///" + str(Path(project.path) / PATH_TO_MODEL_DATABASE),
+                create=True,
             )
             import_scenarios(db_map, ("my_scenario",))
             import_scenario_alternatives(db_map, (("my_scenario", "Base"),))
@@ -1921,9 +1939,10 @@ class ModelInterfaceTests(TestCase):
 
     def test_commit_object_deletion(self):
         """'model' view deletes given object and responds with OK status."""
-        with fake_project(self.baron) as project_dir:
+        with fake_project(self.baron) as project:
             db_map = DatabaseMapping(
-                "sqlite:///" + str(project_dir / PATH_TO_MODEL_DATABASE), create=True
+                "sqlite:///" + str(Path(project.path) / PATH_TO_MODEL_DATABASE),
+                create=True,
             )
             import_object_classes(db_map, ("my_class",))
             import_objects(db_map, (("my_class", "my_object"),))
@@ -1951,9 +1970,10 @@ class ModelInterfaceTests(TestCase):
 
     def test_commit_relationship_deletion(self):
         """'model' view deletes given relationship and responds with OK status."""
-        with fake_project(self.baron) as project_dir:
+        with fake_project(self.baron) as project:
             db_map = DatabaseMapping(
-                "sqlite:///" + str(project_dir / PATH_TO_MODEL_DATABASE), create=True
+                "sqlite:///" + str(Path(project.path) / PATH_TO_MODEL_DATABASE),
+                create=True,
             )
             import_object_classes(db_map, ("my_object_class",))
             import_objects(db_map, (("my_object_class", "my_object"),))
@@ -1983,9 +2003,10 @@ class ModelInterfaceTests(TestCase):
 
     def test_commit_alternative_update(self):
         """'model' view updates alternative in model and responds with OK status."""
-        with fake_project(self.baron) as project_dir:
+        with fake_project(self.baron) as project:
             db_map = DatabaseMapping(
-                "sqlite:///" + str(project_dir / PATH_TO_MODEL_DATABASE), create=True
+                "sqlite:///" + str(Path(project.path) / PATH_TO_MODEL_DATABASE),
+                create=True,
             )
             import_alternatives(db_map, ("my_alternative",))
             db_map.commit_session("Add test data.")
@@ -2014,9 +2035,10 @@ class ModelInterfaceTests(TestCase):
 
     def test_commit_scenario_update(self):
         """'model' view updates scenario in model and responds with OK status."""
-        with fake_project(self.baron) as project_dir:
+        with fake_project(self.baron) as project:
             db_map = DatabaseMapping(
-                "sqlite:///" + str(project_dir / PATH_TO_MODEL_DATABASE), create=True
+                "sqlite:///" + str(Path(project.path) / PATH_TO_MODEL_DATABASE),
+                create=True,
             )
             import_scenarios(db_map, ("my_scenario",))
             db_map.commit_session("Add test data.")
@@ -2044,9 +2066,10 @@ class ModelInterfaceTests(TestCase):
 
     def test_commit_scenario_alternative_update(self):
         """'model' view updates scenario alternative in model and responds with OK status."""
-        with fake_project(self.baron) as project_dir:
+        with fake_project(self.baron) as project:
             db_map = DatabaseMapping(
-                "sqlite:///" + str(project_dir / PATH_TO_MODEL_DATABASE), create=True
+                "sqlite:///" + str(Path(project.path) / PATH_TO_MODEL_DATABASE),
+                create=True,
             )
             import_scenarios(db_map, ("my_scenario",))
             import_alternatives(db_map, ("alternative_1", "alternative_2"))
@@ -2089,9 +2112,10 @@ class ModelInterfaceTests(TestCase):
 
     def test_commit_object_update(self):
         """'model' view updates object in model and responds with OK status."""
-        with fake_project(self.baron) as project_dir:
+        with fake_project(self.baron) as project:
             db_map = DatabaseMapping(
-                "sqlite:///" + str(project_dir / PATH_TO_MODEL_DATABASE), create=True
+                "sqlite:///" + str(Path(project.path) / PATH_TO_MODEL_DATABASE),
+                create=True,
             )
             import_object_classes(db_map, ("my_class",))
             import_objects(db_map, (("my_class", "my_object"),))
@@ -2121,9 +2145,10 @@ class ModelInterfaceTests(TestCase):
 
     def test_commit_relationship_update(self):
         """'model' view updates relationship in model and responds with OK status."""
-        with fake_project(self.baron) as project_dir:
+        with fake_project(self.baron) as project:
             db_map = DatabaseMapping(
-                "sqlite:///" + str(project_dir / PATH_TO_MODEL_DATABASE), create=True
+                "sqlite:///" + str(Path(project.path) / PATH_TO_MODEL_DATABASE),
+                create=True,
             )
             import_object_classes(db_map, ("object_class_1", "object_class_2"))
             import_objects(
@@ -2213,6 +2238,24 @@ class ExecutorTests(unittest.TestCase):
         self.assertEqual(executor.execution_count(), 1)
 
 
+class ExecutionsViewTests(unittest.TestCase):
+    def test_arguments(self):
+        project_path = Path("path", "to", "project")
+        arguments = executions_view.arguments(project_path)
+        expected = [
+            "-mspinetoolbox",
+            "--execute-only",
+            str(project_path),
+            "--select",
+            "FlexTool3_test_data",
+            "ExportFlexTool3ToCSV",
+            "FlexTool3",
+            "Import_Flex3",
+            "Results_F3",
+        ]
+        self.assertEqual(arguments, expected)
+
+
 class ExecutionsInterfaceTests(TestCase):
     baron = None
     executions_url = reverse("flextool3:executions")
@@ -2223,18 +2266,18 @@ class ExecutionsInterfaceTests(TestCase):
         cls.baron.set_password("secretbaron")
         cls.baron.save()
 
-    def test_empty_execution_list(self):
-        with fake_project(self.baron):
+    def test_current_execution_creates_yet_to_run_execution_when_needed(self):
+        with fake_project(self.baron) as project:
             with login_as_baron(self.client) as login_successful:
                 self.assertTrue(login_successful)
                 response = self.client.post(
                     self.executions_url,
-                    {"type": "execution list?", "projectId": 1},
+                    {"type": "current execution?", "projectId": 1},
                     content_type="application/json",
                 )
                 self.assertEqual(response.status_code, 200)
                 content = json.loads(response.content)
-                self.assertEqual(content, {"executions": []})
+                self.assertEqual(content, {"status": "YS", "scenarios": []})
 
 
 class SummaryInterfaceTests(TestCase):
@@ -2266,7 +2309,7 @@ NonSync, JustA, p2025, 3298.2
     def summary_rows(cls):
         with StringIO(cls._SUMMARY) as summary:
             reader = csv.reader(summary)
-            return [[views.number_to_float(x) for x in row] for row in reader]
+            return [[number_to_float(x) for x in row] for row in reader]
 
     @classmethod
     def setUpTestData(cls):
@@ -2274,10 +2317,71 @@ NonSync, JustA, p2025, 3298.2
         cls.baron.set_password("secretbaron")
         cls.baron.save()
 
+    def test_get_scenario_list(self):
+        with fake_project(self.baron) as project:
+            scenario1 = Scenario(project=project, name="scenario_1")
+            scenario1.save()
+            scenario2 = Scenario(project=project, name="scenario_2")
+            scenario2.save()
+            scenario_execution1 = ScenarioExecution(
+                scenario=scenario1,
+                execution_time=datetime.fromisoformat("2022-05-05T12:00:00+03:00"),
+                execution_time_offset=3 * 3600,
+                log="",
+            )
+            scenario_execution1.save()
+            scenario_execution2 = ScenarioExecution(
+                scenario=scenario2,
+                execution_time=datetime.fromisoformat("2022-05-25T16:00:00+03:00"),
+                execution_time_offset=3 * 3600,
+                log="",
+            )
+            scenario_execution2.save()
+            with login_as_baron(self.client) as login_successful:
+                self.assertTrue(login_successful)
+                response = self.client.post(
+                    self.summary_url,
+                    {
+                        "type": "scenario list?",
+                        "projectId": 1,
+                    },
+                    content_type="application/json",
+                )
+                self.assertEqual(response.status_code, 200)
+                content = json.loads(response.content)
+                self.assertEqual(
+                    content,
+                    {
+                        "scenarios": {
+                            "scenario_1": [
+                                {
+                                    "scenario_execution_id": 1,
+                                    "time_stamp": "2022-05-05T09:00:00+00:00",
+                                }
+                            ],
+                            "scenario_2": [
+                                {
+                                    "scenario_execution_id": 2,
+                                    "time_stamp": "2022-05-25T13:00:00+00:00",
+                                }
+                            ],
+                        }
+                    },
+                )
+
     def test_get_summary(self):
-        with fake_project(self.baron) as project_dir:
+        with fake_project(self.baron) as project:
+            scenario = Scenario(project=project, name="my_scenario")
+            scenario.save()
+            scenario_execution = ScenarioExecution(
+                scenario=scenario,
+                execution_time=datetime.fromisoformat("2022-05-05T12:59:50+03:00"),
+                execution_time_offset=3 * 3600,
+                log="",
+            )
+            scenario_execution.save()
             filter_id_path = (
-                project_dir
+                Path(project.path)
                 / ".spinetoolbox"
                 / "items"
                 / "flextool3"
@@ -2287,16 +2391,19 @@ NonSync, JustA, p2025, 3298.2
             )
             filter_id_path.parent.mkdir(parents=True)
             with open(filter_id_path, "w", encoding="utf-8") as filter_id_file:
-                filter_id_file.writelines(["my_filter_id"])
+                filter_id_file.writelines(
+                    ["my_scenario, FlexTool3 - FlexTool3_test_data"]
+                )
             summary_path = (
-                project_dir
+                Path(project.path)
                 / ".spinetoolbox"
                 / "items"
                 / "flextool3"
                 / "output"
                 / "dc03f1ea3aebbee9146b9cf380472f6045c0927d"
                 / "2022-05-05T13.00.00"
-                / "r_summary_solve.csv"
+                / "output"
+                / SUMMARY_FILE_NAME
             )
             summary_path.parent.mkdir(parents=True)
             with open(summary_path, "w", encoding="utf-8") as summary_file:
@@ -2305,13 +2412,90 @@ NonSync, JustA, p2025, 3298.2
                 self.assertTrue(login_successful)
                 response = self.client.post(
                     self.summary_url,
-                    {"type": "summary?", "projectId": 1},
+                    {
+                        "type": "summary?",
+                        "projectId": 1,
+                        "scenarioExecutionId": 1,
+                    },
                     content_type="application/json",
                 )
                 self.assertEqual(response.status_code, 200)
                 content = json.loads(response.content)
                 expected = {"summary": self.summary_rows()}
                 self.assertEqual(content, expected)
+
+    def test_get_result_alternative(self):
+        with fake_project(self.baron) as project:
+            scenario = Scenario(project=project, name="Base")
+            scenario.save()
+            scenario_execution = ScenarioExecution(
+                scenario=scenario,
+                execution_time=datetime.fromisoformat("2022-06-01T14:14:00+03:00"),
+                execution_time_offset=3 * 3600,
+                log="",
+            )
+            scenario_execution.save()
+            scenario_execution = ScenarioExecution(
+                scenario=scenario,
+                execution_time=datetime.fromisoformat("2022-06-01T15:34:00+03:00"),
+                execution_time_offset=3 * 3600,
+                log="",
+            )
+            scenario_execution.save()
+            scenario = Scenario(project=project, name="high_price")
+            scenario.save()
+            scenario_execution = ScenarioExecution(
+                scenario=scenario,
+                execution_time=datetime.fromisoformat("2022-06-01T14:34:00+03:00"),
+                execution_time_offset=3 * 3600,
+                log="",
+            )
+            scenario_execution.save()
+            scenario_execution = ScenarioExecution(
+                scenario=scenario,
+                execution_time=datetime.fromisoformat("2022-06-01T16:34:00+03:00"),
+                execution_time_offset=3 * 3600,
+                log="",
+            )
+            scenario_execution.save()
+            db_map = DatabaseMapping(
+                "sqlite:///" + str(Path(project.path) / PATH_TO_RESULT_DATABASE),
+                create=True,
+            )
+            import_alternatives(
+                db_map,
+                (
+                    "Base__Import_Flex3@2022-06-01T14:15:00",
+                    "high_price__Import_Flex3@2022-06-01T14:35:00",
+                    "Base__Import_Flex3@2022-06-01T15:35:00",
+                    "high_price__Import_Flex3@2022-06-01T16:35:00",
+                ),
+            )
+            db_map.commit_session("Add test data.")
+            alternative_id = (
+                db_map.query(db_map.alternative_sq)
+                .filter(
+                    db_map.alternative_sq.c.name
+                    == "Base__Import_Flex3@2022-06-01T15:35:00"
+                )
+                .one()
+                .id
+            )
+            db_map.connection.close()
+            with login_as_baron(self.client) as login_successful:
+                self.assertTrue(login_successful)
+                response = self.client.post(
+                    self.summary_url,
+                    {
+                        "type": "result alternative?",
+                        "projectId": 1,
+                        "scenarioExecutionId": 2,
+                    },
+                    content_type="application/json",
+                )
+                self.assertEqual(response.status_code, 200)
+                content = json.loads(response.content)
+                self.assertEqual(content, {"alternative_id": alternative_id})
 
 
 class AnalysisInterfaceTests(TestCase):
@@ -2326,9 +2510,10 @@ class AnalysisInterfaceTests(TestCase):
 
     def test_get_entity_classes(self):
         """'analysis' view responses with object and relationship class information."""
-        with fake_project(self.baron) as project_dir:
+        with fake_project(self.baron) as project:
             db_map = DatabaseMapping(
-                "sqlite:///" + str(project_dir / PATH_TO_RESULT_DATABASE), create=True
+                "sqlite:///" + str(Path(project.path) / PATH_TO_RESULT_DATABASE),
+                create=True,
             )
             import_object_classes(db_map, ("object_class",))
             import_relationship_classes(

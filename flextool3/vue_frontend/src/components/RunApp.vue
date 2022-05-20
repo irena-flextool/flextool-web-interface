@@ -2,28 +2,96 @@
     <page-path
         :path="[{name: 'Projects', url: indexUrl}, {name: projectName, url: projectUrl}]"
         leaf-name="Run"/>
-    <n-list>
-        <n-list-item v-for="execution in executions" :key="execution.id">
-            <execution-row
-                @destroyed="deleteExecution"
-                :execution-id="execution.id"
-                :view-url="viewUrl"
-                :executions-url="executionsUrl"
-            />
-        </n-list-item>
-        <template #footer>
-            <n-button @click="createRun" :loading="newRunButtonBusy" :disabled="newRunButtonBusy">
-                New run
-            </n-button>
-        </template>
-    </n-list>
+    <fetchable :state="state" :error-message="errorMessage">
+        <n-grid :cols="3">
+            <n-grid-item>
+                <n-space vertical>
+                    <n-text :type="statusMessageType">{{ statusMessage }}</n-text>
+                    <n-a :href="scenariosUrl">Scenario editor</n-a>
+                    <n-text>Select scenarios to run:</n-text>
+                    <n-checkbox-group v-model:value="selectedScenarios" :disabled="isExecuting">
+                        <n-space vertical>
+                            <n-checkbox
+                                v-for="(scenario, index) in availableScenarios"
+                                :value="scenario"
+                                :label="scenario"
+                                :key="index"
+                            />
+                        </n-space>
+                    </n-checkbox-group>
+                    <n-space>
+                        <n-button @click="execute" :disabled="isPlayButtonDisabled" :loading="isExecuting">
+                            <template #icon>
+                                <n-icon>
+                                    <play/>
+                                </n-icon>
+                            </template>
+                            Run
+                        </n-button>
+                        <n-button @click="abort" :disabled="isAbortButtonDisabled" :loading="isAborting">
+                            <template #icon>
+                                <n-icon>
+                                    <stop-icon/>
+                                </n-icon>
+                            </template>
+                            Abort
+                        </n-button>
+                    </n-space>
+                </n-space>
+            </n-grid-item>
+            <n-grid-item :span="2">
+                <n-h1>Run log</n-h1>
+                <n-card size="small">
+                    <n-log :lines="logLines" :rows="20"></n-log>
+                </n-card>
+            </n-grid-item>
+        </n-grid>
+    </fetchable>
 </template>
+
 <script>
-import {onMounted, ref} from "vue/dist/vue.esm-bundler.js";
+import {computed, onMounted, ref} from "vue/dist/vue.esm-bundler.js";
 import {useMessage} from "naive-ui";
+import {Play, Stop} from '@vicons/fa';
 import PagePath from "./PagePath.vue";
-import ExecutionRow from "./ExecutionRow.vue";
-import {fetchExecutionList, createExecution} from "../modules/communication.mjs";
+import Fetchable from "./Fetchable.vue";
+import {
+    executeExecution,
+    abortExecution,
+    fetchCurrentExecution,
+    fetchData,
+    fetchExecutionBriefing,
+} from "../modules/communication.mjs";
+
+let fetchingBriefing = false;
+
+function followExecution(projectId, executionsUrl, logLines, status, busyExecuting, busyAborting, message) {
+    const timer = window.setInterval(function() {
+        if(fetchingBriefing) {
+            return;
+        }
+        fetchingBriefing = true;
+        fetchExecutionBriefing(projectId, executionsUrl).then(function(data) {
+            const briefing = data.briefing;
+            status.value = briefing.status;
+            logLines.value = briefing.log;
+            if(briefing.status !== "RU") {
+                busyExecuting.value = false;
+                busyAborting.value = false;
+                window.clearInterval(timer);
+            }
+        }).catch(function(error) {
+            window.clearInterval(timer);
+            status.value = "AB";
+            busyExecuting.value = false;
+            busyAborting.value = false;
+            message.error(error.message);
+        }).finally(function() {
+            fetchingBriefing = false;
+        });
+    }, 500);
+}
+
 
 export default {
     props: {
@@ -31,47 +99,126 @@ export default {
         projectUrl: {type: String, required: true},
         projectName: {type: String, required: true},
         projectId: {type: Number, required: true},
+        modelUrl: {type: String, required: true},
         viewUrl: {type: String, required: true},
         executionsUrl: {type: String, required: true},
+        scenariosUrl: {type: String, required: true},
     },
-    setup (props) {
-        const executions = ref([]);
-        const newRunButtonBusy = ref(false);
+    components: {
+        "fetchable": Fetchable,
+        "page-path": PagePath,
+        "play": Play,
+        "stop-icon": Stop,
+    },
+    setup(props) {
+        const availableScenarios = ref([]);
+        const selectedScenarios = ref([]);
+        const logLines = ref([]);
+        const state = ref(Fetchable.state.loading);
+        const errorMessage = ref("");
+        const executionStatus = ref("YS");
+        const isExecuting = ref(false);
+        const isAborting = ref(false);
+        const isPlayButtonDisabled = computed(() => isExecuting.value || selectedScenarios.value.length === 0);
+        const isAbortButtonDisabled = computed(() => !isExecuting.value || isAborting.value);
+        const statusMessageType = ref("default");
+        const statusMessage = computed(function() {
+            if(availableScenarios.value.length === 0) {
+                statusMessageType.value = "error";
+                return "No scenarios available. Please create some in the Scenario editor.";
+            }
+            else if(executionStatus.value === "OK") {
+                statusMessageType.value = "success";
+                return "Run finished successfully.";
+            }
+            else if(executionStatus.value === "AB") {
+                statusMessageType.value = "default";
+                return "Run aborted.";
+            }
+            else if(executionStatus.value === "ER") {
+                statusMessageType.value = "error";
+                return "Error. Check run log."
+            }
+            else {
+                statusMessageType.value = "default";
+                return "";
+            }
+        });
         const message = useMessage();
         onMounted(function() {
-            fetchExecutionList(props.projectId, String(props.executionsUrl)).then(function(data) {
-                executions.value = data.executions;
+            const scenarioPromise = fetchData(
+                "scenarios?", props.projectId, props.modelUrl
+            ).then(function(data) {
+                return data.scenarios;
+            });
+            fetchCurrentExecution(
+                props.projectId, props.executionsUrl
+            ).then(async function(data) {
+                if(data.status === "RU") {
+                    isExecuting.value = true;
+                    followExecution(
+                        props.projectId,
+                        props.executionsUrl,
+                        logLines,
+                        executionStatus,
+                        isExecuting,
+                        isAborting,
+                        message
+                    );
+                }
+                const scenarioData = await scenarioPromise;
+                scenarioData.forEach((scenario) => availableScenarios.value.push(scenario.scenario_name));
+                data.scenarios.forEach(function(scenario) {
+                    if(availableScenarios.value.find((s) => s === scenario) !== undefined) {
+                        selectedScenarios.value.push(scenario);
+                    }
+                });
+                state.value = Fetchable.state.ready;
             }).catch(function(error) {
-                message.error(error.message);
+                errorMessage.value = error.message;
+                state.value = Fetchable.state.error;
             });
         });
         return {
-            executions: executions,
-            newRunButtonBusy: newRunButtonBusy,
-            createRun () {
-                newRunButtonBusy.value = true;
-                createExecution(props.projectId, String(props.executionsUrl)).then(function(data) {
-                    executions.value.push(data.execution);
-                }).catch(function(error) {
+            availableScenarios: availableScenarios,
+            selectedScenarios: selectedScenarios,
+            logLines: logLines,
+            statusMessageType: statusMessageType,
+            statusMessage: statusMessage,
+            state: state,
+            errorMessage: errorMessage,
+            isExecuting: isExecuting,
+            isAborting: isAborting,
+            isPlayButtonDisabled: isPlayButtonDisabled,
+            isAbortButtonDisabled: isAbortButtonDisabled,
+            execute: function() {
+                isExecuting.value = true;
+                logLines.value.length = 0;
+                executeExecution(
+                    props.projectId,
+                    props.executionsUrl,
+                    selectedScenarios.value
+                ).then(function() {
+                    followExecution(
+                        props.projectId,
+                        props.executionsUrl,
+                        logLines,
+                        executionStatus,
+                        isExecuting,
+                        isAborting,
+                        message
+                    );
+                }).catch(function(error){
                     message.error(error.message);
-                }).finally(function() {
-                    newRunButtonBusy.value = false;
                 });
             },
-            deleteExecution: function(executionId) {
-                const index = executions.value.findIndex(function(execution) {
-                    return execution.id === executionId;
+            abort: function() {
+                isAborting.value = true;
+                abortExecution(props.projectId, props.executionsUrl).catch(function(error) {
+                    message.error(error.message);
                 });
-                if (index < 0) {
-                    throw new Error(`Execution id ${executionId} not found while deleting execution.`);
-                }
-                executions.value.splice(index, 1);
-            }
+            },
         };
     },
-    components: {
-        "page-path": PagePath,
-        "execution-row": ExecutionRow
-    }
 };
 </script>

@@ -33,7 +33,7 @@ export default {
     setup(props) {
         const objectClasses = ref([]);
         const relationshipClasses = ref(new Map());
-        const state = ref("loading");
+        const state = ref(Fetchable.state.loading);
         const errorMessage = ref("");
         onMounted(function() {
             const fetchType = props.classType === "physical" ? "physical classes?" : "model classes?";
@@ -44,11 +44,11 @@ export default {
                 }
                 relationshipClasses.value = relationshipClassMap;
                 objectClasses.value = data.objectClasses;
-                state.value = "ready";
+                state.value = Fetchable.state.ready;
                 errorMessage.value = "";
             }).catch(function(error) {
                 errorMessage.value = error.message;
-                state.value = "error";
+                state.value = Fetchable.state.error;
             });
         });
         return {

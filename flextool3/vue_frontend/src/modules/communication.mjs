@@ -94,7 +94,7 @@ function destroyProject(projectId, projectsUrl) {
  */
 function fetchData(queryType, projectId, url, extraBody = {}) {
     const fetchInit = makeFetchInit();
-    fetchInit["body"] = JSON.stringify({"type": queryType, "projectId": projectId, ...extraBody});
+    fetchInit["body"] = JSON.stringify({type: queryType, projectId: projectId, ...extraBody});
     return fetch(url, fetchInit).then(function(response) {
         if (!response.ok) {
             return response.text().then(function(message) {
@@ -127,18 +127,18 @@ function commit(commitData, message, projectId, modelUlr) {
 }
 
 /**
- * Fetches project's execution list.
+ * Fetches project's current execution.
  * @param {number} projectId Project id.
  * @param {string} executionsUrl URL to server's interface.
  * @returns {Promise} A promise that resolves to server's response.
  */
-function fetchExecutionList(projectId, executionsUrl) {
+function fetchCurrentExecution(projectId, executionsUrl) {
     const fetchInit = makeFetchInit();
-    fetchInit.body = JSON.stringify({type: "execution list?", projectId: projectId});
+    fetchInit.body = JSON.stringify({type: "current execution?", projectId: projectId});
     return fetch(executionsUrl, fetchInit).then(function(response) {
         if (!response.ok) {
             return response.text().then(function(message) {
-                throw new Error(`Failed to load run list: ${message}`);
+                throw new Error(`Failed to fetch current run: ${message}`);
             });
         }
         return response.json()
@@ -146,52 +146,15 @@ function fetchExecutionList(projectId, executionsUrl) {
 }
 
 /**
- * Creates a new execution.
+ * Starts execution.
  * @param {number} projectId Project id.
  * @param {string} executionsUrl URL to server's interface.
+ * @param {string[]} scenarios Active scenario names.
  * @returns {Promise} A promise that resolves to server's response.
  */
-function createExecution(projectId, executionsUrl) {
+function executeExecution(projectId, executionsUrl, scenarios) {
     const fetchInit = makeFetchInit();
-    fetchInit.body = JSON.stringify({type: "create execution?", projectId: projectId});
-    return fetch(executionsUrl, fetchInit).then(function(response) {
-        if (!response.ok) {
-            return response.text().then(function(message) {
-                throw new Error(`Failed to create run: ${message}`);
-            });
-        }
-        return response.json();
-    });
-}
-
-/**
- * Stops and deletes an execution.
- * @param {number} executionId Execution id.
- * @param {string} executionsUrl URL to server's interface.
- * @returns {Promise} A promise that resolves to server's response.
- */
-function destroyExecution(executionId, executionsUrl) {
-    const fetchInit = makeFetchInit();
-    fetchInit["body"] = JSON.stringify({type: "destroy execution?", id: executionId});
-    return fetch(executionsUrl, fetchInit).then(function(response) {
-        if (!response.ok) {
-            return response.text().then(function(message) {
-                throw new Error(`Failed to delete execution: ${message}`);
-            });
-        }
-        return response.json();
-    });
-}
-
-/**
- * Starts execution.
- * @param {number} executionId Execution id.
- * @param {string} executionsUrl URL to server's interface.
- * @returns {Promise} A promise that resolves to server's response.
- */
-function executeExecution(executionId, executionsUrl) {
-    const fetchInit = makeFetchInit();
-    fetchInit["body"] = JSON.stringify({type: "execute?", id: executionId});
+    fetchInit["body"] = JSON.stringify({type: "execute?", projectId: projectId, scenarios: scenarios});
     return fetch(executionsUrl, fetchInit).then(function(response) {
         if (!response.ok) {
             return response.text().then(function(message) {
@@ -204,13 +167,13 @@ function executeExecution(executionId, executionsUrl) {
 
 /**
  * Aborts execution.
- * @param {number} executionId Execution id.
+ * @param {number} projectId Project id.
  * @param {string} executionsUrl URL to server's interface.
  * @returns {Promise} A promise that resolves to server's response.
  */
-function abortExecution(executionId, executionsUrl) {
+function abortExecution(projectId, executionsUrl) {
     const fetchInit = makeFetchInit();
-    fetchInit["body"] = JSON.stringify({type: "abort?", id: executionId});
+    fetchInit["body"] = JSON.stringify({type: "abort?", projectId: projectId});
     return fetch(executionsUrl, fetchInit).then(function(response) {
         if (!response.ok) {
             return response.text().then(function(message) {
@@ -223,13 +186,13 @@ function abortExecution(executionId, executionsUrl) {
 
 /**
  * Fetches execution status from server.
- * @param {number} executionId Execution id.
+ * @param {number} projectId Project id.
  * @param {string} executionsUrl URL to server's interface.
  * @returns {Promise} A promise that resolves to server's response.
  */
-function fetchExecutionBriefing(executionId, executionsUrl) {
+function fetchExecutionBriefing(projectId, executionsUrl) {
     const fetchInit = makeFetchInit();
-    fetchInit["body"] = JSON.stringify({type: "briefing?", id: executionId});
+    fetchInit["body"] = JSON.stringify({type: "briefing?", projectId: projectId});
     return fetch(executionsUrl, fetchInit).then(function(response) {
         if (!response.ok) {
             return response.text().then(function(message) {
@@ -244,15 +207,62 @@ function fetchExecutionBriefing(executionId, executionsUrl) {
  * Fetches summary data from server.
  * @param {number} projectId Project id.
  * @param {string} summaryUrl URL to server's interface.
+ * @param {string} scenarioExecutionId Scenario execution id.
  * @returns {Promise} A promise that resolves to server's response.
  */
-function fetchSummary(projectId, summaryUrl) {
+function fetchSummary(projectId, summaryUrl, scenarioExecutionId) {
     const fetchInit = makeFetchInit();
-    fetchInit.body = JSON.stringify({type: "summary?", projectId: projectId});
+    fetchInit.body = JSON.stringify({
+        type: "summary?",
+        projectId: projectId,
+        scenarioExecutionId: scenarioExecutionId,
+    });
     return fetch(summaryUrl, fetchInit).then(function(response) {
         if (!response.ok) {
             return response.text().then(function(message) {
                 throw new Error(`Failed to load summary: ${message}`);
+            });
+        }
+        return response.json()
+    });
+}
+
+/**
+ * Fetches executed scenarios from server.
+ * @param {number} projectId Project id.
+ * @param {string} summaryUrl URL to server's interface.
+ * @returns {Promise} A promise that resolves to server's response.
+ */
+function fetchExecutedScenarioList(projectId, summaryUrl) {
+    const fetchInit = makeFetchInit();
+    fetchInit.body = JSON.stringify({type: "scenario list?", projectId: projectId});
+    return fetch(summaryUrl, fetchInit).then(function(response) {
+        if (!response.ok) {
+            return response.text().then(function(message) {
+                throw new Error(`Failed to load scenarios: ${message}`);
+            });
+        }
+        return response.json()
+    });
+}
+
+/**
+ * Fetches result alternative from serer.
+ * @param {number} projectId Project id.
+ * @param {string} summaryUrl URL to server's interface.
+ * @param {string} scenarioExecutionId Scenario execution id.
+ * @returns {Promise} A promise that resolves to server's response.
+ */
+function fetchResultAlternative(projectId, summaryUrl, scenarioExecutionId) {
+    const fetchInit = makeFetchInit();
+    fetchInit.body = JSON.stringify({type: "result alternative?",
+        projectId: projectId,
+        scenarioExecutionId: scenarioExecutionId,
+    });
+    return fetch(summaryUrl, fetchInit).then(function(response) {
+        if (!response.ok) {
+            return response.text().then(function(message) {
+                throw new Error(`Failed to result alternative: ${message}`);
             });
         }
         return response.json()
@@ -266,11 +276,11 @@ export {
     fetchProjectList,
     createProject,
     destroyProject,
-    fetchExecutionList,
-    createExecution,
-    destroyExecution,
+    fetchCurrentExecution,
     executeExecution,
     abortExecution,
     fetchExecutionBriefing,
+    fetchExecutedScenarioList,
     fetchSummary,
+    fetchResultAlternative,
 };

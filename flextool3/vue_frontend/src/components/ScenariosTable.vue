@@ -34,10 +34,10 @@ function fetchScenarios(projectId, modelUrl, tableText, rowCount, state, errorMe
         emit("scenarioFetch", scenarios);
         tableText.value = makeScenarioAlternativesTable(scenarios);
         rowCount.value = Math.max(10, (tableText.value.match(/\n/g) || "").length + 3);
-        state.value = "ready";
+        state.value = Fetchable.state.ready;
     }).catch(function(error) {
         errorMessage.value = error.message;
-        state.value = "error";
+        state.value = Fetchable.state.error;
     });
 }
 
@@ -53,7 +53,7 @@ export default {
     setup(props, context) {
         const text = ref("");
         const rowCount = ref(10);
-        const state = ref("loading");
+        const state = ref(Fetchable.state.loading);
         const errorMessage = ref("");
         onMounted(function() {
             fetchScenarios(props.projectId, props.modelUrl, text, rowCount, state, errorMessage, context.emit);

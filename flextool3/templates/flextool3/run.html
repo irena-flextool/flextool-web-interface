@@ -20,8 +20,10 @@
                 project-url="{% url 'flextool3:detail' project.id %}"
                 project-name="{{ project.name }}"
                 :project-id="{{ project.id }}"
+                model-url="{% url 'flextool3:model' %}"
                 view-url="{% url 'flextool3:view' project.id %}"
                 executions-url="{% url 'flextool3:executions' %}"
+                scenarios-url="{% url 'flextool3:scenarios' project.id %}"
             >
             </run-app>
         </n-message-provider>

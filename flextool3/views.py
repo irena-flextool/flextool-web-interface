@@ -1,5 +1,3 @@
-import csv
-import sys
 from enum import auto, Enum, unique
 import json
 from pathlib import Path
@@ -26,9 +24,23 @@ from spinedb_api import (
     SpineDBVersionError,
     SpineDBAPIError,
 )
-from .models import Execution, Project, PROJECT_NAME_LENGTH
-from . import executor
+from .models import Project, PROJECT_NAME_LENGTH
 from .exception import FlextoolException
+from .dict_utils import get_and_validate
+from .model_utils import resolve_project
+from .utils import Database, database_map
+from .executions_view import (
+    abort_execution,
+    execute,
+    execution_briefing,
+    clear_execution,
+    current_execution,
+)
+from .summary_view import (
+    get_scenario_list,
+    get_summary,
+    get_result_alternative,
+)
 
 FLEXTOOL_PROJECT_TEMPLATE = Path(__file__).parent / "master_project"
 FLEXTOOL_PROJECTS_ROOT = Path(__file__).parent / "user_projects"
@@ -65,43 +77,6 @@ class Key(Enum):
         return self.value
 
 
-@unique
-class Database(Enum):
-    MODEL = auto()
-    RESULT = auto()
-
-
-def _get_and_validate(dictionary, key, expected_type, required=True):
-    """Returns value with given key from dictionary.
-
-    Raises if value doesn't exist or is of wrong type.
-
-    Args:
-        dictionary (dict): a dictionary
-        key (Any): dictionary key
-        expected_type (Type): value's expected type
-        required (bool): If True, missing key raises an exception
-
-    Returns:
-        Any: value corresponding to key or None key is missing
-    """
-    try:
-        x = dictionary[key]
-    except KeyError as missing:
-        if required:
-            raise FlextoolException(f"Missing {missing}.")
-        return None
-    if not isinstance(x, expected_type):
-        if isinstance(expected_type, tuple):
-            raise FlextoolException(
-                f"'{key}' is of wrong type, expected one of {expected_type}"
-            )
-        raise FlextoolException(
-            f"'{key}' is of wrong type '{type(x).__name__}', expected {expected_type.__name__}"
-        )
-    return x
-
-
 def _convert_ints_to_floats(value):
     """Converts integers to floats in-place in indexed values.
 
@@ -135,10 +110,11 @@ class IndexView(LoginRequiredMixin, generic.ListView):
         return Project.objects.filter(user_id=self.request.user.id)
 
 
-class DetailView(LoginRequiredMixin, generic.DetailView):
-    model = Project
-    template_name = "flextool3/detail.html"
-    login_url = "accounts/login/"
+@login_required
+def detail(request, pk):
+    project = get_object_or_404(Project, pk=pk, user=request.user.id)
+    context = {"project": project}
+    return render(request, "flextool3/detail.html", context)
 
 
 def _ensure_database_up_to_date(func, database, request, pk):
@@ -153,7 +129,7 @@ def _ensure_database_up_to_date(func, database, request, pk):
     Returns:
         HttpResponse: response object
     """
-    project = get_object_or_404(Project, pk=pk)
+    project = get_object_or_404(Project, pk=pk, user=request.user.id)
     if database == Database.MODEL:
         db_path = project.model_database_path()
         create_database = False
@@ -228,11 +204,11 @@ def scenarios(request, pk):
     return _ensure_database_up_to_date(render_scenarios, Database.MODEL, request, pk)
 
 
-class RunView(LoginRequiredMixin, generic.DetailView):
-    """View to generate the Run page."""
-
-    model = Project
-    template_name = "flextool3/run.html"
+@login_required
+def run(request, pk):
+    project = get_object_or_404(Project, pk=pk)
+    context = {"project": project}
+    return render(request, "flextool3/run.html", context)
 
 
 @login_required
@@ -250,9 +226,9 @@ def projects(request):
         raise Http404()
     body = json.loads(request.body)
     try:
-        question = body["type"]
-    except KeyError as missing:
-        return HttpResponseBadRequest(f"Missing '{missing}'.")
+        question = get_and_validate(body, "type", str)
+    except FlextoolException as error:
+        return HttpResponseBadRequest(str(error))
     if question == "project list?":
         return project_list(request.user.id)
     if question == "create project?":
@@ -304,14 +280,15 @@ def destroy_project(user, request_body):
         HttpResponse: response to be sent to client
     """
     try:
-        id_ = request_body["id"]
-    except KeyError as missing:
-        return HttpResponseBadRequest(f"Missing '{missing}'.")
+        id_ = get_and_validate(request_body, "id", int)
+    except FlextoolException as error:
+        return HttpResponseBadRequest(str(error))
     try:
         project = Project.objects.get(user_id=user.id, pk=id_)
     except Project.DoesNotExist:
         return HttpResponseBadRequest("Project does not exist.")
     project.remove_project_dir()
+    clear_execution(project.id)
     project.delete()
     return JsonResponse({"id": id_})
 
@@ -330,8 +307,6 @@ def model(request):
     """
 
     def handle_model_specific_types(type_, project, body):
-        if type_ == "available relationship objects?":
-            return get_available_relationship_objects(project, body)
         if type_ == "scenarios?":
             return get_scenarios(project)
         if type_ == "available relationship objects?":
@@ -370,7 +345,7 @@ def _resolve_interface_request(request, database, additional_type_handler):
         raise Http404()
     body = json.loads(request.body)
     try:
-        project = _resolve_project(request, body)
+        project = resolve_project(request, body)
     except FlextoolException as error:
         return HttpResponseBadRequest(str(error))
     try:
@@ -398,29 +373,6 @@ def _resolve_interface_request(request, database, additional_type_handler):
     except SpineDBVersionError:
         return HttpResponseBadRequest("Error: database version mismatch.")
     return HttpResponseBadRequest("Unknown 'type'.")
-
-
-def _resolve_project(request, body):
-    """Resolves target project according to client request.
-
-    Args:
-        request (HttpRequest): request object
-        body (dict): request body
-
-    Returns:
-        Project: target project
-    """
-    try:
-        project_id = body["projectId"]
-    except KeyError as missing:
-        raise FlextoolException(f"Missing '{missing}'.")
-    try:
-        project = Project.objects.get(id=project_id)
-    except Project.DoesNotExist:
-        raise FlextoolException("Project does not exist.")
-    if project.user.id != request.user.id:
-        raise FlextoolException("Project does not exist.")
-    return project
 
 
 def get_object_classes(project, database):
@@ -511,15 +463,18 @@ def get_parameter_values(project, database, request_body):
     Returns:
         HttpResponse: parameter values
     """
-    class_id = request_body.get(Key.CLASS_ID.value)
-    if class_id is not None and not isinstance(class_id, int):
-        return HttpResponseBadRequest(f"Wrong '{Key.CLASS_ID}' data type.")
-    entity_id = request_body.get(Key.ENTITY_ID.value)
-    if entity_id is not None and not isinstance(entity_id, int):
-        return HttpResponseBadRequest(f"Wrong '{Key.ENTITY_ID}' data type.")
-    alternative_id = request_body.get(Key.ALTERNATIVE_ID.value)
-    if alternative_id is not None and not isinstance(alternative_id, int):
-        return HttpResponseBadRequest(f"Wrong '{Key.ALTERNATIVE_ID}' data type.")
+    try:
+        class_id = get_and_validate(
+            request_body, Key.CLASS_ID.value, int, required=False
+        )
+        entity_id = get_and_validate(
+            request_body, Key.ENTITY_ID.value, int, required=False
+        )
+        alternative_id = get_and_validate(
+            request_body, Key.ALTERNATIVE_ID.value, int, required=False
+        )
+    except FlextoolException as error:
+        return HttpResponseBadRequest(str(error))
     with database_map(project, database) as db_map:
         sq = db_map.parameter_value_sq
         if class_id is not None:
@@ -599,9 +554,12 @@ def get_relationships(project, database, request_body):
     Returns:
         HttpResponse: relationships
     """
-    class_id = request_body.get(Key.RELATIONSHIP_CLASS_ID.value)
-    if class_id is not None and not isinstance(class_id, int):
-        return HttpResponseBadRequest(f"Wrong '{Key.RELATIONSHIP_CLASS_ID}' data type.")
+    try:
+        class_id = get_and_validate(
+            request_body, Key.RELATIONSHIP_CLASS_ID.value, int, required=False
+        )
+    except FlextoolException as error:
+        return HttpResponseBadRequest(str(error))
     with database_map(project, database) as db_map:
         sq = db_map.ext_relationship_sq
         if class_id is not None:
@@ -627,7 +585,7 @@ def get_available_relationship_objects(project, request_body):
     Returns:
         HttpResponse: lists of names of available objects for each relationship dimension
     """
-    class_id = _get_and_validate(request_body, Key.RELATIONSHIP_CLASS_ID.value, int)
+    class_id = get_and_validate(request_body, Key.RELATIONSHIP_CLASS_ID.value, int)
     with database_map(project, Database.MODEL) as db_map:
         available_objects = []
         for names_and_ids in _relationship_object_ids(db_map, class_id):
@@ -656,12 +614,14 @@ def get_parameter_value_lists(project, request_body):
             skeleton[index] = x
         return skeleton
 
-    list_ids = request_body.get(Key.VALUE_LIST_IDS.value)
-    if list_ids is not None:
-        if not isinstance(list_ids, list):
-            return HttpResponseBadRequest(f"Wrong '{Key.VALUE_LIST_IDS}' data type.")
-        if any(not isinstance(id_, int) for id_ in list_ids):
-            return HttpResponseBadRequest(f"Wrong data type in '{Key.VALUE_LIST_IDS}'.")
+    try:
+        list_ids = get_and_validate(
+            request_body, Key.VALUE_LIST_IDS.value, list, required=False
+        )
+    except FlextoolException as error:
+        return HttpResponseBadRequest(str(error))
+    if list_ids is not None and any(not isinstance(id_, int) for id_ in list_ids):
+        return HttpResponseBadRequest(f"Wrong data type in '{Key.VALUE_LIST_IDS}'.")
     with database_map(project, Database.MODEL) as db_map:
         sq = db_map.ord_list_value_sq
         if list_ids is not None:
@@ -762,11 +722,9 @@ def commit(project, request_body):
         HttpResponse: commit status or error message
     """
     try:
-        commit_message = request_body["message"]
-    except KeyError as missing:
-        return HttpResponseBadRequest(f"Missing '{missing}'.")
-    if not isinstance(commit_message, str):
-        return HttpResponseBadRequest("Commit message is of wrong type.")
+        commit_message = get_and_validate(request_body, "message", str)
+    except FlextoolException as error:
+        return HttpResponseBadRequest(str(error))
     with database_map(project, Database.MODEL) as db_map:
         try:
             _delete_from_model(db_map, request_body)
@@ -790,12 +748,10 @@ def _update_model(db_map, request_body):
         db_map (DatabaseMapping): database mapping
         request_body (dict): request body
     """
-    updates = request_body.get("updates")
+    updates = get_and_validate(request_body, "updates", dict, required=False)
     if updates is None:
         return
-    if not isinstance(updates, dict):
-        raise FlextoolException("'updates' wasn't of expected type.")
-    class_id = _get_and_validate(request_body, Key.CLASS_ID.value, int, required=False)
+    class_id = get_and_validate(request_body, Key.CLASS_ID.value, int, required=False)
     _update_alternatives(db_map, updates)
     _update_scenarios(db_map, updates)
     _update_scenario_alternatives(db_map, updates)
@@ -811,7 +767,7 @@ def _delete_from_model(db_map, request_body):
         db_map (DatabaseMapping): database mapping
         request_body (dict): request body
     """
-    deletions = _get_and_validate(request_body, "deletions", dict, required=False)
+    deletions = get_and_validate(request_body, "deletions", dict, required=False)
     if deletions is None:
         return
     try:
@@ -831,10 +787,10 @@ def _insert_to_model(db_map, request_body):
     Returns:
         dict of dict: inserted item ids
     """
-    insertions = _get_and_validate(request_body, "insertions", dict, required=False)
+    insertions = get_and_validate(request_body, "insertions", dict, required=False)
     if insertions is None:
         return {}
-    class_id = _get_and_validate(request_body, Key.CLASS_ID.value, int, required=False)
+    class_id = get_and_validate(request_body, Key.CLASS_ID.value, int, required=False)
     inserted = {}
     inserted_alternatives = _insert_alternatives(db_map, insertions)
     if inserted_alternatives:
@@ -862,16 +818,14 @@ def _update_alternatives(db_map, updates):
         db_map (DatabaseMapping): database mapping
         updates (dict): database updates
     """
-    alternative_updates = _get_and_validate(
-        updates, "alternative", list, required=False
-    )
+    alternative_updates = get_and_validate(updates, "alternative", list, required=False)
     if not alternative_updates:
         return
     sterilized_updates = []
     for update in alternative_updates:
         sterilized = {
-            "id": _get_and_validate(update, "id", int),
-            "name": _get_and_validate(update, "name", str),
+            "id": get_and_validate(update, "id", int),
+            "name": get_and_validate(update, "name", str),
         }
         sterilized_updates.append(sterilized)
     try:
@@ -889,14 +843,14 @@ def _update_scenarios(db_map, updates):
         db_map (DatabaseMapping): database mapping
         updates (dict): database updates
     """
-    scenario_updates = _get_and_validate(updates, "scenario", list, required=False)
+    scenario_updates = get_and_validate(updates, "scenario", list, required=False)
     if not scenario_updates:
         return
     sterilized_updates = []
     for update in scenario_updates:
         sterilized = {
-            "id": _get_and_validate(update, "id", int),
-            "name": _get_and_validate(update, "name", str),
+            "id": get_and_validate(update, "id", int),
+            "name": get_and_validate(update, "name", str),
         }
         sterilized_updates.append(sterilized)
     try:
@@ -914,7 +868,7 @@ def _update_scenario_alternatives(db_map, updates):
         db_map (DatabaseMapping): database mapping
         updates (dict): database updates
     """
-    scenario_alternative_updates = _get_and_validate(
+    scenario_alternative_updates = get_and_validate(
         updates, "scenario_alternative", list, required=False
     )
     if not scenario_alternative_updates:
@@ -925,9 +879,9 @@ def _update_scenario_alternatives(db_map, updates):
     sterilized_updates = []
     for update in scenario_alternative_updates:
         sterilized = {
-            "id": _get_and_validate(update, "id", int),
+            "id": get_and_validate(update, "id", int),
             "alternative_id": alternative_ids[
-                _get_and_validate(update, "alternative_name", str)
+                get_and_validate(update, "alternative_name", str)
             ],
         }
         sterilized_updates.append(sterilized)
@@ -948,14 +902,14 @@ def _update_objects(db_map, updates):
         db_map (DatabaseMapping): database mapping
         updates (dict): database updates
     """
-    object_updates = _get_and_validate(updates, "object", list, required=False)
+    object_updates = get_and_validate(updates, "object", list, required=False)
     if not object_updates:
         return
     sterilized_updates = []
     for update in object_updates:
         sterilized = {
-            "id": _get_and_validate(update, "id", int),
-            "name": _get_and_validate(update, "name", str),
+            "id": get_and_validate(update, "id", int),
+            "name": get_and_validate(update, "name", str),
         }
         sterilized_updates.append(sterilized)
     try:
@@ -974,7 +928,7 @@ def _update_relationships(db_map, updates, class_id):
         updates (dict): database updates
         class_id (int): relationship class id
     """
-    relationship_updates = _get_and_validate(
+    relationship_updates = get_and_validate(
         updates, "relationship", list, required=False
     )
     if not relationship_updates:
@@ -984,14 +938,14 @@ def _update_relationships(db_map, updates, class_id):
     sterilized_updates = []
     object_ids = _relationship_object_ids(db_map, class_id)
     for update in relationship_updates:
-        object_names = _get_and_validate(update, "object_name_list", list)
+        object_names = get_and_validate(update, "object_name_list", list)
         object_id_list = [
             object_ids[dimension][object_names[dimension]]
             for dimension, ids in enumerate(object_ids)
         ]
         sterilized = {
-            "id": _get_and_validate(update, "id", int),
-            "name": _get_and_validate(update, "name", str),
+            "id": get_and_validate(update, "id", int),
+            "name": get_and_validate(update, "name", str),
             "object_id_list": object_id_list,
         }
         sterilized_updates.append(sterilized)
@@ -1011,7 +965,7 @@ def _update_parameter_values(db_map, updates):
         db_map (DatabaseMapping): database mapping
         updates (dict): database updates
     """
-    value_updates = _get_and_validate(updates, "parameter_value", list, required=False)
+    value_updates = get_and_validate(updates, "parameter_value", list, required=False)
     if not value_updates:
         return
     sterilized_updates = []
@@ -1047,13 +1001,13 @@ def _insert_alternatives(db_map, insertions):
     Returns:
         dict: inserted alternative ids keyed by their names
     """
-    alternative_insertions = _get_and_validate(
+    alternative_insertions = get_and_validate(
         insertions, "alternative", list, required=False
     )
     if not alternative_insertions:
         return {}
     sterilized_insertions = [
-        {"name": _get_and_validate(insertion, "name", str)}
+        {"name": get_and_validate(insertion, "name", str)}
         for insertion in alternative_insertions
     ]
     try:
@@ -1077,13 +1031,11 @@ def _insert_scenarios(db_map, insertions):
     Returns:
         dict: inserted scenario ids keyed by their names
     """
-    scenario_insertions = _get_and_validate(
-        insertions, "scenario", list, required=False
-    )
+    scenario_insertions = get_and_validate(insertions, "scenario", list, required=False)
     if not scenario_insertions:
         return {}
     sterilized_insertions = [
-        {"name": _get_and_validate(insertion, "name", str)}
+        {"name": get_and_validate(insertion, "name", str)}
         for insertion in scenario_insertions
     ]
     try:
@@ -1107,7 +1059,7 @@ def _insert_scenario_alternatives(db_map, insertions):
     Returns:
         dict: inserted scenario alternative ids keyed by scenario names and ranks
     """
-    scenario_alternative_insertions = _get_and_validate(
+    scenario_alternative_insertions = get_and_validate(
         insertions, "scenario_alternative", list, required=False
     )
     if not scenario_alternative_insertions:
@@ -1118,12 +1070,12 @@ def _insert_scenario_alternatives(db_map, insertions):
     sterilized_insertions = [
         {
             "scenario_id": scenario_ids[
-                _get_and_validate(insertion, "scenario_name", str)
+                get_and_validate(insertion, "scenario_name", str)
             ],
             "alternative_id": alternative_ids[
-                _get_and_validate(insertion, "alternative_name", str)
+                get_and_validate(insertion, "alternative_name", str)
             ],
-            "rank": _get_and_validate(insertion, "rank", int),
+            "rank": get_and_validate(insertion, "rank", int),
         }
         for insertion in scenario_alternative_insertions
     ]
@@ -1152,14 +1104,14 @@ def _insert_objects(db_map, insertions, class_id):
     Returns:
         dict: inserted object ids keyed by object names
     """
-    object_insertions = _get_and_validate(insertions, "object", list, required=False)
+    object_insertions = get_and_validate(insertions, "object", list, required=False)
     if not object_insertions:
         return {}
     if class_id is None:
         raise FlextoolException(f"'class_id' is required for object insertions")
     sterilized_insertions = []
     for insertion in object_insertions:
-        name = _get_and_validate(insertion, "name", str)
+        name = get_and_validate(insertion, "name", str)
         sterilized = {"name": name, "class_id": class_id}
         sterilized_insertions.append(sterilized)
     try:
@@ -1184,7 +1136,7 @@ def _insert_relationships(db_map, insertions, class_id):
     Returns:
         dict: inserted object ids keyed by object names
     """
-    relationship_insertions = _get_and_validate(
+    relationship_insertions = get_and_validate(
         insertions, "relationship", list, required=False
     )
     if not relationship_insertions:
@@ -1194,12 +1146,12 @@ def _insert_relationships(db_map, insertions, class_id):
     sterilized_insertions = []
     object_ids = _relationship_object_ids(db_map, class_id)
     for insertion in relationship_insertions:
-        object_names = _get_and_validate(insertion, "object_name_list", list)
+        object_names = get_and_validate(insertion, "object_name_list", list)
         object_id_list = [
             object_ids[dimension][object_names[dimension]]
             for dimension, ids in enumerate(object_ids)
         ]
-        name = _get_and_validate(insertion, "name", str)
+        name = get_and_validate(insertion, "name", str)
         sterilized = {
             "name": name,
             "class_id": class_id,
@@ -1225,7 +1177,7 @@ def _insert_parameter_values(db_map, insertions, class_id):
         insertions (dict): database insertions
         class_id (int): entity class id
     """
-    value_insertions = _get_and_validate(
+    value_insertions = get_and_validate(
         insertions, "parameter_value", list, required=False
     )
     if not value_insertions:
@@ -1235,17 +1187,17 @@ def _insert_parameter_values(db_map, insertions, class_id):
     sterilized_insertions = []
     definition_ids = set()
     for insertion in value_insertions:
-        definition_id = _get_and_validate(insertion, "definition_id", int)
+        definition_id = get_and_validate(insertion, "definition_id", int)
         definition_ids.add(definition_id)
-        value = _get_and_validate(insertion, "value", (str, float, int, dict))
+        value = get_and_validate(insertion, "value", (str, float, int, dict))
         value = _convert_ints_to_floats(value)
         value_type = None if not isinstance(value, dict) else value.pop("type")
         database_value, _ = to_database(value)
         sterilized = {
             "entity_class_id": class_id,
-            "entity_name": _get_and_validate(insertion, "entity_name", str),
+            "entity_name": get_and_validate(insertion, "entity_name", str),
             "parameter_definition_id": definition_id,
-            "alternative_id": _get_and_validate(insertion, "alternative_id", int),
+            "alternative_id": get_and_validate(insertion, "alternative_id", int),
             "value": database_value,
             "type": value_type,
         }
@@ -1387,28 +1339,6 @@ def get_scenarios(project):
         return JsonResponse({"scenarios": scenario_data})
 
 
-@contextmanager
-def database_map(project, database):
-    """Opens a database connection to project's database.
-
-    Args:
-        project (Project): project
-        database (Database): database to connect to
-
-    Yields:
-        DatabaseMapping: database mapping connected to the database.
-    """
-    if database == Database.MODEL:
-        url = "sqlite:///" + str(project.model_database_path())
-    else:
-        url = "sqlite:///" + str(project.results_database_path())
-    db_map = DatabaseMapping(url)
-    try:
-        yield db_map
-    finally:
-        db_map.connection.close()
-
-
 @login_required
 def executions(request):
     """Responds to execution requests.
@@ -1423,15 +1353,11 @@ def executions(request):
         raise Http404()
     body = json.loads(request.body)
     try:
-        question = _get_and_validate(body, "type", str)
+        question = get_and_validate(body, "type", str)
     except FlextoolException as error:
         return HttpResponseBadRequest(str(error))
-    if question == "execution list?":
-        return execution_list(request, body)
-    if question == "create execution?":
-        return create_execution(request, body)
-    if question == "destroy execution?":
-        return destroy_execution(request, body)
+    if question == "current execution?":
+        return current_execution(request, body)
     if question == "execute?":
         return execute(request, body)
     if question == "abort?":
@@ -1439,91 +1365,6 @@ def executions(request):
     if question == "briefing?":
         return execution_briefing(request, body)
     return HttpResponseBadRequest("Unknown 'type'.")
-
-
-def execution_list(request, request_body):
-    try:
-        project = _resolve_project(request, request_body)
-    except FlextoolException as error:
-        return HttpResponseBadRequest(str(error))
-    response = {
-        "executions": [
-            e.execution_list_data()
-            for e in Execution.objects.filter(project_id=project.id)
-        ]
-    }
-    return JsonResponse(response)
-
-
-def create_execution(request, request_body):
-    try:
-        project = _resolve_project(request, request_body)
-    except FlextoolException as error:
-        return HttpResponseBadRequest(str(error))
-    try:
-        new_execution = Execution(project=project)
-    except FlextoolException as error:
-        return HttpResponseBadRequest(str(error))
-    new_execution.save()
-    return JsonResponse({"execution": new_execution.execution_list_data()})
-
-
-def _resolve_execution(request, request_body):
-    execution_id = _get_and_validate(request_body, "id", int)
-    try:
-        execution = Execution.objects.get(pk=execution_id)
-    except Execution.DoesNotExist:
-        raise FlextoolException("Execution does not exist.")
-    if execution.project.user.id != request.user.id:
-        raise FlextoolException("Execution does not exist.")
-    return execution
-
-
-def abort_execution(request, request_body):
-    try:
-        execution = _resolve_execution(request, request_body)
-    except FlextoolException as error:
-        return HttpResponseBadRequest(str(error))
-    execution_id = execution.id
-    executor.abort(execution_id)
-    return JsonResponse({"id": execution_id})
-
-
-def destroy_execution(request, request_body):
-    try:
-        execution = _resolve_execution(request, request_body)
-    except FlextoolException as error:
-        return HttpResponseBadRequest(str(error))
-    execution_id = execution.id
-    execution.delete()
-    return JsonResponse({"id": execution_id})
-
-
-def execute(request, request_body):
-    try:
-        execution = _resolve_execution(request, request_body)
-    except FlextoolException as error:
-        return HttpResponseBadRequest(str(error))
-    execution.start(sys.executable, execution.arguments())
-    return JsonResponse({"id": execution.id})
-
-
-def execution_briefing(request, request_body):
-    """Generates execution briefing response.
-
-    Args:
-        request (HTTPRequest): client's request
-        request_body (dict): request body
-
-    Returns:
-        HTTPResponse: execution briefing
-    """
-    try:
-        execution = _resolve_execution(request, request_body)
-    except FlextoolException as error:
-        return HttpResponseBadRequest(str(error))
-    briefing = execution.briefing()
-    return JsonResponse({"briefing": briefing})
 
 
 @login_required
@@ -1540,50 +1381,17 @@ def summary(request):
         raise Http404()
     body = json.loads(request.body)
     try:
-        project = _resolve_project(request, body)
+        project = resolve_project(request, body)
+        type_ = get_and_validate(body, "type", str)
     except FlextoolException as error:
         return HttpResponseBadRequest(str(error))
-    try:
-        type_ = body["type"]
-    except KeyError as missing:
-        return HttpResponseBadRequest(f"Missing '{missing}'.")
+    if type_ == "scenario list?":
+        return get_scenario_list(project)
     if type_ == "summary?":
-        return _get_summary(project)
+        return get_summary(project, body)
+    if type_ == "result alternative?":
+        return get_result_alternative(project, body)
     return HttpResponseBadRequest("Unknown 'type'.")
-
-
-def number_to_float(x):
-    """Converts x to float if possible.
-
-    Args:
-        x (Any): a value
-
-    Returns:
-        float or Any: float or x if conversion was unsuccessful
-    """
-    try:
-        return float(x)
-    except ValueError:
-        return x
-
-
-def _get_summary(project):
-    """Generates a response that contains project's latest execution summary.
-
-    Args:
-        project (Project): a project
-
-    Returns:
-        HTTPResponse: a response object
-    """
-    summaries = project.summary_path()
-    if not summaries:
-        return JsonResponse({"summary": []})
-    summary_path = next(iter(summaries.values()))
-    with open(summary_path, encoding="utf-8") as summary_file:
-        reader = csv.reader(summary_file)
-        summary_rows = [[number_to_float(i) for i in row] for row in reader]
-    return JsonResponse({"summary": summary_rows})
 
 
 @login_required

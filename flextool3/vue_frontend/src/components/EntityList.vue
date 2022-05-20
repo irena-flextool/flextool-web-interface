@@ -91,10 +91,10 @@ function fetchObjects(projectId, modelUrl, classId, entityList, alternatives, st
             });
         });
         entityList.value = list;
-        state.value = "ready";
+        state.value = Fetchable.state.ready;
     }).catch(function(error) {
         errorMessage.value = error.message;
-        state.value = "error";
+        state.value = Fetchable.state.error;
     });
 }
 
@@ -174,10 +174,10 @@ function fetchRelationships(
             return false;
         });
         entityList.value = list;
-        state.value = "ready";
+        state.value = Fetchable.state.ready;
     }).catch(function(error) {
         errorMessage.value = error.message;
-        state.value = "error";
+        state.value = Fetchable.state.error;
     });
 }
 
@@ -197,7 +197,7 @@ export default {
         "entity-list-new-relationship-row": EntityListNewRelationshipRow,
     },
     setup(props, context) {
-        const state = ref("loading");
+        const state = ref(Fetchable.state.loading);
         const entityList = ref([]);
         const errorMessage = ref("");
         const selectedKeys = ref([]);

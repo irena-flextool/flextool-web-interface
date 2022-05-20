@@ -42,8 +42,8 @@
 </template>
 
 <script>
-import {onMounted, ref} from "vue/dist/vue.esm-bundler.js";
-import * as Communication from "../modules/communication.mjs";
+import {ref} from "vue/dist/vue.esm-bundler.js";
+import {fetchSummary} from "../modules/communication.mjs";
 import {parseSummaries} from "../modules/summaries.mjs";
 import Fetchable from "./Fetchable.vue";
 
@@ -58,34 +58,39 @@ export default {
     setup(props) {
         const title = ref("");
         const summaries = ref([]);
-        const state = ref("loading");
+        const state = ref(Fetchable.state.waiting);
         const errorMessage = ref("");
-        onMounted(function() {
-            Communication.fetchSummary(props.projectId, props.summaryUrl).then(function(data) {
-                const summaryData = data.summary;
-                if(summaryData.length === 0) {
-                    return;
-                }
-                const titleRows = summaryData.splice(0, 2);
-                title.value = titleRows[0][0]
-                if(summaryData.length === 0) {
-                    return;
-                }
-                summaries.value = parseSummaries(summaryData);
-            }).catch(function(error) {
-                errorMessage.value = error.message;
-                state.value = "error";
-            }).finally(function() {
-                if(state.value === "loading") {
-                    state.value = "ready";
-                }
-            });
-        });
         return {
             title: title,
             summaries: summaries,
             state: state,
             errorMessage: errorMessage,
+            loadSummary(scenarioInfo) {
+                state.value = Fetchable.state.loading;
+                fetchSummary(
+                    props.projectId,
+                    props.summaryUrl,
+                    scenarioInfo.scenarioExecutionId
+                ).then(function(data) {
+                    const summaryData = data.summary;
+                    if(summaryData.length === 0) {
+                        return;
+                    }
+                    const titleRows = summaryData.splice(0, 2);
+                    title.value = titleRows[0][0]
+                    if(summaryData.length === 0) {
+                        return;
+                    }
+                    summaries.value = parseSummaries(summaryData);
+                }).catch(function(error) {
+                    errorMessage.value = error.message;
+                    state.value = Fetchable.state.error;
+                }).finally(function() {
+                    if(state.value === Fetchable.state.loading) {
+                        state.value = Fetchable.state.ready;
+                    }
+                });
+            },
         };
     },
 }

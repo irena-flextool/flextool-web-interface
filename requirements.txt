@@ -1,2 +1,3 @@
 django[argon2]
-spinetoolbox
+spinetoolbox>=0.6.8
+protobuf<3.21  # From Spine-engine

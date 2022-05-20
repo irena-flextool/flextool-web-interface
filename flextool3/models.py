@@ -1,4 +1,5 @@
-from datetime import datetime
+from bisect import bisect_left
+import datetime
 import os
 from pathlib import Path
 import re
@@ -7,12 +8,11 @@ import stat
 from django.contrib.auth.models import User
 from django.db import models
 from django.urls import reverse
-from django.utils import timezone
-from django.utils.translation import gettext_lazy
 from .exception import FlextoolException
-from . import executor, task_loop
+from .time_utils import naive_local_time
 
 PROJECT_NAME_LENGTH = 60
+SUMMARY_FILE_NAME = "summary_solve.csv"
 
 
 class Project(models.Model):
@@ -45,7 +45,7 @@ class Project(models.Model):
     def remove_project_dir(self):
         """Removes project directory including all project files."""
 
-        def del_read_only_file(action, name, exc):
+        def del_read_only_file(_, name, __):
             os.chmod(name, stat.S_IWRITE)
             os.remove(name)
 
@@ -79,48 +79,6 @@ class Project(models.Model):
             / "Results_F3.sqlite"
         )
 
-    def summary_path(self):
-        """Returns paths to the latest summary files.
-
-        Returns:
-            dict: paths to summary files keyed by Spine filter id
-        """
-        output_directory = (
-            Path(self.path) / ".spinetoolbox" / "items" / "flextool3" / "output"
-        )
-        if not output_directory.exists():
-            return {}
-        time_stamp = re.compile(
-            r"^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}\.[0-9]{2}\.[0-9]{2}$"
-        )
-        summaries = {}
-        for subdir in output_directory.iterdir():
-            if not subdir.is_dir():
-                continue
-            filter_id_path = subdir / ".filter_id"
-            if not filter_id_path.exists():
-                continue
-            with open(filter_id_path, encoding="utf-8") as filter_id_file:
-                filter_id = filter_id_file.readline().strip()
-            if not filter_id:
-                continue
-            summary_files = []
-            for results_dir in subdir.iterdir():
-                if time_stamp.match(results_dir.name) is None:
-                    continue
-                summary_path = results_dir / "r_summary_solve.csv"
-                if not summary_path.exists() or not summary_path.is_file():
-                    continue
-                execution_time = datetime.fromisoformat(
-                    results_dir.name.replace(".", ":")
-                )
-                summary_files.append((execution_time, summary_path))
-            if not summary_files:
-                continue
-            latest_summary_path = sorted(summary_files, key=lambda x: x[0])[-1][1]
-            summaries[filter_id] = latest_summary_path
-        return summaries
-
     def project_list_data(self):
         """Creates data dict for project index page's project list.
 
@@ -134,80 +92,96 @@ class Project(models.Model):
         }
 
 
-class Execution(models.Model):
-    class Status(models.TextChoices):
-        YET_TO_START = "YS", gettext_lazy("Not started yet")
-        FINISHED = "OK", gettext_lazy("Finished")
-        RUNNING = "RU", gettext_lazy("Running")
-        ERROR = "ER", gettext_lazy("Finished with errors")
-        ABORTED = "AB", gettext_lazy("Aborted")
+def _find_next_summary(summary_files, time_point, timezone_offset):
+    """Returns path to the summary file created right after given point in time.
 
+    Args:
+        summary_files (list of tuple): list of time stamp - summary path pairs
+        time_point (datetime.datetime): execution time in UTC
+        timezone_offset (int): time offset from UTC to local time in seconds
+
+    Returns:
+        Path: path to summary file or None if not found
+    """
+    summary_files = sorted(summary_files, key=lambda pair: pair[0])
+    stamps = [pair[0] for pair in summary_files]
+    local_time_point = naive_local_time(time_point, timezone_offset)
+    i = bisect_left(stamps, local_time_point)
+    return summary_files[i][1] if i != len(stamps) else None
+
+
+class Scenario(models.Model):
     project = models.ForeignKey(Project, on_delete=models.CASCADE)
-    execution_time = models.DateTimeField(null=True, default=None)
-    status = models.CharField(
-        max_length=2, choices=Status.choices, default=Status.YET_TO_START
-    )
-    log = models.TextField(default="")
+    name = models.CharField(max_length=255, null=False)
 
-    def briefing(self):
-        """Checks execution and returns its status and log.
 
-        Returns:
-            dict: execution briefing
-        """
-        if self.status == self.Status.RUNNING:
-            execution_status = executor.execution_status(self.id)
-            if execution_status != task_loop.Error.UNKNOWN_EXECUTION_ID:
-                logs = executor.read_lines(self.id)
-                if logs:
-                    self.log += "".join(logs)
-                if execution_status == task_loop.Status.FINISHED:
-                    return_code = executor.execution_return_code(self.id)
-                    executor.remove(self.id)
-                    self.status = (
-                        self.Status.FINISHED if return_code == 0 else self.Status.ERROR
-                    )
-                elif execution_status == task_loop.Status.ABORTED:
-                    executor.remove(self.id)
-                    self.status = self.Status.ABORTED
-                self.save()
-            else:
-                self.status = self.Status.ABORTED
-                self.save()
-        return {"status": self.status, "log": self.log.split("\n")}
+def _scenario_from_filter_id(filter_id):
+    """Parses scenario name from filter id.
 
-    def start(self, command, arguments):
-        """Starts executing given command.
+    Args:
+        filter_id (str): filter id
 
-        Args:
-            command (str): command to execute
-            arguments (list of str): command line arguments
-        """
-        if self.status == self.Status.RUNNING:
-            return
-        self.execution_time = timezone.now()
-        self.log = ""
-        self.status = self.Status.RUNNING
-        executor.start(self.id, command, arguments)
-        self.save()
+    Returns:
+        str: scenario name
+    """
+    front = filter_id[: -len(" - FlexTool3_test_data")]
+    scenario_filter, tool_filter = front.split(",")
+    return scenario_filter.strip()
 
-    def execution_list_data(self):
-        """Creates data dict for Run page's execution list.
+
+class ScenarioExecution(models.Model):
+    scenario = models.ForeignKey(Scenario, on_delete=models.CASCADE)
+    execution_time = models.DateTimeField(null=False)
+    execution_time_offset = models.IntegerField(null=False)
+    log = models.TextField(null=False)
+
+    def summary_path(self):
+        """Returns path to the execution's summary file.
 
         Returns:
-            dict: execution list data
+            Path: path to summary file or None if no summary exists
         """
-        return {"id": self.id}
-
-    def arguments(self):
-        return [
-            "-mspinetoolbox",
-            "--execute-only",
-            str(self.project.path),
-            "--select",
-            "FlexTool3_test_data",
-            "ExportFlexTool3ToCSV",
-            "FlexTool3",
-            "Import_Flex3",
-            "Results_F3",
-        ]
+        output_directory = (
+            Path(self.scenario.project.path)
+            / ".spinetoolbox"
+            / "items"
+            / "flextool3"
+            / "output"
+        )
+        if not output_directory.exists():
+            return None
+        time_stamp = re.compile(
+            r"^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}\.[0-9]{2}\.[0-9]{2}$"
+        )
+        for subdir in output_directory.iterdir():
+            if not subdir.is_dir():
+                continue
+            filter_id_path = subdir / ".filter_id"
+            if not filter_id_path.exists():
+                continue
+            with open(filter_id_path, encoding="utf-8") as filter_id_file:
+                filter_id = filter_id_file.readline().strip()
+            if not filter_id:
+                continue
+            scenario = _scenario_from_filter_id(filter_id)
+            if scenario != self.scenario.name:
+                continue
+            summary_files = []
+            for results_dir in subdir.iterdir():
+                if time_stamp.match(results_dir.name) is None:
+                    continue
+                summary_path = results_dir / "output" / SUMMARY_FILE_NAME
+                if not summary_path.exists() or not summary_path.is_file():
+                    continue
+                execution_time = datetime.datetime.fromisoformat(
+                    results_dir.name.replace(".", ":")
+                )
+                summary_files.append((execution_time, summary_path))
+            if not summary_files:
+                continue
+            return _find_next_summary(
+                summary_files,
+                self.execution_time,
+                self.execution_time_offset,
+            )
+        return None

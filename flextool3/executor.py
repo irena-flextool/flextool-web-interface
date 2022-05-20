@@ -2,7 +2,8 @@ import atexit
 import functools
 from multiprocessing import Pipe, Process, Queue
 
-from .task_loop import Field, loop, Status, Task
+from .exception import ExecutionNotFound
+from .task_loop import Error, Field, loop, Status, Task
 
 
 def _create_process():
@@ -38,6 +39,18 @@ def _message_sender(func):
         return func(*args, **kwargs)
 
     return ensure_loop_is_alive
+
+
+def _receive_response():
+    """Waits for response from task loop.
+
+    Returns:
+        Any: task loop's response
+    """
+    response = _receiving_connection.recv()
+    if response == Error.UNKNOWN_EXECUTION_ID:
+        raise ExecutionNotFound()
+    return response
 
 
 @_message_sender
@@ -104,7 +117,7 @@ def read_lines(execution_id):
             Field.EXECUTION_ID: execution_id,
         }
     )
-    return _receiving_connection.recv()
+    return _receive_response()
 
 
 @_message_sender
@@ -123,7 +136,7 @@ def execution_status(execution_id):
             Field.EXECUTION_ID: execution_id,
         }
     )
-    return _receiving_connection.recv()
+    return _receive_response()
 
 
 @_message_sender
@@ -142,7 +155,7 @@ def execution_return_code(execution_id):
             Field.EXECUTION_ID: execution_id,
         }
     )
-    return _receiving_connection.recv()
+    return _receive_response()
 
 
 @_message_sender
@@ -153,7 +166,7 @@ def execution_count():
         int: number of executions
     """
     _task_queue.put({Field.TASK: Task.SEND_PROCESS_COUNT})
-    return _receiving_connection.recv()
+    return _receive_response()
 
 
 def _quit_execution_process():

@@ -47,6 +47,18 @@ python -mpip install -r requirements.txt
 python init.py
 ```
 
+## Upgrade
+
+Usually, it is enough to `git pull` the latest version.
+However, sometimes an upgrade requires
+upgrading the Python environment, especially Spine Toolbox,
+and/or changes to the server database.
+These operations can be done by running a helper script
+
+```commandline
+python upgrade.py
+```
+
 ## Run
 
 1. Start local web server:
@@ -54,7 +66,7 @@ python init.py
 python manage.py runserver
 ```
 2. Point your browser to ``http://localhost:8000/flextool3/``
-3. If asked, log in with the account created in Setup.
+3. If asked, log in with the account created in Installation.
 
 ## Development
 

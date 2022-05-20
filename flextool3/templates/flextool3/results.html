@@ -18,6 +18,7 @@
             project-url="{% url 'flextool3:detail' project.id %}"
             project-name="{{ project.name }}"
             :project-id="{{ project.id }}"
+            run-url="{% url 'flextool3:run' project.id %}"
             analysis-url="{% url 'flextool3:analysis' %}"
             summary-url="{% url 'flextool3:summary' %}"
         ></results-app>

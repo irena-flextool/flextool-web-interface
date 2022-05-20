@@ -75,6 +75,7 @@ class _ProcessLog:
             args=(out, self._line_queue),
             name=f"fExecution logger {_ProcessLog._n}",
         )
+        self._listener.daemon = True
         self._listener.start()
 
     def merge(self):
@@ -128,8 +129,11 @@ def _read_stream(out, log_queue):
         out (IOBase): output stream
         log_queue (queue.Queue): target queue
     """
-    for line in iter(out.readline, ""):
-        log_queue.put(line)
+    try:
+        for line in iter(out.readline, ""):
+            log_queue.put(line)
+    except ValueError:
+        pass
 
 
 def loop(task_queue, out_connection):
@@ -220,6 +224,8 @@ def _abort(message, processes, logs):
         return
     process.terminate()
     process.wait()
+    if not process.stdout.closed:
+        process.stdout.close()
     del processes[execution_id]
     logs[execution_id].abort(process.returncode)
 
@@ -238,7 +244,10 @@ def _remove(message, processes, logs):
         process.terminate()
         process.wait()
         del processes[execution_id]
-    del logs[execution_id]
+    try:
+        del logs[execution_id]
+    except KeyError:
+        pass
 
 
 def _send_output(message, logs, out_connection):
