@@ -88,6 +88,8 @@ class Project(models.Model):
         output_directory = (
             Path(self.path) / ".spinetoolbox" / "items" / "flextool3" / "output"
         )
+        if not output_directory.exists():
+            return {}
         time_stamp = re.compile(
             r"^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}\.[0-9]{2}\.[0-9]{2}$"
         )

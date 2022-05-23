@@ -1196,9 +1196,7 @@ def _insert_parameter_values(db_map, insertions, class_id):
     if not value_insertions:
         return
     if class_id is None:
-        raise FlextoolException(
-            "'class_id' is required for parameter value insertions"
-        )
+        raise FlextoolException("'class_id' is required for parameter value insertions")
     sterilized_insertions = []
     definition_ids = set()
     for insertion in value_insertions:
@@ -1544,7 +1542,7 @@ def _get_summary(project):
     """
     summaries = project.summary_path()
     if not summaries:
-        return JsonResponse({})
+        return JsonResponse({"summary": []})
     summary_path = next(iter(summaries.values()))
     with open(summary_path, encoding="utf-8") as summary_file:
         reader = csv.reader(summary_file)
