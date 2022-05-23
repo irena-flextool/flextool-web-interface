@@ -1,11 +1,11 @@
 {% extends "flextool3/base.html" %}
 {% load static %}
 
-{% block title %} Project details {% endblock %}
+{% block title %} Manage project {% endblock %}
 
 {% block top-bar %}
     <li><a href="{% url 'flextool3:index' %}">Projects</a></li>
-    <li><p>Project details</p></li>
+    <li><p>Manage project</p></li>
     <li><a href="{% url 'flextool3:edit' project.id %}">Model editor</a></li>
     <li><a href="{% url 'flextool3:run' project.id %}">Run</a></li>
     <li><a href="{% url 'flextool3:view' project.id %}">Results</a></li>

@@ -131,6 +131,7 @@ class IndexView(LoginRequiredMixin, generic.ListView):
 class DetailView(LoginRequiredMixin, generic.DetailView):
     model = Project
     template_name = "flextool3/detail.html"
+    login_url = "accounts/login/"
 
 
 def _ensure_database_up_to_date(func, database, request, pk):
