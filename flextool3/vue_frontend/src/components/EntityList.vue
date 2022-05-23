@@ -48,7 +48,21 @@ import EntityListNewRelationshipRow from "./EntityListNewRelationshipRow.vue";
 function fetchAlternatives(projectId, modelUrl) {
     return Communication.fetchData(
         "alternatives?", projectId, modelUrl
-    ).then(async function(data) {
+    ).then(function(data) {
+        return data.alternatives;
+    });
+}
+
+/**
+ * Creates default 'Base' alternative.
+ * @param {number} projectId Project id.
+ * @param {string} modelUrl URL pointing to server's model interface.
+ * @returns {Promise} Promise object that resolves to a list of alternatives.
+ */
+function makeBaseAlternative(projectId, modelUrl) {
+    return Communication.fetchData(
+        "make base alternative", projectId, modelUrl, {}
+    ).then(function(data) {
         return data.alternatives;
     });
 }
@@ -61,6 +75,9 @@ function fetchObjects(projectId, modelUrl, classId, entityList, alternatives, st
     ).then(async function(data) {
         const objects = data.objects;
         alternatives.value = await alternativesPromise;
+        if(alternatives.value.length === 0) {
+            alternatives.value = await makeBaseAlternative(projectId, modelUrl);
+        }
         const list = [];
         objects.forEach(function(object) {
             alternatives.value.forEach(function(alternative) {
@@ -115,6 +132,9 @@ function fetchRelationships(
             list.push(relationship.object_name);
         });
         alternatives.value = await alternativesPromise;
+        if(alternatives.value.length === 0) {
+            alternatives.value = await makeBaseAlternative(projectId, modelUrl);
+        }
         availableObjects.value = await fetchAvailableObjects(projectId, modelUrl, classId);
         const list = [];
         objectLists.forEach(function(objects, relationship_id) {

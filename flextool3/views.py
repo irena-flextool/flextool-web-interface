@@ -344,6 +344,8 @@ def model(request):
             return get_physical_classes(project)
         if type_ == "commits?":
             return get_commits(project, body)
+        if type_ == "make base alternative":
+            return make_base_alternative(project, body)
         if type_ == "commit":
             return commit(project, body)
         return None
@@ -714,6 +716,39 @@ def get_commits(project, request_body):
         commits = [row._asdict() for row in db_map.query(db_map.commit_sq)]
         # The last commit is always a dummy one.
         return JsonResponse({"commits": commits})
+
+
+def make_base_alternative(project, request_body):
+    """Creates and commits an alternative called 'Base' if there aren't any alternatives in the database.
+
+    Args:
+        project (Project): target project
+        request_body (dict): request body
+
+    Returns:
+        HttpResponse: status or error message
+    """
+    with database_map(project, Database.MODEL) as db_map:
+        if db_map.query(db_map.alternative_sq).all():
+            return JsonResponse({"inserted": []})
+        try:
+            _insert_alternatives(db_map, {"alternative": [{"name": "Base"}]})
+        except FlextoolException as e:
+            return HttpResponseBadRequest(f"Failed to create 'Base' alternative: {e}")
+        try:
+            db_map.commit_session("Add Base alternative.")
+        except SpineDBAPIError as e:
+            return HttpResponseBadRequest(f"Failed to commit: {e}")
+        return JsonResponse(
+            {
+                "alternatives": [
+                    row._asdict()
+                    for row in db_map.query(db_map.alternative_sq).order_by(
+                        db_map.alternative_sq.c.name
+                    )
+                ]
+            }
+        )
 
 
 def commit(project, request_body):
