@@ -7,6 +7,7 @@
         <n-grid-item>
             <n-h1>Physical classes</n-h1>
             <class-list
+                class-type="physical"
                 :project-id="projectId"
                 :model-url="modelUrl"
             />
@@ -22,6 +23,12 @@
                     Edit solves and timelines
                 </n-a>
             </n-p>
+            <n-h1>Model classes</n-h1>
+            <class-list
+                class-type="model"
+                :project-id="projectId"
+                :model-url="modelUrl"
+            />
         </n-grid-item>
         <n-grid-item>
             <n-h1>Commits</n-h1>

@@ -43,6 +43,13 @@ PHYSICAL_OBJECT_CLASS_NAMES = {
     "unit",
 }
 
+MODEL_OBJECT_CLASS_NAMES = {
+    "model",
+    "timeblockSet",
+    "timeline",
+    "solve",
+}
+
 
 @unique
 class Key(Enum):
@@ -341,7 +348,9 @@ def model(request):
         if type_ == "parameter value lists?":
             return get_parameter_value_lists(project, body)
         if type_ == "physical classes?":
-            return get_physical_classes(project)
+            return get_class_set(project, PHYSICAL_OBJECT_CLASS_NAMES)
+        if type_ == "model classes?":
+            return get_class_set(project, MODEL_OBJECT_CLASS_NAMES)
         if type_ == "commits?":
             return get_commits(project, body)
         if type_ == "make base alternative":
@@ -1268,11 +1277,12 @@ def _insert_parameter_values(db_map, insertions, class_id):
         raise FlextoolException(f"Database integrity error: {e}")
 
 
-def get_physical_classes(project):
+def get_class_set(project, object_class_names):
     """Queries physical object and relationship classes in model database.
 
     Args:
         project (Project): target project
+        object_class_names (set of str): set's object class names
 
     Returns:
         HttpResponse: physical entity classes
@@ -1290,7 +1300,7 @@ def get_physical_classes(project):
     with database_map(project, Database.MODEL) as db_map:
         object_class_rows = iter(
             db_map.query(db_map.object_class_sq)
-            .filter(db_map.object_class_sq.c.name.in_(PHYSICAL_OBJECT_CLASS_NAMES))
+            .filter(db_map.object_class_sq.c.name.in_(object_class_names))
             .order_by(db_map.object_class_sq.c.name)
         )
         object_classes = []

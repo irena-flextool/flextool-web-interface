@@ -16,15 +16,16 @@
 </template>
 
 <script>
-import { onMounted, ref } from "vue/dist/vue.esm-bundler.js";
+import {onMounted, ref} from "vue/dist/vue.esm-bundler.js";
 import * as Communication from "../modules/communication.mjs";
 import Fetchable from "./Fetchable.vue";
 
 
 export default {
     props: {
-        projectId: Number,
-        modelUrl: String
+        classType: {type: String, required: true},
+        projectId: {type: Number, required: true},
+        modelUrl: {type: String, required: true},
     },
     components: {
         "fetchable": Fetchable,
@@ -35,7 +36,8 @@ export default {
         const state = ref("loading");
         const errorMessage = ref("");
         onMounted(function() {
-            Communication.fetchData("physical classes?", props.projectId, props.modelUrl).then(function(data) {
+            const fetchType = props.classType === "physical" ? "physical classes?" : "model classes?";
+            Communication.fetchData(fetchType, props.projectId, props.modelUrl).then(function(data) {
                 const relationshipClassMap = new Map();
                 for (const [key, value] of Object.entries(data.relationshipClasses)) {
                     relationshipClassMap[parseInt(key)] = value;
