@@ -2,7 +2,7 @@
     <n-tag
         v-if="!editing"
         :type="tagType"
-        @dblclick="startEditing"
+        @click="startEditing"
         size="small"
     >
         {{ objectName }}
