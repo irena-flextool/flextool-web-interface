@@ -1,6 +1,7 @@
 <template>
     <n-tag
         v-if="!editing"
+        :type="tagType"
         @dblclick="startEditing"
         size="small"
     >
@@ -16,12 +17,13 @@
 </template>
 
 <script>
-import {ref} from "vue/dist/vue.esm-bundler.js";
+import {computed, ref} from "vue/dist/vue.esm-bundler.js";
 import EntityListRelationshipObjectInput from "./EntityListRelationshipObjectInput.vue";
 
 export default {
     props: {
         objectName: {type: String, required: true},
+        objectNamesClash: {type: Boolean, required: false, default: false},
         dimension: {type: Number, required: true},
         availableObjects: {type: Array, required: true},
     },
@@ -30,8 +32,10 @@ export default {
         "entity-list-relationship-object-input": EntityListRelationshipObjectInput,
     },
     setup(props, context) {
+        const tagType = computed(() => props.objectNamesClash ? "error" : "default");
         const editing = ref(false);
         return {
+            tagType: tagType,
             editing: editing,
             startEditing() {
                 editing.value = true;

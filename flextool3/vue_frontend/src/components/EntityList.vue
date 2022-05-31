@@ -114,6 +114,17 @@ function fetchAvailableObjects(projectId, modelUrl, classId) {
     });
 }
 
+let currentRelationshipGroupId = 0;
+
+/**
+ * Generates a unique id for relationship groups (objects + alternative).
+ * @returns {number} Unique id.
+ */
+function uniqueRelationshipGroupId() {
+    currentRelationshipGroupId += 1;
+    return currentRelationshipGroupId;
+}
+
 function fetchRelationships(
         projectId, modelUrl, classId , entityList, availableObjects, alternatives, state, errorMessage) {
     const alternativesPromise = fetchAlternatives(projectId, modelUrl);
@@ -138,6 +149,7 @@ function fetchRelationships(
         availableObjects.value = await fetchAvailableObjects(projectId, modelUrl, classId);
         const list = [];
         objectLists.forEach(function(objects, relationship_id) {
+            const groupId = uniqueRelationshipGroupId();
             alternatives.value.forEach(function(alternative) {
                 list.push({
                     entityEmblem: objects,
@@ -146,6 +158,7 @@ function fetchRelationships(
                     alternativeId: alternative.id,
                     availableObjects: availableObjects,
                     key: `${objects.join(",")}:${alternative.id}`,
+                    groupId: groupId,
                 });
             });
         });
@@ -177,7 +190,7 @@ export default {
         classType: {type: Number, required: true},
         inserted: {type: Object, required: false},
     },
-    emits: ["entitySelect", "entityInsert", "entityUpdate", "entityDelete"],
+    emits: ["entitySelect", "entityInsert", "entityUpdate", "entityDelete", "relationshipsClash"],
     components: {
         "fetchable": Fetchable,
         "new-named-item-row": NewNamedItemRow,
@@ -246,22 +259,16 @@ export default {
             const existing = entityList.value.find(function(item) {
                 return relationshipEmblemsEqual(updateData.entityEmblem, item.entityEmblem);
             });
-            if(existing) {
-                dialog.error({
-                    title: "Cannot change dimension",
-                    content: "A relationship with the same objects already exists."
-                });
-                return;
-            }
+            updateData.setObjectNamesClash(existing !== undefined);
             entityList.value.forEach(function(item) {
-                for(let i = 0; i !== updateData.previousEmblem.length; ++i) {
-                    if(updateData.previousEmblem[i] !== item.entityEmblem[i]) {
-                        return;
-                    }
+                if(updateData.groupId === item.groupId) {
+                    item.entityEmblem = updateData.entityEmblem;
                 }
-                item.entityEmblem = updateData.entityEmblem;
             });
-            context.emit("entityUpdate", updateData);
+            context.emit("relationshipsClash", existing);
+            if(!existing) {
+                context.emit("entityUpdate", updateData);
+            }
         };
         watch(toRefs(props).inserted, function(inserted) {
             if(!inserted) {
@@ -304,6 +311,7 @@ export default {
                             relationshipId: info.option.entityId,
                             alternativeName: info.option.alternativeName,
                             availableObjects: info.option.availableObjects,
+                            groupId: info.option.groupId,
                             onObjectsUpdate: updateRelationshipObjects,
                         }
                     );
@@ -359,6 +367,7 @@ export default {
                     });
                     return;
                 }
+                const groupId = uniqueRelationshipGroupId();
                 const newEntities = [];
                 const newObjects = [...objects];
                 alternatives.value.forEach(function(alternative) {
@@ -369,6 +378,7 @@ export default {
                         alternativeId: alternative.id,
                         availableObjects: availableObjects,
                         key: `${objects.join(",")}:${alternative.id}`,
+                        groupId: groupId,
                     });
                 });
                 const insertIndex = entityList.value.findIndex((row) => objects[0] < row.entityEmblem);

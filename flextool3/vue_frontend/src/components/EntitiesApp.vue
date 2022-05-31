@@ -6,6 +6,7 @@
     <commit-button
         :has-pending-changes="pendingChanges"
         :committing="committing"
+        :error-message="commitErrorMessage"
         @commitRequest="showCommitMessageEditor = true"
     />
     <n-h1>{{ className }}</n-h1>
@@ -23,6 +24,7 @@
                 @entity-insert="storeEntityInsertion"
                 @entity-update="storeEntityUpdate"
                 @entity-delete="storeEntityDeletion"
+                @relationships-clash="setRelationshipsClashErrorState"
             />
         </n-grid-item>
         <n-grid-item :span="2">
@@ -97,6 +99,7 @@ export default {
         const currentEntityKey = ref(null);
         const valueEditorData = ref(null);
         const committing = ref(false);
+        const commitErrorMessage = ref("");
         const showCommitMessageEditor = ref(false);
         const pendingChanges = ref(false);
         const insertedEntities = ref({});
@@ -107,6 +110,7 @@ export default {
             currentEntityKey: currentEntityKey,
             valueEditorData: valueEditorData,
             committing: committing,
+            commitErrorMessage: commitErrorMessage,
             showCommitMessageEditor: showCommitMessageEditor,
             pendingChanges: pendingChanges,
             insertedEntities: insertedEntities,
@@ -193,7 +197,15 @@ export default {
             },
             updateShowCommitMessageEditor(show) {
                 showCommitMessageEditor.value = show;
-            }
+            },
+            setRelationshipsClashErrorState(clash) {
+                if(clash) {
+                    commitErrorMessage.value = "Cannot commit: some relationships have the same objects.";
+                }
+                else {
+                    commitErrorMessage.value = "";
+                }
+            },
         };
     },
 }
