@@ -360,9 +360,10 @@ export default {
                     return;
                 }
                 const newEntities = [];
+                const newObjects = [...objects];
                 alternatives.value.forEach(function(alternative) {
                     newEntities.push({
-                        entityEmblem: objects,
+                        entityEmblem: newObjects,
                         entityId: undefined,
                         alternativeName:alternative.name,
                         alternativeId: alternative.id,
@@ -372,7 +373,7 @@ export default {
                 });
                 const insertIndex = entityList.value.findIndex((row) => objects[0] < row.entityEmblem);
                 entityList.value.splice(insertIndex >= 0 ? insertIndex : entityList.value.length, 0, ...newEntities);
-                context.emit("entityInsert", objects);
+                context.emit("entityInsert", newObjects);
             }
         };
     },

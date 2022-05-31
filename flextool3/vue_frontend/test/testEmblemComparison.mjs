@@ -14,6 +14,9 @@ describe("emblemsEqual", function() {
     it("different relationship objects are unequal", function() {
         assert.equal(emblemsEqual(["a", "b"], ["a", "c"]), false);
     });
+    it("different relationship objects in first object position are unequal", function() {
+        assert.equal(emblemsEqual(["a", "b"], ["c", "b"]), false);
+    });
 });
 
 describe("relationshipEmblemsEqual", function() {
