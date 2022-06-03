@@ -57,13 +57,7 @@ class Project(models.Model):
         Returns:
             Path: path to model database
         """
-        return (
-            Path(self.path)
-            / ".spinetoolbox"
-            / "items"
-            / "flextool3_test_data"
-            / "FlexTool3_data.sqlite"
-        )
+        return Path(self.path) / "Input_data.sqlite"
 
     def results_database_path(self):
         """Returns path to results database.
@@ -75,7 +69,7 @@ class Project(models.Model):
             Path(self.path)
             / ".spinetoolbox"
             / "items"
-            / "results_f3"
+            / "results"
             / "Results_F3.sqlite"
         )
 
@@ -124,7 +118,7 @@ def _scenario_from_filter_id(filter_id):
     Returns:
         str: scenario name
     """
-    front = filter_id[: -len(" - FlexTool3_test_data")]
+    front = filter_id[: -len(" - Input_data")]
     scenario_filter, tool_filter = front.split(",")
     return scenario_filter.strip()
 

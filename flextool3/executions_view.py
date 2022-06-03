@@ -154,9 +154,7 @@ def briefing(project, execution):
                 has_results = (
                     False
                     if return_code != 0
-                    else _has_result_database_changed(
-                        project.path, execution.execution_time
-                    )
+                    else _has_result_database_changed(project, execution.execution_time)
                 )
                 execution.status = (
                     Status.FINISHED
@@ -215,11 +213,11 @@ def arguments(project_path, mod_script_path=None):
         "--execute-only",
         str(project_path),
         "--select",
-        "FlexTool3_test_data",
-        "ExportFlexTool3ToCSV",
+        "Input_data",
+        "Export_to_CSV",
         "FlexTool3",
-        "Import_Flex3",
-        "Results_F3",
+        "Import_results",
+        "Results",
     ]
     if mod_script_path is not None:
         interpreter_arguments = (
@@ -268,18 +266,18 @@ def _make_mod_script(scenarios):
     script_contents = [
         "from spinedb_api import DatabaseMapping\n",
         "from spinedb_api.filters.scenario_filter import SCENARIO_FILTER_TYPE\n",
-        "importer = project.find_item('Import_Flex3')\n",
+        "importer = project.find_item('Import_results')\n",
         "importer['purge_before_writing'] = False\n",
-        "db_path = project.project_dir / '.spinetoolbox' / 'items' / 'flextool3_test_data' / 'FlexTool3_data.sqlite'\n",
+        "db_path = project.project_dir / 'Input_data.sqlite'\n",
         "db_url = 'sqlite:///' + str(db_path)\n",
         "db_map = DatabaseMapping(db_url)\n",
         f"active_scenarios = [{', '.join(quoted_scenarios)}]\n",
         "try:\n",
         "    scenario_ids = {r.name: r.id for r in db_map.query(db_map.scenario_sq).all()}\n",
-        "    connection = project.find_connection('FlexTool3_test_data', 'ExportFlexTool3ToCSV')\n",
+        "    connection = project.find_connection('Input_data', 'Export_to_CSV')\n",
         "    online_scenarios = {scenario_ids[name]: True for name in active_scenarios}\n",
         "    filters = {SCENARIO_FILTER_TYPE: online_scenarios}\n",
-        "    connection.resource_filters.setdefault('db_url@FlexTool3_test_data', {}).update(filters)\n",
+        "    connection.resource_filters.setdefault('db_url@Input_data', {}).update(filters)\n",
         "finally:\n",
         "    db_map.connection.close()\n",
     ]
@@ -290,20 +288,14 @@ def _make_mod_script(scenarios):
     return temp_dir, script_path
 
 
-def _has_result_database_changed(project_path, time_point):
+def _has_result_database_changed(project, time_point):
     """Checks if the result database has been modified after given time.
 
     Args:
-        project_path (Path): path to project directory
+        project (Project): project
         time_point (datetime): time after which modification is expected to have happened
     """
-    result_database_path = (
-        Path(project_path)
-        / ".spinetoolbox"
-        / "items"
-        / "results_f3"
-        / "Results_F3.sqlite"
-    )
+    result_database_path = project.results_database_path()
     if not result_database_path.exists():
         return False
     modification_time = datetime.fromtimestamp(

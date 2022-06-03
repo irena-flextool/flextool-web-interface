@@ -35,12 +35,8 @@ from .summary_view import number_to_float
 from . import executions_view
 
 
-PATH_TO_MODEL_DATABASE = Path(
-    ".spinetoolbox", "items", "flextool3_test_data", "FlexTool3_data.sqlite"
-)
-PATH_TO_RESULT_DATABASE = Path(
-    ".spinetoolbox", "items", "results_f3", "Results_F3.sqlite"
-)
+PATH_TO_MODEL_DATABASE = Path("Input_data.sqlite")
+PATH_TO_RESULT_DATABASE = Path(".spinetoolbox", "items", "results", "Results_F3.sqlite")
 
 
 def build_fake_project_template(root_dir):
@@ -55,7 +51,6 @@ def build_fake_project_template(root_dir):
     project_dir = root_dir / "flextool3"
     project_dir.mkdir()
     model_database_file = project_dir / PATH_TO_MODEL_DATABASE
-    model_database_file.parent.mkdir(parents=True)
     model_database_file.touch()
     result_database_dir = project_dir / PATH_TO_RESULT_DATABASE.parent
     result_database_dir.mkdir(parents=True)
@@ -2247,11 +2242,11 @@ class ExecutionsViewTests(unittest.TestCase):
             "--execute-only",
             str(project_path),
             "--select",
-            "FlexTool3_test_data",
-            "ExportFlexTool3ToCSV",
+            "Input_data",
+            "Export_to_CSV",
             "FlexTool3",
-            "Import_Flex3",
-            "Results_F3",
+            "Import_results",
+            "Results",
         ]
         self.assertEqual(arguments, expected)
 
