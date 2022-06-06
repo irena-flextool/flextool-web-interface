@@ -7,7 +7,7 @@
         :has-pending-changes="pendingChanges"
         :committing="committing"
         :error-message="commitErrorMessage"
-        @commitRequest="showCommitMessageEditor = true"
+        @commitRequest="commit"
     />
     <n-h1>{{ className }}</n-h1>
     <n-p v-show="classDescription !== 'None'">{{ classDescription }}</n-p>
@@ -49,17 +49,6 @@
             />
         </n-grid-item>
     </n-grid>
-    <n-modal
-        :show="showCommitMessageEditor"
-        @update:show="updateShowCommitMessageEditor"
-    >
-        <div>
-            <commit-message-editor
-                @commit="commit"
-                @cancel="showCommitMessageEditor = false"
-            />
-        </div>
-    </n-modal>
 </template>
 
 <script>
@@ -69,7 +58,6 @@ import * as Communication from "../modules/communication.mjs";
 import {EntityDiff} from "../modules/entityDiff.mjs";
 import {uncommittedChangesWatcher} from "../modules/eventListeners.mjs";
 import CommitButton from "./CommitButton.vue"
-import CommitMessageEditor from "./CommitMessageEditor.vue";
 import EntityList from "./EntityList.vue";
 import ParameterTable from "./ParameterTable.vue";
 import IndexedValueEditor from "./IndexedValueEditor.vue";
@@ -90,7 +78,6 @@ export default {
     },
     components: {
         "commit-button": CommitButton,
-        "commit-message-editor": CommitMessageEditor,
         "entity-list": EntityList,
         "indexed-value-editor": IndexedValueEditor,
         "page-path": PagePath,
@@ -101,7 +88,6 @@ export default {
         const valueEditorData = ref(null);
         const committing = ref(false);
         const commitErrorMessage = ref("");
-        const showCommitMessageEditor = ref(false);
         const pendingChanges = ref(false);
         const insertedEntities = ref({});
         const pendingModelChanges = new EntityDiff(props.classId, props.className);
@@ -113,7 +99,6 @@ export default {
             valueEditorData: valueEditorData,
             committing: committing,
             commitErrorMessage: commitErrorMessage,
-            showCommitMessageEditor: showCommitMessageEditor,
             pendingChanges: pendingChanges,
             insertedEntities: insertedEntities,
             pendingModelChanges: pendingModelChanges,
@@ -172,11 +157,15 @@ export default {
                 );
                 pendingChanges.value = pendingModelChanges.isPending();
             },
-            commit(commitMessage) {
-                showCommitMessageEditor.value = false;
+            commit() {
                 committing.value = true;
                 const commitData = pendingModelChanges.makeCommitData();
-                Communication.commit(commitData, commitMessage, props.projectId, props.modelUrl).then(function(data) {
+                Communication.commit(
+                    commitData,
+                    "Modified entities.",
+                    props.projectId,
+                    props.modelUrl
+                ).then(function(data) {
                     if(data.inserted) {
                         if(data.inserted.object) {
                             insertedEntities.value = data.inserted.object;
@@ -196,9 +185,6 @@ export default {
                     pendingModelChanges.clearPending();
                     committing.value = false;
                 });
-            },
-            updateShowCommitMessageEditor(show) {
-                showCommitMessageEditor.value = show;
             },
             setRelationshipsClashErrorState(clash) {
                 if(clash) {

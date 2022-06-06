@@ -6,7 +6,7 @@
     <commit-button
         :has-pending-changes="hasPendingChanges"
         :committing="committing"
-        @commit-request="startCommitting"
+        @commit-request="commit"
     />
     <n-grid :cols="3">
         <n-grid-item>
@@ -40,17 +40,6 @@
             </n-space>
         </n-grid-item>
     </n-grid>
-    <n-modal
-        :show="showCommitMessageEditor"
-        @update:show="updateShowCommitMessageEditor"
-    >
-        <div>
-            <commit-message-editor
-                @commit="commit"
-                @cancel="showCommitMessageEditor = false"
-            />
-        </div>
-    </n-modal>
 </template>
 
 <script>
@@ -61,7 +50,6 @@ import {scenarioActions} from "../modules/scenarioAlternativeTextTable.mjs";
 import * as Communication from "../modules/communication.mjs";
 import {uncommittedChangesWatcher} from "../modules/eventListeners.mjs";
 import CommitButton from "./CommitButton.vue";
-import CommitMessageEditor from "./CommitMessageEditor.vue";
 import AlternativeList from "./AlternativeList.vue";
 import PagePath from "./PagePath.vue";
 import ScenariosTable from "./ScenariosTable.vue";
@@ -131,7 +119,6 @@ export default {
     },
     components: {
         "commit-button": CommitButton,
-        "commit-message-editor": CommitMessageEditor,
         "alternative-list": AlternativeList,
         "page-path": PagePath,
         "scenarios-table": ScenariosTable
@@ -139,7 +126,6 @@ export default {
     setup(props) {
         const hasPendingChanges = ref(false);
         const committing = ref(false);
-        const showCommitMessageEditor = ref(false);
         const insertedAlternatives = ref([]);
         const scenarioIssues = ref("");
         const scenariosTable = ref(null);
@@ -153,11 +139,11 @@ export default {
         return {
             hasPendingChanges: hasPendingChanges,
             committing: committing,
-            showCommitMessageEditor: showCommitMessageEditor,
             insertedAlternatives: insertedAlternatives,
             scenarioIssues: scenarioIssues,
             scenariosTable: scenariosTable,
-            startCommitting() {
+            commit () {
+                committing.value = true;
                 if(scenarioIssues.value) {
                     dialog.warning({
                         title: "Cannot commit",
@@ -176,13 +162,13 @@ export default {
                         );
                     });
                 }
-                showCommitMessageEditor.value = true;
-            },
-            commit(commitMessage) {
-                showCommitMessageEditor.value = false;
-                committing.value = true;
                 const commitData = diff.makeCommitData();
-                Communication.commit(commitData, commitMessage, props.projectId, props.modelUrl).then(function(data) {
+                Communication.commit(
+                    commitData,
+                    "Modified alternatives and scenarios.",
+                    props.projectId,
+                    props.modelUrl
+                ).then(function(data) {
                     if(data.inserted && data.inserted.alternative) {
                         insertedAlternatives.value = data.inserted.alternative;
                     }
@@ -195,9 +181,6 @@ export default {
                     diff.clearPending();
                     committing.value = false;
                 });
-            },
-            updateShowCommitMessageEditor(show) {
-                showCommitMessageEditor.value = show;
             },
             updateAvailableAlternatives(alternatives) {
                 availableAlternatives = alternatives;
