@@ -54,11 +54,12 @@
 </template>
 
 <script>
-import {ref} from "vue/dist/vue.esm-bundler.js";
+import {ref, watch} from "vue/dist/vue.esm-bundler.js";
 import {useDialog, useMessage} from "naive-ui";
 import {ScenarioDiff} from "../modules/scenarioDiff.mjs";
 import {scenarioActions} from "../modules/scenarioAlternativeTextTable.mjs";
 import * as Communication from "../modules/communication.mjs";
+import {uncommittedChangesWatcher} from "../modules/eventListeners.mjs";
 import CommitButton from "./CommitButton.vue";
 import CommitMessageEditor from "./CommitMessageEditor.vue";
 import AlternativeList from "./AlternativeList.vue";
@@ -148,6 +149,7 @@ export default {
         let currentScenarios = null;
         const message = useMessage();
         const dialog = useDialog();
+        watch(hasPendingChanges, uncommittedChangesWatcher);
         return {
             hasPendingChanges: hasPendingChanges,
             committing: committing,

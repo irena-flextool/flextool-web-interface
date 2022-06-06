@@ -63,12 +63,13 @@
 </template>
 
 <script>
-import {ref} from "vue/dist/vue.esm-bundler.js";
+import {ref, watch} from "vue/dist/vue.esm-bundler.js";
 import {useDialog, useMessage} from "naive-ui";
-import CommitButton from "./CommitButton.vue"
-import CommitMessageEditor from "./CommitMessageEditor.vue";
 import * as Communication from "../modules/communication.mjs";
 import {EntityDiff} from "../modules/entityDiff.mjs";
+import {uncommittedChangesWatcher} from "../modules/eventListeners.mjs";
+import CommitButton from "./CommitButton.vue"
+import CommitMessageEditor from "./CommitMessageEditor.vue";
 import EntityList from "./EntityList.vue";
 import ParameterTable from "./ParameterTable.vue";
 import IndexedValueEditor from "./IndexedValueEditor.vue";
@@ -106,6 +107,7 @@ export default {
         const pendingModelChanges = new EntityDiff(props.classId, props.className);
         const message = useMessage();
         const dialog = useDialog();
+        watch(pendingChanges, uncommittedChangesWatcher);
         return {
             currentEntityKey: currentEntityKey,
             valueEditorData: valueEditorData,
