@@ -18,6 +18,11 @@
                 :summary-url="summaryUrl"
                 ref="summary"
             />
+            <results-output-directory
+                :project-id="projectId"
+                :summary-url="summaryUrl"
+                ref="outputDirectory"
+            />
             <results-plots
                 :project-id="projectId"
                 :analysis-url="analysisUrl"
@@ -34,6 +39,7 @@ import PagePath from "./PagePath.vue";
 import ResultsPlots from "./ResultsPlots.vue";
 import ResultsScenarioList from "./ResultsScenarioList.vue";
 import ResultsSummary from "./ResultsSummary.vue";
+import ResultsOutputDirectory from "./ResultsOutputDirectory.vue";
 
 export default {
     props: {
@@ -50,15 +56,19 @@ export default {
         "results-plots": ResultsPlots,
         "results-scenario-list": ResultsScenarioList,
         "results-summary": ResultsSummary,
+        "results-output-directory": ResultsOutputDirectory,
     },
     setup() {
         const summary = ref(null);
+        const outputDirectory = ref(null);
         const plots = ref(null);
         return {
             summary: summary,
+            outputDirectory: outputDirectory,
             plots: plots,
             loadResults(scenarioInfo) {
                 summary.value.loadSummary(scenarioInfo);
+                outputDirectory.value.loadDirectory(scenarioInfo);
                 plots.value.loadPlots(scenarioInfo);
             },
         };

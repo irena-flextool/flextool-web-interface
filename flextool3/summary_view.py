@@ -141,3 +141,23 @@ def get_result_alternative(project, body):
         candidate_alternatives[i][0] if i != len(candidate_alternatives) else None
     )
     return JsonResponse({"alternative_id": alternative_id})
+
+
+def get_output_directory(project, body):
+    """Finds the path to the tool's results directory.
+
+    Args:
+        project (Project): a project
+        body (dict): request body
+
+    Returns:
+        HTTPResponse: a response object
+    """
+    try:
+        scenario_execution = _resolve_scenario_execution(project, body)
+    except FlextoolException as error:
+        return HttpResponseBadRequest(str(error))
+    summary_path = scenario_execution.summary_path()
+    if summary_path is None:
+        return JsonResponse({"directory": None})
+    return JsonResponse({"directory": str(summary_path.parent)})

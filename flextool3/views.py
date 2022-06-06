@@ -40,6 +40,7 @@ from .summary_view import (
     get_scenario_list,
     get_summary,
     get_result_alternative,
+    get_output_directory,
 )
 
 FLEXTOOL_PROJECT_TEMPLATE = Path(__file__).parent / "master_project"
@@ -1391,6 +1392,8 @@ def summary(request):
         return get_summary(project, body)
     if type_ == "result alternative?":
         return get_result_alternative(project, body)
+    if type_ == "output directory?":
+        return get_output_directory(project, body)
     return HttpResponseBadRequest("Unknown 'type'.")
 
 

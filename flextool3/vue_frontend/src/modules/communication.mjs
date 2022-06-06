@@ -228,6 +228,30 @@ function fetchSummary(projectId, summaryUrl, scenarioExecutionId) {
 }
 
 /**
+ * Fetches tool output directory path from server.
+ * @param {number} projectId Project id.
+ * @param {string} summaryUrl URL to server's interface.
+ * @param {string} scenarioExecutionId Scenario execution id.
+ * @returns {Promise} A promise that resolves to server's response.
+ */
+function fetchOutputDirectory(projectId, summaryUrl, scenarioExecutionId) {
+    const fetchInit = makeFetchInit();
+    fetchInit.body = JSON.stringify({
+        type: "output directory?",
+        projectId: projectId,
+        scenarioExecutionId: scenarioExecutionId,
+    });
+    return fetch(summaryUrl, fetchInit).then(function(response) {
+        if (!response.ok) {
+            return response.text().then(function(message) {
+                throw new Error(`Failed to load output directory path: ${message}`);
+            });
+        }
+        return response.json()
+    });
+}
+
+/**
  * Fetches executed scenarios from server.
  * @param {number} projectId Project id.
  * @param {string} summaryUrl URL to server's interface.
@@ -282,5 +306,6 @@ export {
     fetchExecutionBriefing,
     fetchExecutedScenarioList,
     fetchSummary,
+    fetchOutputDirectory,
     fetchResultAlternative,
 };
