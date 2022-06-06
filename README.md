@@ -49,12 +49,17 @@ python init.py
 
 ## Upgrade
 
-Usually, it is enough to `git pull` the latest version.
-However, sometimes an upgrade requires
-upgrading the Python environment, especially Spine Toolbox,
-and/or changes to the server database.
-These operations can be done by running a helper script
+1. Pull the latest changes:
+```commandline
+git pull
+```
 
+2. Make sure the master project is up-to-date:
+```commandline
+git submodule update
+```
+
+3. Make sure the Python environment and server database are up-to-date:
 ```commandline
 python upgrade.py
 ```
