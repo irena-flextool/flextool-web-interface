@@ -153,10 +153,12 @@ function fetchRelationships(
             alternatives.value.forEach(function(alternative) {
                 list.push({
                     entityEmblem: objects,
+                    originalEmblem: [...objects],
                     entityId: relationship_id,
                     alternativeName:alternative.name,
                     alternativeId: alternative.id,
                     availableObjects: availableObjects,
+                    objectNamesClash: false,
                     key: `${objects.join(",")}:${alternative.id}`,
                     groupId: groupId,
                 });
@@ -259,10 +261,14 @@ export default {
             const existing = entityList.value.find(function(item) {
                 return relationshipEmblemsEqual(updateData.entityEmblem, item.entityEmblem);
             });
-            updateData.setObjectNamesClash(existing !== undefined);
+            const clash = existing !== undefined;
             entityList.value.forEach(function(item) {
                 if(updateData.groupId === item.groupId) {
+                    item.objectNamesClash = clash;
                     item.entityEmblem = updateData.entityEmblem;
+                    if(!clash) {
+                        item.originalEmblem = [...updateData.entityEmblem];
+                    }
                 }
             });
             context.emit("relationshipsClash", existing);
@@ -308,10 +314,12 @@ export default {
                         EntityListRelationshipLabel,
                         {
                             objects: info.option.entityEmblem,
+                            originalObjects: info.option.originalEmblem,
                             relationshipId: info.option.entityId,
                             alternativeName: info.option.alternativeName,
                             availableObjects: info.option.availableObjects,
                             groupId: info.option.groupId,
+                            objectNamesClash: info.option.objectNamesClash,
                             onObjectsUpdate: updateRelationshipObjects,
                         }
                     );
@@ -373,10 +381,12 @@ export default {
                 alternatives.value.forEach(function(alternative) {
                     newEntities.push({
                         entityEmblem: newObjects,
+                        originalEmblem: [...newObjects],
                         entityId: undefined,
                         alternativeName:alternative.name,
                         alternativeId: alternative.id,
                         availableObjects: availableObjects,
+                        objectNamesClash: false,
                         key: `${objects.join(",")}:${alternative.id}`,
                         groupId: groupId,
                     });

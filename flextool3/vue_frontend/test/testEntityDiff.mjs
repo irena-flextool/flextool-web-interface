@@ -106,6 +106,15 @@ describe("EntityDiff", function() {
             expected.updates.object.push({id: 23, name: "new_name"});
             assert.deepEqual(diff.makeCommitData(), expected);
         });
+        it("should generate single update commit when existing object is renamed twice", function() {
+            const diff = new EntityDiff(1, "my_class");
+            diff.updateEntity("original", 23, "new_name");
+            diff.updateEntity("new_name", 23, "final_name")
+            assert.equal(diff.isPending(), true);
+            const expected = makeEmptyCommitData();
+            expected.updates.object.push({id: 23, name: "final_name"});
+            assert.deepEqual(diff.makeCommitData(), expected);
+        });
         it("should generate insert only commit data when uncommitted object is renamed", function() {
             const diff = new EntityDiff(1, "my_class");
             diff.insertEntity("original_name", 1);
@@ -134,6 +143,19 @@ describe("EntityDiff", function() {
                 id: 23,
                 name: "my_class_object_3__object_4",
                 object_name_list: ["object_3", "object_4"]
+                });
+            assert.deepEqual(diff.makeCommitData(), expected);
+        });
+        it("should generate single commit when existing relationship is changed twice", function() {
+            const diff = new EntityDiff(1, "my_class");
+            diff.updateEntity(["object_1", "object_2"], 23, ["object_3", "object_4"]);
+            diff.updateEntity(["object_3", "object_4"], 23, ["object_5", "object_6"]);
+            assert.equal(diff.isPending(), true);
+            const expected = makeEmptyCommitData();
+            expected.updates.relationship.push({
+                id: 23,
+                name: "my_class_object_5__object_6",
+                object_name_list: ["object_5", "object_6"]
                 });
             assert.deepEqual(diff.makeCommitData(), expected);
         });

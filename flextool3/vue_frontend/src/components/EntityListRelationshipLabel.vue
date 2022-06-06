@@ -15,15 +15,16 @@
 </template>
 
 <script>
-import {ref} from "vue/dist/vue.esm-bundler.js";
 import EntityListRelationshipObject from "./EntityListRelationshipObject.vue";
 
 export default {
     props: {
         objects: {type: Array, required: true},
+        originalObjects: {type: Array, required: true},
         relationshipId: {type: Number, required: false},
         alternativeName: {type: String, required: true},
         availableObjects: {type: Array, required: true},
+        objectNamesClash: {type: Boolean, required: false, default: false},
         groupId: {type: Number, required: true},
     },
     emits: ["objectsUpdate"],
@@ -31,9 +32,7 @@ export default {
         "entity-list-relationship-object": EntityListRelationshipObject,
     },
     setup(props, context) {
-        const objectNamesClash = ref(false);
         return {
-            objectNamesClash: objectNamesClash,
             emitObjectsUpdate(objectData) {
                 const objects = [];
                 props.objects.forEach(function(currentObject, dimension) {
@@ -44,12 +43,12 @@ export default {
                         objects.push(objectData.objectName);
                     }
                 });
+                const previousObjects = props.originalObjects !== null ? props.originalObjects : props.objects;
                 context.emit("objectsUpdate", {
                     id: props.relationshipId,
-                    previousEmblem: props.objects,
+                    previousEmblem: previousObjects,
                     entityEmblem: objects,
                     groupId: props.groupId,
-                    setObjectNamesClash: (clash) => objectNamesClash.value = clash,
                 });
             }
         };
