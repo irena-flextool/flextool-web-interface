@@ -1,45 +1,60 @@
 <template>
-    <page-path
-        :path="[{name: 'Projects', url: indexUrl}, {name: projectName, url: projectUrl}, {name: 'Model', url: editUrl}]"
-        leaf-name="scenarios"
-    />
-    <commit-button
-        :has-pending-changes="hasPendingChanges"
-        :committing="committing"
-        @commit-request="commit"
-    />
-    <n-grid :cols="3">
-        <n-grid-item>
-            <n-space vertical>
-                <n-h1>Alternatives</n-h1>
-                <alternative-list
-                    :project-id="projectId"
-                    :model-url="modelUrl"
-                    :inserted="insertedAlternatives"
-                    @available-alternatives-change="updateAvailableAlternatives"
-                    @alternative-insert="storeAlternativeInsertion"
-                    @alternative-update="storeAlternativeUpdate"
-                    @alternative-delete="storeAlternativeDeletion"
-                />
-            </n-space>
-        </n-grid-item>
-        <n-grid-item :span="2">
-            <n-space vertical>
-                <n-h1>Scenarios</n-h1>
-                <scenarios-table
-                    ref="scenariosTable"
-                    :project-id="projectId"
-                    :model-url="modelUrl"
-                    @scenario-fetch="setOriginalScenarios"
-                    @scenario-update="updateScenarios"
-                    @duplicate-scenario="setScenarioIssues"
-                />
-                <text type="error">
-                    {{ scenarioIssues }}
-                </text>
-            </n-space>
-        </n-grid-item>
-    </n-grid>
+    <page
+        name="Edit model"
+        :index-url="indexUrl"
+        :project-url="projectUrl"
+        :edit-url="editUrl"
+        :run-url="runUrl"
+        :results-url="resultsUrl"
+        :logout-url="logoutUrl"
+        :logo-url="logoUrl"
+    >
+        <template #header>
+            <page-path
+                :path="[{name: 'Projects', url: indexUrl}, {name: projectName, url: projectUrl}, {name: 'Model', url: editUrl}]"
+                leaf-name="scenarios"
+            />
+        </template>
+        <n-space vertical>
+        <commit-button
+            :has-pending-changes="hasPendingChanges"
+            :committing="committing"
+            @commit-request="commit"
+        />
+        <n-grid :cols="3">
+            <n-grid-item>
+                <n-space vertical>
+                    <n-h1>Alternatives</n-h1>
+                    <alternative-list
+                        :project-id="projectId"
+                        :model-url="modelUrl"
+                        :inserted="insertedAlternatives"
+                        @available-alternatives-change="updateAvailableAlternatives"
+                        @alternative-insert="storeAlternativeInsertion"
+                        @alternative-update="storeAlternativeUpdate"
+                        @alternative-delete="storeAlternativeDeletion"
+                    />
+                </n-space>
+            </n-grid-item>
+            <n-grid-item :span="2">
+                <n-space vertical>
+                    <n-h1>Scenarios</n-h1>
+                    <scenarios-table
+                        ref="scenariosTable"
+                        :project-id="projectId"
+                        :model-url="modelUrl"
+                        @scenario-fetch="setOriginalScenarios"
+                        @scenario-update="updateScenarios"
+                        @duplicate-scenario="setScenarioIssues"
+                    />
+                    <text type="error">
+                        {{ scenarioIssues }}
+                    </text>
+                </n-space>
+            </n-grid-item>
+        </n-grid>
+        </n-space>
+    </page>
 </template>
 
 <script>
@@ -51,6 +66,7 @@ import * as Communication from "../modules/communication.mjs";
 import {uncommittedChangesWatcher} from "../modules/eventListeners.mjs";
 import CommitButton from "./CommitButton.vue";
 import AlternativeList from "./AlternativeList.vue";
+import Page from "./Page.vue";
 import PagePath from "./PagePath.vue";
 import ScenariosTable from "./ScenariosTable.vue";
 
@@ -115,11 +131,16 @@ export default {
         projectName: {type: String, required: true},
         projectId: {type: Number, required: true},
         editUrl: {type: String, required: true},
+        runUrl: {type: String, required: true},
+        resultsUrl: {type: String, required: true},
         modelUrl: {type: String, required:  true},
+        logoutUrl: {type: String, required: true},
+        logoUrl: {type: String, required: true},
     },
     components: {
         "commit-button": CommitButton,
         "alternative-list": AlternativeList,
+        "page": Page,
         "page-path": PagePath,
         "scenarios-table": ScenariosTable
     },

@@ -3,22 +3,17 @@
 
 {% block title %} Manage project {% endblock %}
 
-{% block top-bar %}
-    <li><a href="{% url 'flextool3:index' %}">Projects</a></li>
-    <li><p>Manage project</p></li>
-    <li><a href="{% url 'flextool3:edit' project.id %}">Model editor</a></li>
-    <li><a href="{% url 'flextool3:run' project.id %}">Run</a></li>
-    <li><a href="{% url 'flextool3:view' project.id %}">Results</a></li>
-{% endblock %}
-
 {% block content %}
-    <div class="app-box" id="detail-app">
+    <div id="detail-app">
         <detail-app
             index-url="{% url 'flextool3:index' %}"
+            project-url="{% url 'flextool3:detail' project.id %}"
             edit-url="{% url 'flextool3:edit' project.id %}"
             run-url="{% url 'flextool3:run' project.id %}"
-            view-url="{% url 'flextool3:view' project.id %}"
+            results-url="{% url 'flextool3:view' project.id %}"
             project-name="{{ project.name }}"
+            logout-url="{% url 'flextool3:logout' %}"
+            logo-url="{% static 'flextool3/menu-logo.png' %}"
         ></detail-app>
     </div>
     <script src="{% static 'flextool3/apps/js/chunk-vendors.js' %}"></script>

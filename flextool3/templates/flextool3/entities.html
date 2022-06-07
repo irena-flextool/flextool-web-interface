@@ -2,7 +2,7 @@
 {% load static %}
 
 {% block content %}
-    <div class="app-box" id="entities-app">
+    <div id="entities-app">
         <n-dialog-provider>
             <n-message-provider>
                 <entities-app
@@ -11,11 +11,15 @@
                         project-name="{{ project.name }}"
                         :project-id="{{ project.id }}"
                         edit-url="{% url 'flextool3:edit' project.id %}"
+                        run-url="{% url 'flextool3:run' project.id %}"
+                        results-url="{% url 'flextool3:view' project.id %}"
                         :class-id="{{ entity_class.id }}"
                         class-name="{{ entity_class.name }}"
                         :class-type="{{ entity_class.type_id }}"
                         class-description="{{ entity_class.description}}"
                         model-url="{% url 'flextool3:model' %}"
+                        logout-url="{% url 'flextool3:logout' %}"
+                        logo-url="{% static 'flextool3/menu-logo.png' %}"
                 ></entities-app>
             </n-message-provider>
         </n-dialog-provider>

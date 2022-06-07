@@ -3,24 +3,20 @@
 
 {% block title %} Results - Flextool 3{% endblock %}
 
-{% block top-bar %}
-    <li><a href="{% url 'flextool3:index' %}">Projects</a></li>
-    <li><a href="{% url 'flextool3:detail' project.id %}">Manage project</a></li>
-    <li><a href="{% url 'flextool3:edit' project.id %}">Model editor</a></li>
-    <li><a href="{% url 'flextool3:run' project.id %}">Run</a></li>
-    <li><p>Results</p></li>
-{% endblock %}
-
 {% block content %}
-    <div class="app-box" id="results-app">
+    <div id="results-app">
         <results-app
             index-url="{% url 'flextool3:index' %}"
+            edit-url="{% url 'flextool3:edit' project.id %}"
             project-url="{% url 'flextool3:detail' project.id %}"
             project-name="{{ project.name }}"
             :project-id="{{ project.id }}"
             run-url="{% url 'flextool3:run' project.id %}"
+            results-url="{% url 'flextool3:view' project.id %}"
             analysis-url="{% url 'flextool3:analysis' %}"
             summary-url="{% url 'flextool3:summary' %}"
+            logout-url="{% url 'flextool3:logout' %}"
+            logo-url="{% static 'flextool3/menu-logo.png' %}"
         ></results-app>
     </div>
     <script src="{% static 'flextool3/apps/js/chunk-vendors.js' %}"></script>

@@ -1,58 +1,73 @@
 <template>
-    <page-path
-        :path="[{name: 'Projects', url: indexUrl}, {name: projectName, url: projectUrl}]"
-        leaf-name="Run"/>
-    <fetchable :state="state" :error-message="errorMessage">
-        <n-grid :cols="3">
-            <n-grid-item>
-                <n-space vertical>
-                    <n-text :type="statusMessageType">{{ statusMessage }}</n-text>
-                    <n-a :href="scenariosUrl">Scenario editor</n-a>
-                    <n-text>Select scenarios to run:</n-text>
-                    <n-checkbox-group v-model:value="selectedScenarios" :disabled="isExecuting">
-                        <n-space vertical>
-                            <n-checkbox
-                                v-for="(scenario, index) in availableScenarios"
-                                :value="scenario"
-                                :label="scenario"
-                                :key="index"
-                            />
+    <page
+        name="Run"
+        :index-url="indexUrl"
+        :project-url="projectUrl"
+        :edit-url="editUrl"
+        :run-url="runUrl"
+        :results-url="resultsUrl"
+        :logout-url="logoutUrl"
+        :logo-url="logoUrl"
+    >
+        <template #header>
+            <page-path
+                :path="[{name: 'Projects', url: indexUrl}, {name: projectName, url: projectUrl}]"
+                leaf-name="Run"
+            />
+        </template>
+        <fetchable :state="state" :error-message="errorMessage">
+            <n-grid :cols="3">
+                <n-grid-item>
+                    <n-space vertical>
+                        <n-text :type="statusMessageType">{{ statusMessage }}</n-text>
+                        <n-a :href="scenariosUrl">Scenario editor</n-a>
+                        <n-text>Select scenarios to run:</n-text>
+                        <n-checkbox-group v-model:value="selectedScenarios" :disabled="isExecuting">
+                            <n-space vertical>
+                                <n-checkbox
+                                    v-for="(scenario, index) in availableScenarios"
+                                    :value="scenario"
+                                    :label="scenario"
+                                    :key="index"
+                                />
+                            </n-space>
+                        </n-checkbox-group>
+                        <n-space>
+                            <n-button @click="execute" :disabled="isPlayButtonDisabled" :loading="isExecuting">
+                                <template #icon>
+                                    <n-icon>
+                                        <play/>
+                                    </n-icon>
+                                </template>
+                                Run
+                            </n-button>
+                            <n-button @click="abort" :disabled="isAbortButtonDisabled" :loading="isAborting">
+                                <template #icon>
+                                    <n-icon>
+                                        <stop-icon/>
+                                    </n-icon>
+                                </template>
+                                Abort
+                            </n-button>
                         </n-space>
-                    </n-checkbox-group>
-                    <n-space>
-                        <n-button @click="execute" :disabled="isPlayButtonDisabled" :loading="isExecuting">
-                            <template #icon>
-                                <n-icon>
-                                    <play/>
-                                </n-icon>
-                            </template>
-                            Run
-                        </n-button>
-                        <n-button @click="abort" :disabled="isAbortButtonDisabled" :loading="isAborting">
-                            <template #icon>
-                                <n-icon>
-                                    <stop-icon/>
-                                </n-icon>
-                            </template>
-                            Abort
-                        </n-button>
                     </n-space>
-                </n-space>
-            </n-grid-item>
-            <n-grid-item :span="2">
-                <n-h1>Run log</n-h1>
-                <n-card size="small">
-                    <n-log :lines="logLines" :rows="20"></n-log>
-                </n-card>
-            </n-grid-item>
-        </n-grid>
-    </fetchable>
+                </n-grid-item>
+                <n-grid-item :span="2">
+                    <n-h1>Run log</n-h1>
+                    <n-card size="small">
+                        <n-log :lines="logLines" :rows="20"></n-log>
+                    </n-card>
+                </n-grid-item>
+            </n-grid>
+        </fetchable>
+    </page>
 </template>
 
 <script>
 import {computed, onMounted, ref} from "vue/dist/vue.esm-bundler.js";
 import {useMessage} from "naive-ui";
 import {Play, Stop} from '@vicons/fa';
+import Page from "./Page.vue";
 import PagePath from "./PagePath.vue";
 import Fetchable from "./Fetchable.vue";
 import {
@@ -96,16 +111,21 @@ function followExecution(projectId, executionsUrl, logLines, status, busyExecuti
 export default {
     props: {
         indexUrl: {type: String, required: true},
+        editUrl: {type: String, required: true},
         projectUrl: {type: String, required: true},
         projectName: {type: String, required: true},
         projectId: {type: Number, required: true},
+        runUrl: {type: String, required: true},
+        resultsUrl: {type: String, required: true},
         modelUrl: {type: String, required: true},
-        viewUrl: {type: String, required: true},
         executionsUrl: {type: String, required: true},
         scenariosUrl: {type: String, required: true},
+        logoutUrl: {type: String, required: true},
+        logoUrl: {type: String, required: true},
     },
     components: {
         "fetchable": Fetchable,
+        "page": Page,
         "page-path": PagePath,
         "play": Play,
         "stop-icon": Stop,

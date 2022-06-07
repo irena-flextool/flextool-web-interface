@@ -3,14 +3,15 @@
 
 {% block title %} Projects {% endblock %}
 
-{% block top-bar %}
-    <li><p>Projects</p></li>
-{% endblock %}
-
 {% block content %}
-    <div class="app-box" id="index-app">
+    <div id="index-app">
         <n-message-provider>
-            <index-app projects-url="{% url 'flextool3:projects' %}"></index-app>
+            <index-app
+                index-url="{% url 'flextool3:index' %}"
+                projects-url="{% url 'flextool3:projects' %}"
+                logout-url="{% url 'flextool3:logout' %}"
+                logo-url="{% static 'flextool3/menu-logo.png' %}"
+            ></index-app>
         </n-message-provider>
     </div>
     <script src="{% static 'flextool3/apps/js/chunk-vendors.js' %}"></script>

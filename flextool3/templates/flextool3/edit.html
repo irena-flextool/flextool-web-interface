@@ -2,15 +2,20 @@
 {% load static %}
 
 {% block content %}
-    <div class="app-box" id="edit-app">
+    <div id="edit-app">
         <n-message-provider>
             <editor-app
                 index-url="{% url 'flextool3:index' %}"
+                edit-url="{% url 'flextool3:edit' project.id %}"
                 project-url="{% url 'flextool3:detail' project.id %}"
                 project-name="{{ project.name }}"
                 :project-id="{{ project.id }}"
+                run-url="{% url 'flextool3:run' project.id %}"
+                results-url="{% url 'flextool3:view' project.id %}"
                 model-url="{% url 'flextool3:model' %}"
                 scenarios-url="{% url 'flextool3:scenarios' project.id %}"
+                logout-url="{% url 'flextool3:logout' %}"
+                logo-url="{% static 'flextool3/menu-logo.png' %}"
             ></editor-app>
         </n-message-provider>
     </div>

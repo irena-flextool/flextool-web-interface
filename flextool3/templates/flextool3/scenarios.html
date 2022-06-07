@@ -2,7 +2,7 @@
 {% load static %}
 
 {% block content %}
-    <div class="app-box" id="scenarios-app">
+    <div id="scenarios-app">
         <n-dialog-provider>
             <n-message-provider>
                 <scenarios-app
@@ -11,7 +11,11 @@
                         project-name="{{ project.name }}"
                         :project-id="{{ project.id }}"
                         edit-url="{% url 'flextool3:edit' project.id %}"
+                        run-url="{% url 'flextool3:run' project.id %}"
+                        results-url="{% url 'flextool3:view' project.id %}"
                         model-url="{% url 'flextool3:model' %}"
+                        logout-url="{% url 'flextool3:logout' %}"
+                        logo-url="{% static 'flextool3/menu-logo.png' %}"
                 ></scenarios-app>
             </n-message-provider>
         </n-dialog-provider>

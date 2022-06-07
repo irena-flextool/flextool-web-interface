@@ -1,54 +1,67 @@
 <template>
-    <page-path
-        :path="[{name: 'Projects', url: indexUrl}, {name: projectName, url: projectUrl}, {name: 'Model', url: editUrl}]"
-        :leaf-name="className"
-    />
-    <commit-button
-        :has-pending-changes="pendingChanges"
-        :committing="committing"
-        :error-message="commitErrorMessage"
-        @commitRequest="commit"
-    />
-    <n-h1>{{ className }}</n-h1>
-    <n-p v-show="classDescription !== 'None'">{{ classDescription }}</n-p>
-    <n-grid :cols="6" :x-gap="12">
-        <n-grid-item :span="2">
-            <entity-list
-                :project-id="projectId"
-                :model-url="modelUrl"
-                :class-id="classId"
-                :class-name="className"
-                :class-type="classType"
-                :inserted="insertedEntities"
-                @entity-select="changeCurrentParameters"
-                @entity-insert="storeEntityInsertion"
-                @entity-update="storeEntityUpdate"
-                @entity-delete="storeEntityDeletion"
-                @relationships-clash="setRelationshipsClashErrorState"
+    <page
+        name="Edit model"
+        :index-url="indexUrl"
+        :project-url="projectUrl"
+        :edit-url="editUrl"
+        :run-url="runUrl"
+        :results-url="resultsUrl"
+        :logout-url="logoutUrl"
+        :logo-url="logoUrl"
+    >
+        <template #header>
+            <page-path
+                :path="[{name: 'Projects', url: indexUrl}, {name: projectName, url: projectUrl}, {name: 'Model', url: editUrl}]"
+                :leaf-name="className"
             />
-        </n-grid-item>
-        <n-grid-item :span="2">
-            <parameter-table
-                :project-id="projectId"
-                :model-url="modelUrl"
-                :class-id="classId"
-                :entity-key="currentEntityKey"
-                :diff="pendingModelChanges"
-                @open-value-editor-request="setValueEditorData"
-                @close-value-editor-request="possiblyClearValueEditor"
-                @value-insert="storeValueInsertion"
-                @value-update="storeValueUpdate"
-                @value-delete="storeValueDeletion"
-            />
-        </n-grid-item>
-        <n-grid-item :span="2">
-            <indexed-value-editor
-                :value-data="valueEditorData"
-                :diff="pendingModelChanges"
-                @value-update="storeValueUpdate"
-            />
-        </n-grid-item>
-    </n-grid>
+        </template>
+        <commit-button
+            :has-pending-changes="pendingChanges"
+            :committing="committing"
+            :error-message="commitErrorMessage"
+            @commitRequest="commit"
+        />
+        <n-h1>{{ className }}</n-h1>
+        <n-p v-show="classDescription !== 'None'">{{ classDescription }}</n-p>
+        <n-grid :cols="6" :x-gap="12">
+            <n-grid-item :span="2">
+                <entity-list
+                    :project-id="projectId"
+                    :model-url="modelUrl"
+                    :class-id="classId"
+                    :class-name="className"
+                    :class-type="classType"
+                    :inserted="insertedEntities"
+                    @entity-select="changeCurrentParameters"
+                    @entity-insert="storeEntityInsertion"
+                    @entity-update="storeEntityUpdate"
+                    @entity-delete="storeEntityDeletion"
+                    @relationships-clash="setRelationshipsClashErrorState"
+                />
+            </n-grid-item>
+            <n-grid-item :span="2">
+                <parameter-table
+                    :project-id="projectId"
+                    :model-url="modelUrl"
+                    :class-id="classId"
+                    :entity-key="currentEntityKey"
+                    :diff="pendingModelChanges"
+                    @open-value-editor-request="setValueEditorData"
+                    @close-value-editor-request="possiblyClearValueEditor"
+                    @value-insert="storeValueInsertion"
+                    @value-update="storeValueUpdate"
+                    @value-delete="storeValueDeletion"
+                />
+            </n-grid-item>
+            <n-grid-item :span="2">
+                <indexed-value-editor
+                    :value-data="valueEditorData"
+                    :diff="pendingModelChanges"
+                    @value-update="storeValueUpdate"
+                />
+            </n-grid-item>
+        </n-grid>
+    </page>
 </template>
 
 <script>
@@ -61,25 +74,31 @@ import CommitButton from "./CommitButton.vue"
 import EntityList from "./EntityList.vue";
 import ParameterTable from "./ParameterTable.vue";
 import IndexedValueEditor from "./IndexedValueEditor.vue";
+import Page from "./Page.vue";
 import PagePath from "./PagePath.vue";
 
 export default {
     props: {
-        indexUrl: String,
-        projectUrl: String,
-        projectName: String,
-        projectId: Number,
-        editUrl: String,
-        classId: Number,
-        className: String,
-        classType: Number,
-        classDescription: String,
-        modelUrl: String,
+        indexUrl: {type: String, required: true},
+        projectUrl: {type: String, required: true},
+        projectName: {type: String, required: true},
+        projectId: {type: Number, required: true},
+        editUrl: {type: String, required: true},
+        runUrl: {type: String, required: true},
+        resultsUrl: {type: String, required: true},
+        classId: {type: Number, required: true},
+        className: {type: String, required: true},
+        classType: {type: Number, required: true},
+        classDescription: {type: String, required: true},
+        modelUrl: {type: String, required: true},
+        logoutUrl: {type: String, required: true},
+        logoUrl: {type: String, required: true},
     },
     components: {
         "commit-button": CommitButton,
         "entity-list": EntityList,
         "indexed-value-editor": IndexedValueEditor,
+        "page": Page,
         "page-path": PagePath,
         "parameter-table": ParameterTable,
     },

@@ -3,28 +3,23 @@
 
 {% block title %} Run model - Flextool 3{% endblock %}
 
-{% block top-bar %}
-    <li><a href="{% url 'flextool3:index' %}">Projects</a></li>
-    <li><a href="{% url 'flextool3:detail' project.id %}">Manage project</a></li>
-    <li><a href="{% url 'flextool3:edit' project.id %}">Model editor</a></li>
-    <li><p>Run</p></li>
-    <li><a href="{% url 'flextool3:view' project.id %}">Results</a></li>
-{% endblock %}
-
-
 {% block content %}
-    <div class="app-box" id="run-app">
+    <div id="run-app">
         <n-message-provider>
             <run-app
                 index-url="{% url 'flextool3:index' %}"
+                edit-url="{% url 'flextool3:edit' project.id %}"
                 project-url="{% url 'flextool3:detail' project.id %}"
                 project-name="{{ project.name }}"
                 :project-id="{{ project.id }}"
                 model-url="{% url 'flextool3:model' %}"
-                view-url="{% url 'flextool3:view' project.id %}"
+                run-url="{% url 'flextool3:run' project.id %}"
+                results-url="{% url 'flextool3:view' project.id %}"
                 executions-url="{% url 'flextool3:executions' %}"
                 scenarios-url="{% url 'flextool3:scenarios' project.id %}"
-            >
+                logout-url="{% url 'flextool3:logout' %}"
+                logo-url="{% static 'flextool3/menu-logo.png' %}"
+                >
             </run-app>
         </n-message-provider>
     </div>
