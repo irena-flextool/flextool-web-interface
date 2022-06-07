@@ -1,15 +1,15 @@
 <template>
     <n-space>
         <n-input
-        clearable
-        :placeholder="placeholder"
-        v-model:value="currentName"
-        size="small"
+            clearable
+            :placeholder="placeholder"
+            v-model:value="currentName"
+            size="tiny"
         />
         <n-button
             @click="emitCreate"
-            size="small"
-            >
+            size="tiny"
+        >
             Create
         </n-button>
     </n-space>

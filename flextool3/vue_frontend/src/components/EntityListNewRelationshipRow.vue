@@ -5,12 +5,15 @@
             :key="index"
             :options="options[index]"
             filterable
-            size="small"
+            :placeholder="placeholderText(index)"
+            :show-arrow="false"
+            size="tiny"
             @update:value="updateSelection"
+            class="entity-list-select"
         />
         <n-button
             @click="emitRelationshipCreate"
-            size="small"
+            size="tiny"
             :disabled="!wellDefined"
             >
             Create
@@ -34,7 +37,8 @@ function selectOptions(availableObjects) {
             dimensionOptions.push({
                 label: objectName,
                 value: objectName,
-                dimension: dimension
+                dimension: dimension,
+                style: {"font-size": "12px"},
             });
         });
         options.push(dimensionOptions);
@@ -70,6 +74,23 @@ export default {
                     }
                 });
             },
+            placeholderText(index) {
+                let suffix = null;
+                switch(index) {
+                    case 0:
+                        suffix = "st";
+                        break;
+                    case 1:
+                        suffix = "nd";
+                        break;
+                    case 2:
+                        suffix = "rd";
+                        break;
+                    default:
+                        suffix = "th";
+                }
+                return `${index + 1}${suffix} object`;
+            }
         };
     }
 }

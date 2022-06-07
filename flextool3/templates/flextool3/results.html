@@ -3,6 +3,10 @@
 
 {% block title %} Results - Flextool 3{% endblock %}
 
+{% block head %}
+    <link rel="stylesheet" href="{% static 'flextool3/apps/css/results.css' %}">
+{% endblock %}
+
 {% block content %}
     <div id="results-app">
         <results-app

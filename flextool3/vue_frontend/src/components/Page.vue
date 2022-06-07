@@ -1,22 +1,26 @@
 <template>
-    <n-card size="small">
-        <navigation-menu
-            :current="name"
-            :index-url="indexUrl"
-            :project-url="projectUrl"
-            :edit-url="editUrl"
-            :run-url="runUrl"
-            :results-url="resultsUrl"
-            :logout-url="logoutUrl"
-            :logo-url="logoUrl"
-        />
-    </n-card>
-    <div class="page-content">
-        <slot name="header"></slot>
-    </div>
-    <div class ="page-content">
-        <slot></slot>
-    </div>
+    <n-layout position="absolute">
+        <n-layout-header>
+            <n-card size="small">
+                <navigation-menu
+                    :current="name"
+                    :index-url="indexUrl"
+                    :project-url="projectUrl"
+                    :edit-url="editUrl"
+                    :run-url="runUrl"
+                    :results-url="resultsUrl"
+                    :logout-url="logoutUrl"
+                    :logo-url="logoUrl"
+                />
+            </n-card>
+            <div class="page-content">
+                <slot name="header"></slot>
+            </div>
+        </n-layout-header>
+        <div class="page-content">
+            <slot></slot>
+        </div>
+    </n-layout>
 </template>
 
 <script>

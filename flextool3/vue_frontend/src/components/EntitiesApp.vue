@@ -14,64 +14,77 @@
                 :path="[{name: 'Projects', url: indexUrl}, {name: projectName, url: projectUrl}, {name: 'Model', url: editUrl}]"
                 :leaf-name="className"
             />
+            <n-h1>{{ className }}</n-h1>
+            <n-p v-show="classDescription !== 'None'">{{ classDescription }}</n-p>
+            <commit-button
+                :has-pending-changes="pendingChanges"
+                :committing="committing"
+                :error-message="commitErrorMessage"
+                @commitRequest="commit"
+            />
         </template>
-        <commit-button
-            :has-pending-changes="pendingChanges"
-            :committing="committing"
-            :error-message="commitErrorMessage"
-            @commitRequest="commit"
-        />
-        <n-h1>{{ className }}</n-h1>
-        <n-p v-show="classDescription !== 'None'">{{ classDescription }}</n-p>
-        <n-grid :cols="6" :x-gap="12">
-            <n-grid-item :span="2">
-                <entity-list
-                    :project-id="projectId"
-                    :model-url="modelUrl"
-                    :class-id="classId"
-                    :class-name="className"
-                    :class-type="classType"
-                    :inserted="insertedEntities"
-                    @entity-select="changeCurrentParameters"
-                    @entity-insert="storeEntityInsertion"
-                    @entity-update="storeEntityUpdate"
-                    @entity-delete="storeEntityDeletion"
-                    @relationships-clash="setRelationshipsClashErrorState"
-                />
-            </n-grid-item>
-            <n-grid-item :span="2">
-                <parameter-table
-                    :project-id="projectId"
-                    :model-url="modelUrl"
-                    :class-id="classId"
-                    :entity-key="currentEntityKey"
-                    :diff="pendingModelChanges"
-                    @open-value-editor-request="setValueEditorData"
-                    @close-value-editor-request="possiblyClearValueEditor"
-                    @value-insert="storeValueInsertion"
-                    @value-update="storeValueUpdate"
-                    @value-delete="storeValueDeletion"
-                />
-            </n-grid-item>
-            <n-grid-item :span="2">
-                <indexed-value-editor
-                    :value-data="valueEditorData"
-                    :diff="pendingModelChanges"
-                    @value-update="storeValueUpdate"
-                />
-            </n-grid-item>
-        </n-grid>
+        <n-layout id="main-layout" has-sider position="absolute">
+            <n-layout-sider :width="siderWidth">
+                <n-space>
+                    <entity-list
+                        :project-id="projectId"
+                        :model-url="modelUrl"
+                        :class-id="classId"
+                        :class-name="className"
+                        :class-type="classType"
+                        :inserted="insertedEntities"
+                        @entity-select="setSelectedEntity"
+                        @entity-insert="storeEntityInsertion"
+                        @entity-update="storeEntityUpdate"
+                        @entity-delete="storeEntityDeletion"
+                        @relationships-clash="setRelationshipsClashErrorState"
+                        @entity-dimensions-reveal="setEntityDimensions"
+                    />
+                    <alternative-selection
+                        :project-id="projectId"
+                        :model-url="modelUrl"
+                        @alternative-select="setSelectedAlternative"
+                    />
+                </n-space>
+            </n-layout-sider>
+            <n-layout-content content-style="margin-left: 1em; margin-right: 1em">
+                <n-grid cols="1 m:2" responsive="screen">
+                    <n-grid-item>
+                        <parameter-table
+                            :project-id="projectId"
+                            :model-url="modelUrl"
+                            :class-id="classId"
+                            :entity-key="currentEntityKey"
+                            :diff="pendingModelChanges"
+                            @open-value-editor-request="setValueEditorData"
+                            @close-value-editor-request="possiblyClearValueEditor"
+                            @value-insert="storeValueInsertion"
+                            @value-update="storeValueUpdate"
+                            @value-delete="storeValueDeletion"
+                        />
+                    </n-grid-item>
+                    <n-grid-item>
+                        <indexed-value-editor
+                            :value-data="valueEditorData"
+                            :diff="pendingModelChanges"
+                            @value-update="storeValueUpdate"
+                        />
+                    </n-grid-item>
+                </n-grid>
+            </n-layout-content>
+        </n-layout>
     </page>
 </template>
 
 <script>
-import {ref, watch} from "vue/dist/vue.esm-bundler.js";
+import {computed, ref, watch} from "vue/dist/vue.esm-bundler.js";
 import {useDialog, useMessage} from "naive-ui";
 import * as Communication from "../modules/communication.mjs";
 import {EntityDiff} from "../modules/entityDiff.mjs";
 import {uncommittedChangesWatcher} from "../modules/eventListeners.mjs";
 import CommitButton from "./CommitButton.vue"
 import EntityList from "./EntityList.vue";
+import AlternativeSelection from "./AlternativeSelection.vue";
 import ParameterTable from "./ParameterTable.vue";
 import IndexedValueEditor from "./IndexedValueEditor.vue";
 import Page from "./Page.vue";
@@ -95,6 +108,7 @@ export default {
         logoUrl: {type: String, required: true},
     },
     components: {
+        "alternative-selection": AlternativeSelection,
         "commit-button": CommitButton,
         "entity-list": EntityList,
         "indexed-value-editor": IndexedValueEditor,
@@ -103,35 +117,38 @@ export default {
         "parameter-table": ParameterTable,
     },
     setup(props) {
-        const currentEntityKey = ref(null);
         const valueEditorData = ref(null);
         const committing = ref(false);
         const commitErrorMessage = ref("");
         const pendingChanges = ref(false);
         const insertedEntities = ref({});
         const pendingModelChanges = new EntityDiff(props.classId, props.className);
+        const selectedEntity = ref(null);
+        const selectedAlternative = ref(null);
+        const entityDimensions = ref(1);
+        const siderWidth = computed(function() {
+            return `${10 + Math.max(20, entityDimensions.value * 10)}em`;
+        });
         const message = useMessage();
         const dialog = useDialog();
         watch(pendingChanges, uncommittedChangesWatcher);
         return {
-            currentEntityKey: currentEntityKey,
+            currentEntityKey: computed(function() {
+                if(selectedEntity.value === null || selectedAlternative.value === null) {
+                    return null;
+                }
+                return {
+                    ...selectedEntity.value,
+                    ...selectedAlternative.value,
+                };
+            }),
             valueEditorData: valueEditorData,
             committing: committing,
             commitErrorMessage: commitErrorMessage,
             pendingChanges: pendingChanges,
             insertedEntities: insertedEntities,
             pendingModelChanges: pendingModelChanges,
-            changeCurrentParameters(entityKey) {
-                if(entityKey === null) {
-                    valueEditorData.value = null;
-                    currentEntityKey.value = null;
-                }
-                else if(currentEntityKey.value === null || entityKey.entityId !== currentEntityKey.value.entityId
-                        || entityKey.alternativeId !== currentEntityKey.value.alternativeId) {
-                    valueEditorData.value = null;
-                    currentEntityKey.value = entityKey;
-                }
-            },
+            siderWidth: siderWidth,
             setValueEditorData(valueData) {
                 valueEditorData.value = valueData;
             },
@@ -213,7 +230,24 @@ export default {
                     commitErrorMessage.value = "";
                 }
             },
+            setEntityDimensions(dimensions) {
+                entityDimensions.value = dimensions;
+            },
+            setSelectedEntity(entityKey) {
+                selectedEntity.value = entityKey;
+                valueEditorData.value = null;
+            },
+            setSelectedAlternative(alternativeInfo) {
+                selectedAlternative.value = alternativeInfo;
+                valueEditorData.value = null;
+            },
         };
     },
 }
 </script>
+
+<style>
+#main-layout {
+    top: 270px;
+}
+</style>

@@ -3,25 +3,25 @@
         <n-select
             :options="species"
             :value="currentSpecie"
-            size="small"
+            size="tiny"
             @update:value="changeState"
         />
         <n-input
             v-if="state === 'single value'"
             :value="currentValue"
             @update:value="changeSingleValue"
-            size="small"
+            size="tiny"
         />
         <n-select
             v-else-if="state === 'value list'"
             :value="currentValue"
             :options="valueOptions"
-            size="small"
+            size="tiny"
             @update:value="changeSingleValue"
         />
         <n-button
             v-else-if="state === 'indexed value'"
-            size="small"
+            size="tiny"
             @click="emitOpenValueEditorRequest"
             >
             Edit

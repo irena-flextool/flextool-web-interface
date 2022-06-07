@@ -8,17 +8,16 @@
                 :render-label="renderLabel"
                 :render-suffix="renderSuffix"
                 :selected-keys="selectedKeys"
+                size="tiny"
                 @update:selected-keys="emitEntitySelect"
             />
             <new-named-item-row
                 v-if="classType === 1"
-                v-show="alternatives"
                 item-name="object"
                 @create="addObject"
             />
             <entity-list-new-relationship-row
                 v-else
-                v-show="alternatives"
                 :available-objects="availableObjects"
                 @relationship-create="addRelationship"
             />
@@ -39,55 +38,18 @@ import DeleteItemButton from "./DeleteItemButton.vue";
 import NewNamedItemRow from "./NewNamedItemRow.vue";
 import EntityListNewRelationshipRow from "./EntityListNewRelationshipRow.vue";
 
-/**
- * Fetches alternatives.
- * @param {number} projectId Project id.
- * @param {string} modelUrl URL pointing to server's model interface.
- * @returns {Promise} Promise object that resolves to a list of alternatives.
- */
-function fetchAlternatives(projectId, modelUrl) {
-    return Communication.fetchData(
-        "alternatives?", projectId, modelUrl
-    ).then(function(data) {
-        return data.alternatives;
-    });
-}
-
-/**
- * Creates default 'Base' alternative.
- * @param {number} projectId Project id.
- * @param {string} modelUrl URL pointing to server's model interface.
- * @returns {Promise} Promise object that resolves to a list of alternatives.
- */
-function makeBaseAlternative(projectId, modelUrl) {
-    return Communication.fetchData(
-        "make base alternative", projectId, modelUrl, {}
-    ).then(function(data) {
-        return data.alternatives;
-    });
-}
-
-function fetchObjects(projectId, modelUrl, classId, entityList, alternatives, state, errorMessage) {
-    const alternativesPromise = fetchAlternatives(projectId, modelUrl);
+function fetchObjects(projectId, modelUrl, classId, entityList, state, errorMessage) {
     const extraBody = {object_class_id: classId};
     Communication.fetchData(
         "objects?", projectId, modelUrl, extraBody
     ).then(async function(data) {
         const objects = data.objects;
-        alternatives.value = await alternativesPromise;
-        if(alternatives.value.length === 0) {
-            alternatives.value = await makeBaseAlternative(projectId, modelUrl);
-        }
         const list = [];
         objects.forEach(function(object) {
-            alternatives.value.forEach(function(alternative) {
-                list.push({
-                    entityEmblem: object.name,
-                    entityId: object.id,
-                    alternativeName:alternative.name,
-                    alternativeId: alternative.id,
-                    key: `${object.name}:${alternative.id}`,
-                });
+            list.push({
+                entityEmblem: object.name,
+                entityId: object.id,
+                key: object.name,
             });
         });
         entityList.value = list;
@@ -99,7 +61,7 @@ function fetchObjects(projectId, modelUrl, classId, entityList, alternatives, st
 }
 
 /**
- * Fetches objects that are available as given alternative's dimensions.
+ * Fetches objects that are available as given relationship's dimensions.
  * @param {number} projectId Project id.
  * @param {string} modelUrl URL pointing to server's model interface.
  * @param {number} classId Relationship class id.
@@ -114,20 +76,8 @@ function fetchAvailableObjects(projectId, modelUrl, classId) {
     });
 }
 
-let currentRelationshipGroupId = 0;
-
-/**
- * Generates a unique id for relationship groups (objects + alternative).
- * @returns {number} Unique id.
- */
-function uniqueRelationshipGroupId() {
-    currentRelationshipGroupId += 1;
-    return currentRelationshipGroupId;
-}
-
 function fetchRelationships(
-        projectId, modelUrl, classId , entityList, availableObjects, alternatives, state, errorMessage) {
-    const alternativesPromise = fetchAlternatives(projectId, modelUrl);
+        projectId, modelUrl, classId , entityList, availableObjects, emit, state, errorMessage) {
     const extraBody = {relationship_class_id: classId};
     Communication.fetchData(
         "relationships?", projectId, modelUrl, extraBody
@@ -142,26 +92,17 @@ function fetchRelationships(
             }
             list.push(relationship.object_name);
         });
-        alternatives.value = await alternativesPromise;
-        if(alternatives.value.length === 0) {
-            alternatives.value = await makeBaseAlternative(projectId, modelUrl);
-        }
         availableObjects.value = await fetchAvailableObjects(projectId, modelUrl, classId);
+        emit("entityDimensionsReveal", availableObjects.value.length);
         const list = [];
         objectLists.forEach(function(objects, relationship_id) {
-            const groupId = uniqueRelationshipGroupId();
-            alternatives.value.forEach(function(alternative) {
-                list.push({
-                    entityEmblem: objects,
-                    originalEmblem: [...objects],
-                    entityId: relationship_id,
-                    alternativeName:alternative.name,
-                    alternativeId: alternative.id,
-                    availableObjects: availableObjects,
-                    objectNamesClash: false,
-                    key: `${objects.join(",")}:${alternative.id}`,
-                    groupId: groupId,
-                });
+            list.push({
+                entityEmblem: objects,
+                originalEmblem: [...objects],
+                entityId: relationship_id,
+                availableObjects: availableObjects,
+                objectNamesClash: false,
+                key: objects.join(","),
             });
         });
         list.sort(function(item1, item2) {
@@ -183,6 +124,10 @@ function fetchRelationships(
     });
 }
 
+function makeSelectedEntityInfo(selectedEntity) {
+    return {entityEmblem: selectedEntity.entityEmblem, entityId: selectedEntity.entityId};
+}
+
 export default {
     props: {
         projectId: {type: Number, required: true},
@@ -192,7 +137,14 @@ export default {
         classType: {type: Number, required: true},
         inserted: {type: Object, required: false},
     },
-    emits: ["entitySelect", "entityInsert", "entityUpdate", "entityDelete", "relationshipsClash"],
+    emits: [
+        "entitySelect",
+        "entityInsert",
+        "entityUpdate",
+        "entityDelete",
+        "relationshipsClash",
+        "entityDimensionsReveal"
+    ],
     components: {
         "fetchable": Fetchable,
         "new-named-item-row": NewNamedItemRow,
@@ -203,7 +155,6 @@ export default {
         const entityList = ref([]);
         const errorMessage = ref("");
         const selectedKeys = ref([]);
-        const alternatives = ref([]);
         const availableObjects = ref([]);
         const dialog = useDialog();
         onMounted(function() {
@@ -213,7 +164,6 @@ export default {
                     props.modelUrl,
                     props.classId,
                     entityList,
-                    alternatives,
                     state,
                     errorMessage
                 );
@@ -225,7 +175,7 @@ export default {
                     props.classId,
                     entityList,
                     availableObjects,
-                    alternatives,
+                    context.emit,
                     state,
                     errorMessage
                 );
@@ -262,15 +212,16 @@ export default {
                 return relationshipEmblemsEqual(updateData.entityEmblem, item.entityEmblem);
             });
             const clash = existing !== undefined;
-            entityList.value.forEach(function(item) {
-                if(updateData.groupId === item.groupId) {
-                    item.objectNamesClash = clash;
-                    item.entityEmblem = updateData.entityEmblem;
+            for(const entity of entityList.value) {
+                if(relationshipEmblemsEqual(updateData.previousEmblem, entity.originalEmblem)) {
+                    entity.objectNamesClash = clash;
+                    entity.entityEmblem = updateData.entityEmblem;
                     if(!clash) {
-                        item.originalEmblem = [...updateData.entityEmblem];
+                        entity.originalEmblem = [...updateData.entityEmblem];
                     }
+                    break;
                 }
-            });
+            }
             context.emit("relationshipsClash", existing);
             if(!existing) {
                 context.emit("entityUpdate", updateData);
@@ -295,7 +246,6 @@ export default {
             entityList: entityList,
             errorMessage: errorMessage,
             selectedKeys: selectedKeys,
-            alternatives: alternatives,
             availableObjects: availableObjects,
             renderLabel(info) {
                 if(props.classType === 1) {
@@ -304,7 +254,6 @@ export default {
                         {
                             objectName: info.option.entityEmblem,
                             objectId: info.option.entityId,
-                            alternativeName: info.option.alternativeName,
                             onRename: renameObject,
                         }
                     );
@@ -316,9 +265,7 @@ export default {
                             objects: info.option.entityEmblem,
                             originalObjects: info.option.originalEmblem,
                             relationshipId: info.option.entityId,
-                            alternativeName: info.option.alternativeName,
                             availableObjects: info.option.availableObjects,
-                            groupId: info.option.groupId,
                             objectNamesClash: info.option.objectNamesClash,
                             onObjectsUpdate: updateRelationshipObjects,
                         }
@@ -328,18 +275,16 @@ export default {
             renderSuffix(info) {
                 return h(DeleteItemButton, {emblem: info.option.entityEmblem, onDelete: deleteEntity});
             },
-            emitEntitySelect(newSelectedKeys, selectedNodes) {
-                const selected = selectedNodes.find(function(row) {
-                    return row && row.key === newSelectedKeys[0];
-                });
+            emitEntitySelect(keys, selectedEntities) {
+                if(keys.length === 0) {
+                    selectedKeys.value.length = 0;
+                    return;
+                }
+                const selectedEntity = selectedEntities[0]
+                selectedKeys.value = [selectedEntity.key];
                 context.emit(
                     "entitySelect",
-                    selected ? {
-                        entityEmblem: selected.entityEmblem,
-                        entityId: selected.entityId,
-                        alternativeName: selected.alternativeName,
-                        alternativeId: selected.alternativeId,
-                    } : null
+                    makeSelectedEntityInfo(selectedEntity),
                 );
             },
             addObject(name) {
@@ -350,19 +295,16 @@ export default {
                     dialog.error({title: "Cannot create", content: "An entity with the same name already exists."});
                     return;
                 }
-                const newEntities = [];
-                alternatives.value.forEach(function(alternative) {
-                    newEntities.push({
-                        entityEmblem: name,
-                        entityId: undefined,
-                        alternativeName:alternative.name,
-                        alternativeId: alternative.id,
-                        key: `${name}:${alternative.id}`,
-                    });
-                });
+                const newEntity = {
+                    entityEmblem: name,
+                    entityId: undefined,
+                    key: name,
+                };
                 const insertIndex = entityList.value.findIndex((row) => name < row.entityEmblem);
-                entityList.value.splice(insertIndex >= 0 ? insertIndex : entityList.value.length, 0, ...newEntities);
+                entityList.value.splice(insertIndex >= 0 ? insertIndex : entityList.value.length, 0, newEntity);
                 context.emit("entityInsert", name);
+                selectedKeys.value = [newEntity.key];
+                context.emit("entitySelect", makeSelectedEntityInfo(newEntity));
             },
             addRelationship(objects) {
                 const existing = entityList.value.find(function(item) {
@@ -375,27 +317,28 @@ export default {
                     });
                     return;
                 }
-                const groupId = uniqueRelationshipGroupId();
-                const newEntities = [];
                 const newObjects = [...objects];
-                alternatives.value.forEach(function(alternative) {
-                    newEntities.push({
-                        entityEmblem: newObjects,
-                        originalEmblem: [...newObjects],
-                        entityId: undefined,
-                        alternativeName:alternative.name,
-                        alternativeId: alternative.id,
-                        availableObjects: availableObjects,
-                        objectNamesClash: false,
-                        key: `${objects.join(",")}:${alternative.id}`,
-                        groupId: groupId,
-                    });
-                });
+                const newEntity = {
+                    entityEmblem: newObjects,
+                    originalEmblem: [...newObjects],
+                    entityId: undefined,
+                    availableObjects: availableObjects,
+                    objectNamesClash: false,
+                    key: objects.join(","),
+                };
                 const insertIndex = entityList.value.findIndex((row) => objects[0] < row.entityEmblem);
-                entityList.value.splice(insertIndex >= 0 ? insertIndex : entityList.value.length, 0, ...newEntities);
+                entityList.value.splice(insertIndex >= 0 ? insertIndex : entityList.value.length, 0, newEntity);
                 context.emit("entityInsert", newObjects);
+                selectedKeys.value = [newEntity.key];
+                context.emit("entitySelect", makeSelectedEntityInfo(newEntity));
             }
         };
     },
 }
 </script>
+
+<style>
+.entity-list-select {
+    max-width: 7em;
+}
+</style>

@@ -7,7 +7,7 @@
         </n-space>
         <n-data-table
             v-if="!errorMessage"
-            size="small"
+            size="tiny"
             :columns="columns"
             :data="data"
             :loading="loading"

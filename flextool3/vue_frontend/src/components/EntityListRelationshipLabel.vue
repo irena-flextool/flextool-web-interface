@@ -9,8 +9,6 @@
             :key="index"
             @accept="emitObjectsUpdate"
         />
-        <n-text>―</n-text>
-        <n-text italic>{{ alternativeName }}</n-text>
     </n-space>
 </template>
 
@@ -22,10 +20,8 @@ export default {
         objects: {type: Array, required: true},
         originalObjects: {type: Array, required: true},
         relationshipId: {type: Number, required: false},
-        alternativeName: {type: String, required: true},
         availableObjects: {type: Array, required: true},
         objectNamesClash: {type: Boolean, required: false, default: false},
-        groupId: {type: Number, required: true},
     },
     emits: ["objectsUpdate"],
     components: {
@@ -48,7 +44,6 @@ export default {
                     id: props.relationshipId,
                     previousEmblem: previousObjects,
                     entityEmblem: objects,
-                    groupId: props.groupId,
                 });
             }
         };

@@ -7,8 +7,6 @@
             @accept="emitRename"
             @cancel="hideInput"
         />
-        <n-text>―</n-text>
-        <n-text italic>{{ alternativeName }}</n-text>
     </n-space>
 </template>
 
@@ -20,7 +18,6 @@ export default {
     props: {
         objectName: {type: String, required: true},
         objectId: {type: Number, required: false},
-        alternativeName: {type: String, required: true},
     },
     emits: ["rename"],
     components: {

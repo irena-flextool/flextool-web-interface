@@ -4,7 +4,9 @@
         ref="instance"
         filterable
         :options="options"
-        size="small"
+        size="tiny"
+        :show-arrow="false"
+        class="entity-list-select"
         @blur="accept"
         @keydown="handleKey"
     />
@@ -24,6 +26,7 @@ export default {
             objectsList.push({
                 label: object,
                 value: object,
+                style: {"font-size": "12px"},
             });
         });
         const options = ref(objectsList);
