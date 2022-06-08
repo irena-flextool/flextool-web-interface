@@ -97,7 +97,7 @@ function makeColumns(entityKey, context) {
                 onOpenValueEditorRequest(valueData) {
                     context.emit("openValueEditorRequest", {
                         value: valueData.parameterValue,
-                        id: valueData.valueId,
+                        valueId: valueData.valueId,
                         entityEmblem: entityKey.value.entityEmblem,
                         parameterName: rowData.name,
                         definitionId: rowData.definitionId,
