@@ -83,10 +83,15 @@ export default {
                     return;
                 }
                 for(const scenario of scenarios.value) {
-                    if(scenario.key === keys[0]) {
-                        scenario.selected = [keys[0]];
+                    let selectedFound = false;
+                    for(const execution of scenario.executions) {
+                        if(execution.key === keys[0]) {
+                            scenario.selected = [keys[0]];
+                            selectedFound = true;
+                            break;
+                        }
                     }
-                    else {
+                    if(!selectedFound) {
                         scenario.selected.length = 0;
                     }
                 }
