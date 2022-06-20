@@ -14,14 +14,13 @@
                 :path="[{name: 'Projects', url: indexUrl}, {name: projectName, url: projectUrl}, {name: 'Model', url: editUrl}]"
                 leaf-name="scenarios"
             />
+            <commit-button
+                :has-pending-changes="hasPendingChanges"
+                :committing="committing"
+                @commit-request="commit"
+            />
         </template>
-        <n-space vertical>
-        <commit-button
-            :has-pending-changes="hasPendingChanges"
-            :committing="committing"
-            @commit-request="commit"
-        />
-        <n-grid :cols="3">
+        <n-grid cols="1 s:2 m:3 l:4 xl:6" responsive="screen">
             <n-grid-item>
                 <n-space vertical>
                     <n-h1>Alternatives</n-h1>
@@ -36,7 +35,7 @@
                     />
                 </n-space>
             </n-grid-item>
-            <n-grid-item :span="2">
+            <n-grid-item span="1 m:2 l:3 xl:5">
                 <n-space vertical>
                     <n-h1>Scenarios</n-h1>
                     <scenarios-table
@@ -53,7 +52,6 @@
                 </n-space>
             </n-grid-item>
         </n-grid>
-        </n-space>
     </page>
 </template>
 
