@@ -6,6 +6,7 @@
                 :data="alternativeList"
                 :render-label="renderLabel"
                 :render-suffix="renderSuffix"
+                :selectable="false"
             />
             <new-named-item-row
                 item-name="alternative"
