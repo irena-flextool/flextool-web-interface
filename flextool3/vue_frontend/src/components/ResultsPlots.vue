@@ -1,6 +1,6 @@
 <template>
     <fetchable :state="state" :error-message="errorMessage">
-        <n-grid v-if="plotBoxes.length > 0" :cols="3">
+        <n-grid v-if="plotBoxes.length > 0" cols="1 l:2" responsive="screen">
             <n-grid-item v-for="(plotBox, index) in plotBoxes" :key="index">
                 <keyed-card
                     :title="plotBox.title"

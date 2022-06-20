@@ -15,7 +15,7 @@
                 leaf-name="Results"
             />
         </template>
-        <n-layout has-sider style="height: 100vh">
+        <n-layout id="main-layout" has-sider position="absolute">
             <n-layout-sider>
                 <results-scenario-list
                     :project-id="projectId"
@@ -24,7 +24,7 @@
                     @scenarioSelect="loadResults"
                 />
             </n-layout-sider>
-            <n-layout-content>
+            <n-layout-content content-style="margin-left: 1em; margin-right: 1em">
                 <results-summary
                     :project-id="projectId"
                     :summary-url="summaryUrl"
@@ -94,3 +94,9 @@ export default {
     },
 };
 </script>
+
+<style>
+#main-layout {
+    top: 100px;
+}
+</style>

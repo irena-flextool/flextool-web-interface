@@ -15,7 +15,8 @@ export default {
     setup(props) {
         const plotId = ref(`plot-${props.identifier}`);
         onMounted(function() {
-            Plotly.newPlot(plotId.value, props.plotData, props.plotLayout);
+            const config = {responsive: true};
+            Plotly.newPlot(plotId.value, props.plotData, props.plotLayout, config);
         });
         return {
             plotId: plotId,
