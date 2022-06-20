@@ -15,16 +15,16 @@
                 leaf-name="Model editor"
             />
         </template>
-        <n-grid :cols="2">
-            <n-grid-item>
+        <n-space>
+            <n-space vertical>
                 <n-h1>Physical classes</n-h1>
                 <class-list
                     class-type="physical"
                     :project-id="projectId"
                     :model-url="modelUrl"
                 />
-            </n-grid-item>
-            <n-grid-item>
+            </n-space>
+            <n-space vertical>
                 <n-h1>Scenarios</n-h1>
                 <n-p>
                     <n-a :href="scenariosUrl">
@@ -37,8 +37,8 @@
                     :project-id="projectId"
                     :model-url="modelUrl"
                 />
-            </n-grid-item>
-        </n-grid>
+            </n-space>
+        </n-space>
     </page>
 </template>
 
