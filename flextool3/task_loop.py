@@ -131,6 +131,8 @@ def _read_stream(out, log_queue):
     """
     try:
         for line in iter(out.readline, ""):
+            if line.startswith("\x1b"):
+                continue
             log_queue.put(line)
     except ValueError:
         pass
