@@ -119,8 +119,8 @@ def _scenario_from_filter_id(filter_id):
         str: scenario name
     """
     front = filter_id[: -len(" - Input_data")]
-    scenario_filter, tool_filter = front.split(",")
-    return scenario_filter.strip()
+    filter_1_name, filter_2_name = (name.strip() for name in front.split(","))
+    return filter_1_name if filter_1_name != "FlexTool3" else filter_2_name
 
 
 class ScenarioExecution(models.Model):

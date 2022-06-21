@@ -159,9 +159,7 @@ class ScenarioExecutionModelTests(TestCase):
             run_dir = output_dir / "dc03f1ea3aebbee9146b9cf380472f6045c0927d"
             run_dir.mkdir(parents=True)
             with open(run_dir / ".filter_id", "w", encoding="utf-8") as filter_id_file:
-                filter_id_file.writelines(
-                    ["my_scenario, FlexTool3 - FlexTool3_test_data\n"]
-                )
+                filter_id_file.writelines(["my_scenario, FlexTool3 - Input_data\n"])
             runs = ["2023-05-23T14.05.23", "2023-05-23T15.23.05"]
             for run in runs:
                 run_output_dir = run_dir / run / "output"
@@ -2386,9 +2384,60 @@ NonSync, JustA, p2025, 3298.2
             )
             filter_id_path.parent.mkdir(parents=True)
             with open(filter_id_path, "w", encoding="utf-8") as filter_id_file:
-                filter_id_file.writelines(
-                    ["my_scenario, FlexTool3 - FlexTool3_test_data"]
+                filter_id_file.writelines(["my_scenario, FlexTool3 - Input_data"])
+            summary_path = (
+                Path(project.path)
+                / ".spinetoolbox"
+                / "items"
+                / "flextool3"
+                / "output"
+                / "dc03f1ea3aebbee9146b9cf380472f6045c0927d"
+                / "2022-05-05T13.00.00"
+                / "output"
+                / SUMMARY_FILE_NAME
+            )
+            summary_path.parent.mkdir(parents=True)
+            with open(summary_path, "w", encoding="utf-8") as summary_file:
+                summary_file.write(self._SUMMARY)
+            with login_as_baron(self.client) as login_successful:
+                self.assertTrue(login_successful)
+                response = self.client.post(
+                    self.summary_url,
+                    {
+                        "type": "summary?",
+                        "projectId": 1,
+                        "scenarioExecutionId": 1,
+                    },
+                    content_type="application/json",
                 )
+                self.assertEqual(response.status_code, 200)
+                content = json.loads(response.content)
+                expected = {"summary": self.summary_rows()}
+                self.assertEqual(content, expected)
+
+    def test_get_summary_when_filter_id_names_are_inverted(self):
+        with fake_project(self.baron) as project:
+            scenario = Scenario(project=project, name="my_scenario")
+            scenario.save()
+            scenario_execution = ScenarioExecution(
+                scenario=scenario,
+                execution_time=datetime.fromisoformat("2022-05-05T12:59:50+03:00"),
+                execution_time_offset=3 * 3600,
+                log="",
+            )
+            scenario_execution.save()
+            filter_id_path = (
+                Path(project.path)
+                / ".spinetoolbox"
+                / "items"
+                / "flextool3"
+                / "output"
+                / "dc03f1ea3aebbee9146b9cf380472f6045c0927d"
+                / ".filter_id"
+            )
+            filter_id_path.parent.mkdir(parents=True)
+            with open(filter_id_path, "w", encoding="utf-8") as filter_id_file:
+                filter_id_file.writelines(["FlexTool3, my_scenario - Input_data"])
             summary_path = (
                 Path(project.path)
                 / ".spinetoolbox"
