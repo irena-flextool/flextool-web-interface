@@ -78,3 +78,19 @@ python manage.py runserver
 Install `dev-requirements.txt` to get the Python packages needed for development.
 
 [node.js](nodejs.org) and [yarn](yarnpkg.com) package manager are needed to build the browser app.
+
+### Keeping master project up-to-date
+
+The master project template is located in `<repository root>/flextool3/master_project`.
+The directory is a [git submodule](https://git-scm.com/book/en/v2/Git-Tools-Submodules)
+and can be updated to the latest version by
+
+```commandline
+cd flextool3
+cd master_project
+git pull
+cd ..
+cd ..
+git add -A
+git commit
+```
