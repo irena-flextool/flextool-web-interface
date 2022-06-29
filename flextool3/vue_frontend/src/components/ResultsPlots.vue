@@ -9,8 +9,12 @@
                 >
                     <plot-figure
                         :identifier="index"
-                        :plot-data="plotBox.data"
-                        :plot-layout="plotBox.layout"
+                        :data-table="plotBox.data"
+                        :index-names="plotBox.indexNames"
+                        :entity-class="plotBox.entityClass"
+                        :parameter-name="plotBox.parameterName"
+                        :project-id="projectId"
+                        :analysis-url="analysisUrl"
                     />
                 </keyed-card>
             </n-grid-item>
@@ -22,8 +26,8 @@
 <script>
 import {ref} from "vue/dist/vue.esm-bundler.js";
 import {tabulate} from "../modules/parameterValues.mjs";
-import {toBarChartData} from "../modules/plots.mjs";
 import {fetchData, fetchResultAlternative} from "../modules/communication.mjs";
+import {interpretClassTypeId} from "../modules/entityClasses.mjs";
 import Fetchable from "./Fetchable.vue";
 import KeyedCard from "./KeyedCard.vue";
 import PlotFigure from "./PlotFigure.vue";
@@ -46,17 +50,16 @@ async function completeFetch(
         const values = await parameterValuePromise;
         const tables = new Map();
         for(const value of values) {
-            const entityClass = entityClasses.get(value.entity_class_id);
-            let tablesPerClass = tables.get(entityClass);
+            let tablesPerClass = tables.get(value.entity_class_id);
             if(tablesPerClass === undefined) {
                 tablesPerClass = new Map();
-                tables.set(entityClass, tablesPerClass);
+                tables.set(value.entity_class_id, tablesPerClass);
             }
             const name = definitions.get(value.parameter_definition_id);
-            let table = tablesPerClass.get(name);
-            if(table === undefined) {
-                table = [];
-                tablesPerClass.set(name, table);
+            let tableData = tablesPerClass.get(name);
+            if(tableData === undefined) {
+                tableData = {indexNames: undefined, table: []};
+                tablesPerClass.set(name, tableData);
             }
             const objectId = value.object_id;
             let entities = undefined;
@@ -73,21 +76,25 @@ async function completeFetch(
                 tabulatedValue = tabulate(parsed, value.type);
             }
             else {
-                tabulatedValue = [[parsed]];
+                tabulatedValue = {indexNames: [], table: [[parsed]]};
             }
-            for(const valueRow of tabulatedValue) {
-                table.push([...entities, ...valueRow]);
+            for(const valueRow of tabulatedValue.table) {
+                tableData.table.push([...entities, ...valueRow]);
             }
+            tableData.indexNames = tabulatedValue.indexNames;
         }
-        for(const [className, tablesPerClass] of tables) {
+        for(const [classId, tablesPerClass] of tables) {
+            const classInfo = entityClasses.get(classId);
+            const entityClass = {id: classId, name: classInfo.name, type: classInfo.type};
             for(const [parameterName, table] of tablesPerClass) {
-                const title = `${className} - ${parameterName}`;
-                let xColumn = 0;
-                if(table) {
-                    xColumn = table[0].length - 2;
-                }
-                const plotData = toBarChartData(table, xColumn);
-                plotBoxes.value.push({title: title, data: plotData, layout: {}});
+                const title = `${classInfo.name} - ${parameterName}`;
+                plotBoxes.value.push({
+                    title: title,
+                    entityClass: entityClass,
+                    parameterName: parameterName,
+                    indexNames: table.indexNames,
+                    data: table.table
+                });
             }
         }
     } catch(error) {
@@ -141,7 +148,13 @@ export default {
                 const entityClassPromise = fetchData(
                     "entity classes?", props.projectId, props.analysisUrl
                 ).then(function(data) {
-                    return new Map(data.classes.map((c) => [c.id, c.name]));
+                    return new Map(data.classes.map(function(c) {
+                        const info = {
+                            name: c.name,
+                            type: interpretClassTypeId(c.type_id),
+                        };
+                        return [c.id, info];
+                    }));
                 });
                 const objectPromise = fetchData(
                     "objects?", props.projectId, props.analysisUrl

@@ -9,7 +9,7 @@ from django.contrib.auth.models import User
 from django.db import models
 from django.urls import reverse
 from .exception import FlextoolException
-from .time_utils import naive_local_time
+from .utils import naive_local_time
 
 PROJECT_NAME_LENGTH = 60
 SUMMARY_FILE_NAME = "summary_solve.csv"

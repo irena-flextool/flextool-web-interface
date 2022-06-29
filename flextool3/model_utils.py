@@ -1,4 +1,4 @@
-from .dict_utils import get_and_validate
+from .utils import get_and_validate
 from .models import Project
 from .exception import FlextoolException
 

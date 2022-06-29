@@ -98,5 +98,6 @@ export default {
 <style>
 #main-layout {
     top: 100px;
+    margin-left: 1em;
 }
 </style>

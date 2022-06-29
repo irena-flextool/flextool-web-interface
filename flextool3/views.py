@@ -1,9 +1,7 @@
-from enum import auto, Enum, unique
 import json
 from pathlib import Path
 import re
 from shutil import copyfile
-from contextlib import contextmanager
 
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -24,11 +22,11 @@ from spinedb_api import (
     SpineDBVersionError,
     SpineDBAPIError,
 )
+from .analysis_view import get_entity_classes, get_relationship_class_object_classes
 from .models import Project, PROJECT_NAME_LENGTH
 from .exception import FlextoolException
-from .dict_utils import get_and_validate
 from .model_utils import resolve_project
-from .utils import Database, database_map
+from .utils import Database, database_map, get_and_validate, Key
 from .executions_view import (
     abort_execution,
     execute,
@@ -62,20 +60,6 @@ MODEL_OBJECT_CLASS_NAMES = {
     "timeline",
     "solve",
 }
-
-
-@unique
-class Key(Enum):
-    ALTERNATIVE_ID = "alternative_id"
-    CLASS_ID = "class_id"
-    ENTITY_ID = "entity_id"
-    OBJECT_CLASS_ID = "object_class_id"
-    OBJECT_ID = "object_id"
-    RELATIONSHIP_CLASS_ID = "relationship_class_id"
-    VALUE_LIST_IDS = "value_list_ids"
-
-    def __str__(self):
-        return self.value
 
 
 def _convert_ints_to_floats(value):
@@ -319,9 +303,9 @@ def model(request):
         if type_ == "model classes?":
             return get_class_set(project, MODEL_OBJECT_CLASS_NAMES)
         if type_ == "commits?":
-            return get_commits(project, body)
+            return get_commits(project)
         if type_ == "make base alternative":
-            return make_base_alternative(project, body)
+            return make_base_alternative(project)
         if type_ == "commit":
             return commit(project, body)
         return None
@@ -663,12 +647,11 @@ def get_parameter_value_lists(project, request_body):
         return JsonResponse({"lists": value_lists})
 
 
-def get_commits(project, request_body):
+def get_commits(project):
     """Queries commits in model database.
 
     Args:
         project (Project): target project
-        request_body (dict): request body
 
     Returns:
         HttpResponse: commits
@@ -679,12 +662,11 @@ def get_commits(project, request_body):
         return JsonResponse({"commits": commits})
 
 
-def make_base_alternative(project, request_body):
+def make_base_alternative(project):
     """Creates and commits an alternative called 'Base' if there aren't any alternatives in the database.
 
     Args:
         project (Project): target project
-        request_body (dict): request body
 
     Returns:
         HttpResponse: status or error message
@@ -1222,7 +1204,7 @@ def _insert_parameter_values(db_map, insertions, class_id):
 
 
 def get_class_set(project, object_class_names):
-    """Queries physical object and relationship classes in model database.
+    """Queries object and relationship classes by object class names in model database.
 
     Args:
         project (Project): target project
@@ -1413,22 +1395,10 @@ def analysis(request):
     def handle_result_specific_types(type_, project, body):
         if type_ == "entity classes?":
             return get_entity_classes(project)
+        if type_ == "relationship class object classes?":
+            return get_relationship_class_object_classes(project, body)
         return None
 
     return _resolve_interface_request(
         request, Database.RESULT, handle_result_specific_types
     )
-
-
-def get_entity_classes(project):
-    """Queries entity classes in of project's results database.
-
-    Args:
-        project (Project): target project
-
-    Returns:
-        HttpResponse: entity classes
-    """
-    with database_map(project, Database.RESULT) as db_map:
-        classes = [row._asdict() for row in db_map.query(db_map.entity_class_sq)]
-        return JsonResponse({"classes": classes})

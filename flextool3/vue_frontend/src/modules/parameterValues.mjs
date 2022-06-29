@@ -36,12 +36,45 @@ function tabulateMap(map) {
     return mapToTable(map.data);
 }
 
+function arrayIndexName(array) {
+    if(array.index_name !== undefined) {
+        return [array.index_name];
+    }
+    else {
+        return ["x"];
+    }
+}
+
+function mapIndexNames(map, current = [], depth = 0) {
+    depth += 1;
+    if(current.length < depth) {
+        current.push(map.index_name !== undefined ? map.index_name : "x");
+    }
+    if(Array.isArray(map.data)) {
+        for(const row of map.data) {
+            const value = row[1];
+            if(value !== null && typeof(value) === "object") {
+                current = mapIndexNames(value, current, depth);
+            }
+        }
+    }
+    else {
+        for(const index in map.data) {
+            const value = map.data[index];
+            if(value !== null && typeof(value) === "object") {
+                current = mapIndexNames(value, current, depth);
+            }
+        }
+    }
+    return current;
+}
+
 function tabulate(value, type) {
     if(type === "array") {
-        return tabulateArray(value);
+        return {indexNames: arrayIndexName(value), table: tabulateArray(value)};
     }
     else if(type === "map") {
-        return tabulateMap(value);
+        return {indexNames: mapIndexNames(value), table: tabulateMap(value)};
     }
     throw new Error("Unknown parameter value type.");
 }

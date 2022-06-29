@@ -5,11 +5,9 @@ import re
 
 from django.http import HttpResponseBadRequest, JsonResponse
 
-from .dict_utils import get_and_validate
 from .exception import FlextoolException
 from .models import Scenario, ScenarioExecution
-from .time_utils import naive_local_time
-from .utils import Database, database_map
+from .utils import Database, database_map, get_and_validate, naive_local_time
 
 
 def number_to_float(x):

@@ -13,7 +13,7 @@ from django.utils import timezone
 from .exception import FlextoolException, ExecutionNotFound
 from .model_utils import resolve_project
 from .models import Scenario, ScenarioExecution
-from .dict_utils import get_and_validate
+from .utils import get_and_validate
 from . import executor, task_loop
 
 _MOD_SCRIPT_NAME = "mod_script.py"

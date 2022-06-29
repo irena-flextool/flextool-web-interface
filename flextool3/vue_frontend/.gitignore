@@ -2,6 +2,7 @@
 node_modules
 /dist
 webpack-stats.json
+.yarn*
 
 # local env files
 .env.local
