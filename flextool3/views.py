@@ -11,6 +11,7 @@ from django.http import (
     HttpResponseBadRequest,
     JsonResponse,
     HttpResponseServerError,
+    FileResponse,
 )
 from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
@@ -40,6 +41,7 @@ from .summary_view import (
     get_result_alternative,
     get_output_directory,
 )
+from .import_model_database_view import save_model_database_file
 
 FLEXTOOL_PROJECT_TEMPLATE = Path(__file__).parent / "master_project"
 FLEXTOOL_PROJECTS_ROOT = Path(__file__).parent / "user_projects"
@@ -191,7 +193,7 @@ def scenarios(request, pk):
 
 @login_required
 def run(request, pk):
-    project = get_object_or_404(Project, pk=pk)
+    project = get_object_or_404(Project, pk=pk, user=request.user.id)
     context = {"project": project}
     return render(request, "flextool3/run.html", context)
 
@@ -1402,3 +1404,34 @@ def analysis(request):
     return _resolve_interface_request(
         request, Database.RESULT, handle_result_specific_types
     )
+
+
+@login_required
+def export_model_database(request, pk):
+    """Creates a model database file download response.
+
+    Args:
+        request (HttpRequest): client's request
+        pk (int): project id
+
+    Returns:
+        HttpResponse: server response
+    """
+    project = get_object_or_404(Project, pk=pk, user=request.user.id)
+    return FileResponse(open(project.model_database_path(), "rb"), as_attachment=True)
+
+
+@login_required
+def import_model_database(request, pk):
+    """Saves uploaded model database file to project.
+
+    Args:
+        request (HttpRequest): client's request
+        pk (int): project id
+
+    Returns:
+        HttpResponse: server response
+    """
+    project = get_object_or_404(Project, pk=pk, user=request.user.id)
+    save_model_database_file(request.FILES["model_database"], project)
+    return JsonResponse({})

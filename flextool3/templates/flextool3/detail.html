@@ -18,6 +18,8 @@
             project-name="{{ project.name }}"
             logout-url="{% url 'flextool3:logout' %}"
             logo-url="{% static 'flextool3/menu-logo.png' %}"
+            model-export-url="{% url 'flextool3:model_export' project.id %}"
+            model-import-url="{% url 'flextool3:model_import' project.id %}"
         ></detail-app>
     </div>
     <script src="{% static 'flextool3/apps/js/chunk-vendors.js' %}"></script>

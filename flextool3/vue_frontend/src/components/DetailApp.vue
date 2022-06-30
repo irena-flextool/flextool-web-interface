@@ -20,7 +20,18 @@
                     <n-p><n-a :href="runUrl">Run</n-a> page allows you to set up scenarios and solve the model.</n-p>
                     <n-p><n-a :href="resultsUrl">Results</n-a> shows results of solved scenarios.</n-p>
                 </n-space>
-            </n-grid-item>
+                <n-h1>Import or export model</n-h1>
+                <n-p>Download model database <n-a :href="modelExportUrl">here</n-a>.</n-p>
+                 <n-upload
+                    name="model_database"
+                    :action="modelImportUrl"
+                    :headers="uploadHeaders"
+                    accept=".sqlite"
+                >
+                    <n-button>Upload model database</n-button>
+                </n-upload>
+                <n-p>Warning: uploading database will overwrite model data.</n-p>
+           </n-grid-item>
             <n-grid-item class="column">
                 <n-h1>Usage hints</n-h1>
                 <n-p>
@@ -33,6 +44,7 @@
 </template>
 
 <script>
+import {csrftoken} from "../modules/communication.mjs";
 import Page from "./Page.vue";
 import PagePath from "./PagePath.vue";
 
@@ -46,10 +58,19 @@ export default {
         resultsUrl: {type: String, required: true},
         logoutUrl: {type: String, required: true},
         logoUrl: {type: String, required: true},
+        modelExportUrl: {type: String, required: true},
+        modelImportUrl: {type: String, required: true},
     },
     components: {
         "page": Page,
         "page-path": PagePath,
+    },
+    setup() {
+        return {
+            uploadHeaders() {
+                return {"X-CSRFToken": csrftoken};
+            },
+        };
     },
 }
 </script>

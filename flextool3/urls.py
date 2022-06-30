@@ -17,4 +17,12 @@ urlpatterns = [
     path("executions/", views.executions, name="executions"),
     path("summary/", views.summary, name="summary"),
     path("analysis/", views.analysis, name="analysis"),
+    path(
+        "<int:pk>/results_database/", views.export_model_database, name="model_export"
+    ),
+    path(
+        "<int:pk>/upload_results_database",
+        views.import_model_database,
+        name="model_import",
+    ),
 ]

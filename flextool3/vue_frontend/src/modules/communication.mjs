@@ -14,7 +14,7 @@ function getCookie(name) {
     return cookieValue;
 }
 
-const csrftoken = getCookie('csrftoken');
+const csrftoken = getCookie("csrftoken");
 
 /**
  * Creates skeleton settings for fetching.
@@ -294,6 +294,7 @@ function fetchResultAlternative(projectId, summaryUrl, scenarioExecutionId) {
 }
 
 export {
+    csrftoken,
     makeFetchInit,
     fetchData,
     commit,
