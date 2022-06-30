@@ -1,71 +1,69 @@
-function parseSummaries(summaries) {
-    const makeCurrent = function() {
+/**
+ * Add padding to table header and rows such that all are of same length.
+ */
+function evenOutRows(table, width) {
+    const fill = function(row, width) {
+        const filler = new Array(width - row.length);
+        filler.fill("");
+        row.splice(row.length, 0, ...filler);
+    };
+
+    if(table.header !== null && table.header.length < width) {
+        fill(table.header, width)
+    }
+    for(const row of table.rows) {
+        if(row.length < width) {
+            fill(row, width)
+        }
+    }
+}
+
+/**
+ * Breaks raw summary table into subtables with titles and headers.
+ * @param {Array} rawSummary Raw summary without the two initial title rows.
+ * @returns {object[]} Summary's subtables.
+ */
+function parseSummary(rawSummary) {
+    const makeTable = function() {
         return {
-            solve: null,
-            solveParameters: [],
-            emissionsParameters: [],
-            issueTitle: null,
-            issues: []
+            title: "",
+            header: [""],
+            rows: [],
         };
     };
-    const parsed = [];
-    let summaryPart = 0;
-    let current = makeCurrent();
-    let currentAddedToParsed = false;
-    summaries.forEach(function(row, index) {
-        if(!currentAddedToParsed) {
-            parsed.push(current);
-            currentAddedToParsed = true;
-        }
+    const tables = [];
+    let currentTable = null;
+    let tableRowIndex = 0;
+    let width = -1;
+    for(const row of rawSummary) {
         if(row.length === 0) {
-            ++summaryPart;
-            if(summaryPart === 4) {
-                summaryPart = 0;
-                current = makeCurrent();
-                currentAddedToParsed = false;
+            if(currentTable !== null) {
+                evenOutRows(currentTable, width);
+            }
+            currentTable = makeTable();
+            tables.push(currentTable);
+            tableRowIndex = 0;
+            continue;
+        }
+        if(tableRowIndex === 0) {
+            currentTable.title = row[0]
+            if(row.length > 1) {
+                currentTable.header.splice(currentTable.header.length, 0, ...row.slice(1));
+            }
+            else {
+                currentTable.header = null;
             }
         }
         else {
-            if(summaryPart === 0) {
-                if(row[0] === "Solve") {
-                    current.solve = row[1];
-                }
-                else {
-                    const parameters = {
-                        name: row[0],
-                        value: row[1],
-                        description: row.length === 3 ? row[2] : "",
-                    };
-                    current.solveParameters.push(parameters);
-                }
-            }
-            else if(summaryPart === 1) {
-                if(row[0] !== "Emissions") {
-                    const parameters = {
-                        name: row[0],
-                        value: row[1],
-                        description: row.length === 3 ? row[2] : "",
-                    };
-                    current.emissionsParameters.push(parameters);
-                }
-            }
-            else if(summaryPart === 2) {
-                if(row.length === 1) {
-                    current.issueTitle = row[0];
-                }
-                else {
-                    const issue = {
-                        type: row[0],
-                        node: row[1],
-                        solve: row[2],
-                        value: row[3],
-                    };
-                    current.issues.push(issue);
-                }
-            }
+            currentTable.rows.push(row);
         }
-    });
-    return parsed;
+        width = Math.max(width, row.length);
+        ++tableRowIndex;
+    }
+    if(currentTable !== null) {
+        evenOutRows(currentTable, width);
+    }
+    return tables;
 }
 
-export {parseSummaries};
+export {parseSummary};

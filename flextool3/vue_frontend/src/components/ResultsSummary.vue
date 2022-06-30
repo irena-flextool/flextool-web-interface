@@ -3,35 +3,24 @@
         <n-space vertical>
             <n-text strong>{{ title }}</n-text>
             <n-list>
-                <n-list-item v-for="(summary, index) in summaries" :key="index">
-                    <n-text type="info">Solve {{ summary.solve }}</n-text>
+                <n-list-item v-for="(table, tableIndex) in tables" :key="tableIndex">
+                    <n-text type="info">{{ table.title }}</n-text>
                     <n-table :bordered="false" size="small">
-                        <n-tbody>
-                            <n-tr v-for="(parameter, index) in summary.solveParameters" :key="index">
-                                <n-th>{{ parameter.name }}</n-th>
-                                <n-th>{{ parameter.value }}</n-th>
-                                <n-th>{{ parameter.description }}</n-th>
+                        <n-thead v-show="table.header !== null">
+                            <n-tr>
+                                <n-th v-for="(headerColumn, headerIndex) in table.header" :key="headerIndex">
+                                    {{ headerColumn }}
+                                </n-th>
                             </n-tr>
-                        </n-tbody>
-                    </n-table>
-                    <n-text type="info">Emissions</n-text>
-                    <n-table :bordered="false" size="small">
+                        </n-thead>
                         <n-tbody>
-                            <n-tr v-for="(parameter, index) in summary.emissionsParameters" :key="index">
-                                <n-th>{{ parameter.name }}</n-th>
-                                <n-th>{{ parameter.value }}</n-th>
-                                <n-th>{{ parameter.description }}</n-th>
-                            </n-tr>
-                        </n-tbody>
-                    </n-table>
-                    <n-text type="info">{{ summary.issueTitle }}</n-text>
-                    <n-table :bordered="false" size="small">
-                        <n-tbody>
-                            <n-tr v-for="(issue, index) in summary.issues" :key="index">
-                                <n-th>{{ issue.type }}</n-th>
-                                <n-th>{{ issue.node }}</n-th>
-                                <n-th>{{ issue.solve }}</n-th>
-                                <n-th>{{ issue.value }}</n-th>
+                            <n-tr v-for="(row, rowIndex) in table.rows" :key="rowIndex">
+                                <n-td
+                                    v-for="(column, bodyColumnIndex) in row"
+                                    :key="bodyColumnIndex"
+                                >
+                                    {{ column }}
+                                </n-td>
                             </n-tr>
                         </n-tbody>
                     </n-table>
@@ -44,7 +33,7 @@
 <script>
 import {ref} from "vue/dist/vue.esm-bundler.js";
 import {fetchSummary} from "../modules/communication.mjs";
-import {parseSummaries} from "../modules/summaries.mjs";
+import {parseSummary} from "../modules/summaries.mjs";
 import Fetchable from "./Fetchable.vue";
 
 export default {
@@ -57,12 +46,12 @@ export default {
     },
     setup(props) {
         const title = ref("");
-        const summaries = ref([]);
+        const tables = ref([]);
         const state = ref(Fetchable.state.waiting);
         const errorMessage = ref("");
         return {
             title: title,
-            summaries: summaries,
+            tables: tables,
             state: state,
             errorMessage: errorMessage,
             loadSummary(scenarioInfo) {
@@ -76,12 +65,12 @@ export default {
                     if(summaryData.length === 0) {
                         return;
                     }
-                    const titleRows = summaryData.splice(0, 2);
+                    const titleRows = summaryData.splice(0, 1);
                     title.value = titleRows[0][0]
                     if(summaryData.length === 0) {
                         return;
                     }
-                    summaries.value = parseSummaries(summaryData);
+                    tables.value = parseSummary(summaryData);
                 }).catch(function(error) {
                     errorMessage.value = error.message;
                     state.value = Fetchable.state.error;
