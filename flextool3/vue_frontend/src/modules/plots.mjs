@@ -86,19 +86,20 @@ function toHeatMapData(data, xColumn) {
 }
 
 /**
- * Converts data into Plotly-compatible bar chart data.
+ * Converts data into Plotly-compatible bar chart or scatter data.
  * @param {Array[]} data Input data; each element is an Array in the form [index1, index2, ..., value].
  * @param {number} xColumn Column index in data that is taken as the x axis.
+ * @param {string} plotType "scatter" or "bar".
  * @returns {Object} Bar chart data for plotly.
  */
-function toBarChartData(data, xColumn) {
+function toBasicChartData(data, xColumn, plotType) {
     const groupedData = groupData(data, xColumn);
     const charts = new Map();
     groupedData.grouped.forEach(function(group, x) {
         group.forEach(function(y, name) {
             let chart = charts.get(name);
             if(chart === undefined) {
-                chart = {x: [], y: [], name: name, type: "bar"};
+                chart = {x: [], y: [], name: name, type: plotType};
                 charts.set(name, chart);
             }
             chart.x.push(x);
@@ -108,4 +109,4 @@ function toBarChartData(data, xColumn) {
     return [...charts.values()];
 }
 
-export {toBarChartData, toHeatMapData};
+export {toBasicChartData, toHeatMapData};

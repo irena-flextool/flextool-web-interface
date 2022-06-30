@@ -4,6 +4,7 @@
             :options="species"
             :value="currentSpecie"
             size="tiny"
+            :consistent-menu-width="false"
             @update:value="changeState"
         />
         <n-input
@@ -17,6 +18,7 @@
             :value="currentValue"
             :options="valueOptions"
             size="tiny"
+            :consistent-menu-width="false"
             @update:value="changeSingleValue"
         />
         <n-button

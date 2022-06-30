@@ -1,5 +1,5 @@
 import assert from "assert/strict";
-import {toHeatMapData, toBarChartData} from "../src/modules/plots.mjs";
+import {toHeatMapData, toBasicChartData} from "../src/modules/plots.mjs";
 
 function make_empty_heat_map_plot_data() {
     return {z: [], x: [], y:[], type: "heatmap"};
@@ -57,15 +57,15 @@ describe("toHeatMapData", function() {
     });
 });
 
-describe("toBarChartData", function() {
+describe("toBasicChartData", function() {
     it("should return empty chart array for empty input", function() {
         const data = [];
-        const plotData = toBarChartData(data, 0);
+        const plotData = toBasicChartData(data, 0, "bar");
         assert.equal(plotData.length, 0);
     });
     it("should work with single data point", function() {
         const data = [["data_1", "T1", 2.3]];
-        const plotData = toBarChartData(data, 1);
+        const plotData = toBasicChartData(data, 1, "bar");
         const expected = make_empty_bar_chart_plot_data(["data_1"]);
         expected[0].x = ["T1"];
         expected[0].y = [2.3];
@@ -78,7 +78,7 @@ describe("toBarChartData", function() {
             ["data_1", "alt_1", "T2", -2.3],
             ["data_1", "alt_2", "T2", -5.5],
         ];
-        const plotData = toBarChartData(data, 2);
+        const plotData = toBasicChartData(data, 2, "bar");
         const expected = make_empty_bar_chart_plot_data(["data_1 | alt_1", "data_1 | alt_2"]);
         expected[0].x = ["T1", "T2"];
         expected[0].y = [2.3, -2.3];
@@ -91,7 +91,7 @@ describe("toBarChartData", function() {
             ["data_1", "T1", 2.3],
             ["data_2", "T2", 5.5],
         ];
-        const plotData = toBarChartData(data, 1);
+        const plotData = toBasicChartData(data, 1, "bar");
         const expected = make_empty_bar_chart_plot_data(["data_1", "data_2"]);
         expected[0].x = ["T1"];
         expected[0].y = [2.3];

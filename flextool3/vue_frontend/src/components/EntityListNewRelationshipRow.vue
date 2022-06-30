@@ -8,6 +8,7 @@
             :placeholder="placeholderText(index)"
             :show-arrow="false"
             size="tiny"
+            :consistent-menu-width="false"
             @update:value="updateSelection"
             class="entity-list-select"
         />
