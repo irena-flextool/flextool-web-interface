@@ -55,7 +55,12 @@
                 <n-grid-item :span="2">
                     <n-h1>Run log</n-h1>
                     <n-card size="small">
-                        <n-log :lines="logLines" :rows="20"></n-log>
+                        <n-log
+                            :lines="logLines"
+                            :rows="20"
+                            :loading="isExecuting"
+                            ref="logInstance"
+                        />
                     </n-card>
                 </n-grid-item>
             </n-grid>
@@ -64,7 +69,7 @@
 </template>
 
 <script>
-import {computed, onMounted, ref} from "vue/dist/vue.esm-bundler.js";
+import {computed, nextTick, onMounted, ref, watch} from "vue/dist/vue.esm-bundler.js";
 import {useMessage} from "naive-ui";
 import {Play, Stop} from '@vicons/fa';
 import Page from "./Page.vue";
@@ -80,7 +85,8 @@ import {
 
 let fetchingBriefing = false;
 
-function followExecution(projectId, executionsUrl, logLines, status, busyExecuting, busyAborting, message) {
+function followExecution(
+    projectId, executionsUrl, logLines, status, busyExecuting, busyAborting, message) {
     const timer = window.setInterval(function() {
         if(fetchingBriefing) {
             return;
@@ -139,6 +145,7 @@ export default {
         const executionStatus = ref("YS");
         const isExecuting = ref(false);
         const isAborting = ref(false);
+        const logInstance = ref(null);
         const isPlayButtonDisabled = computed(() => isExecuting.value || selectedScenarios.value.length === 0);
         const isAbortButtonDisabled = computed(() => !isExecuting.value || isAborting.value);
         const statusMessageType = ref("default");
@@ -199,6 +206,11 @@ export default {
                 state.value = Fetchable.state.error;
             });
         });
+        watch(logLines, function() {
+            if(logInstance.value !== null) {
+                nextTick(() => logInstance.value.scrollTo({top: logLines.value.length * 1000, slient: true}));
+            }
+        });
         return {
             availableScenarios: availableScenarios,
             selectedScenarios: selectedScenarios,
@@ -209,6 +221,7 @@ export default {
             errorMessage: errorMessage,
             isExecuting: isExecuting,
             isAborting: isAborting,
+            logInstance: logInstance,
             isPlayButtonDisabled: isPlayButtonDisabled,
             isAbortButtonDisabled: isAbortButtonDisabled,
             execute: function() {
