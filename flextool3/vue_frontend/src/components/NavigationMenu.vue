@@ -13,9 +13,13 @@
                 :options="links"
             />
         </n-space>
-        <n-button @click="logout">
-            Log out
-        </n-button>
+        <n-space align="baseline">
+            <n-a href="https://irena-flextool.github.io/flextool/">User guide</n-a>
+            <n-divider vertical/>
+            <n-button @click="logout">
+                Log out
+            </n-button>
+        </n-space>
     </n-space>
 </template>
 

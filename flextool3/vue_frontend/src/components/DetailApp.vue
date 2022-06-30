@@ -12,8 +12,8 @@
         <template #header>
             <page-path :path="[{name: 'Projects', url: indexUrl}]" :leaf-name="projectName"></page-path>
         </template>
-        <n-grid cols="1 m:2" responsive="screen">
-            <n-grid-item class="column">
+        <n-space>
+            <n-space vertical>
                 <n-h1>Links</n-h1>
                 <n-space vertical>
                     <n-p><n-a :href="editUrl">Model editor</n-a> lets you to define the project's model.</n-p>
@@ -31,15 +31,15 @@
                     <n-button>Upload model database</n-button>
                 </n-upload>
                 <n-p>Warning: uploading database will overwrite model data.</n-p>
-           </n-grid-item>
-            <n-grid-item class="column">
+            </n-space>
+            <n-space vertical>
                 <n-h1>Usage hints</n-h1>
                 <n-p>
                     Links on these pages can be opened in different browser tabs or windows.
                     It is possible to e.g. open two Model editors side-by-side to compare or copy data around.
                 </n-p>
-            </n-grid-item>
-        </n-grid>
+            </n-space>
+        </n-space>
     </page>
 </template>
 
