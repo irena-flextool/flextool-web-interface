@@ -1,9 +1,13 @@
 from contextlib import contextmanager
 import datetime
 from enum import auto, Enum, unique
+from pathlib import Path
 from django.utils import timezone
 from spinedb_api import DatabaseMapping
 from .exception import FlextoolException
+
+FLEXTOOL_PROJECT_TEMPLATE = Path(__file__).parent / "master_project"
+FLEXTOOL_PROJECTS_ROOT = Path(__file__).parent / "user_projects"
 
 
 @unique
