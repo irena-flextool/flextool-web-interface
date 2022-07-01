@@ -15,11 +15,11 @@ Install [Miniconda](https://docs.conda.io/en/latest/miniconda.html) if you don't
 1. Open a conda prompt
 2. Create a new Python 3.8 environment:
 ```commandline
-conda create -n flextool3-site python=3.8
+conda create -n flextool3-web-interface python=3.8
 ```
 3. Activate the environment:
 ```commandline
-conda activate flextool3-site
+conda activate flextool3-web-interface
 ```
 4. If you don't have Git installed yet, install it in conda:
 ```commandline
@@ -28,11 +28,11 @@ conda install git
 5. `cd` to a directory where you want the store the application.
 6. Clone the repository. You'll need GitLab username and password.
 ```commandline
-git clone --recurse-submodules https://gitlab.vtt.fi/FlexTool/flextool-site.git
+git clone --recurse-submodules https://github.com/irena-flextool/flextool-web-interface.git
 ```
 7. `cd` to the newly created directory:
 ```commandline
-cd flextool-site
+cd flextool-web-interface
 ```
 8. Make sure Python's `pip` package is up-to-date:
 ```commandline
@@ -88,6 +88,7 @@ and can be updated to the latest version by
 ```commandline
 cd flextool3
 cd master_project
+git checkout master
 git pull
 cd ..
 cd ..
