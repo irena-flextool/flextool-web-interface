@@ -1,3 +1,4 @@
+"""Utilities and helpers for the summary interface."""
 from bisect import bisect_left
 import csv
 import datetime
@@ -5,24 +6,24 @@ import re
 
 from django.http import HttpResponseBadRequest, JsonResponse
 
-from .exception import FlextoolException
+from .exception import FlexToolException
 from .models import Scenario, ScenarioExecution
 from .utils import Database, database_map, get_and_validate, naive_local_time
 
 
-def number_to_float(x):
+def number_to_float(value):
     """Converts x to float if possible.
 
     Args:
-        x (Any): a value
+        value (Any): a value
 
     Returns:
         float or Any: float or x if conversion was unsuccessful
     """
     try:
-        return float(x)
+        return float(value)
     except ValueError:
-        return x
+        return value
 
 
 def get_scenario_list(project):
@@ -34,9 +35,11 @@ def get_scenario_list(project):
     Returns:
         HTTPResponse: a response object
     """
+    # pylint: disable=no-member
     scenarios = Scenario.objects.filter(project=project.id)
     scenarios_and_executions = {}
     for scenario in scenarios:
+        # pylint: disable=no-member
         scenario_executions = ScenarioExecution.objects.filter(scenario=scenario)
         for execution in scenario_executions:
             scenarios_and_executions.setdefault(scenario.name, []).append(
@@ -64,13 +67,14 @@ def _resolve_scenario_execution(project, body):
     """
     scenario_execution_id = get_and_validate(body, "scenarioExecutionId", int)
     try:
+        # pylint: disable=no-member
         scenario_execution = ScenarioExecution.objects.get(id=scenario_execution_id)
-    except ScenarioExecution.DoesNotExist:
-        raise FlextoolException(
+    except ScenarioExecution.DoesNotExist as error:  # pylint: disable=no-member
+        raise FlexToolException(
             f"Scenario execution with id {scenario_execution_id} doesn't exist."
-        )
+        ) from error
     if scenario_execution.scenario.project.id != project.id:
-        raise FlextoolException(
+        raise FlexToolException(
             f"Scenario execution with id {scenario_execution_id} doesn't exist."
         )
     return scenario_execution
@@ -88,7 +92,7 @@ def get_summary(project, body):
     """
     try:
         scenario_execution = _resolve_scenario_execution(project, body)
-    except FlextoolException as error:
+    except FlexToolException as error:
         return HttpResponseBadRequest(str(error))
     summary_path = scenario_execution.summary_path()
     if summary_path is None:
@@ -111,7 +115,7 @@ def get_result_alternative(project, body):
     """
     try:
         scenario_execution = _resolve_scenario_execution(project, body)
-    except FlextoolException as error:
+    except FlexToolException as error:
         return HttpResponseBadRequest(str(error))
     target_scenario_name = scenario_execution.scenario.name
     candidate_alternatives = []
@@ -153,7 +157,7 @@ def get_output_directory(project, body):
     """
     try:
         scenario_execution = _resolve_scenario_execution(project, body)
-    except FlextoolException as error:
+    except FlexToolException as error:
         return HttpResponseBadRequest(str(error))
     summary_path = scenario_execution.summary_path()
     if summary_path is None:

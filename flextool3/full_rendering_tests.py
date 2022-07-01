@@ -1,3 +1,8 @@
+"""Full rendering tests.
+
+Note: this is work in progress.
+"""
+
 from django.contrib.staticfiles.testing import StaticLiveServerTestCase
 from selenium.webdriver.firefox.webdriver import WebDriver
 from selenium.webdriver.common.by import By

@@ -28,7 +28,7 @@ from spinedb_api import (
     import_scenario_alternatives,
 )
 
-from .exception import FlextoolException
+from .exception import FlexToolException
 from . import executor, task_loop, views
 from .models import Project, Scenario, ScenarioExecution, SUMMARY_FILE_NAME
 from .summary_view import number_to_float
@@ -113,7 +113,7 @@ class ProjectModelTests(TestCase):
             template_dir = projects_root_dir.parent / "template"
             self.assertTrue(template_dir.exists())
             self.assertRaises(
-                FlextoolException,
+                FlexToolException,
                 Project.create,
                 user,
                 "my_test_project",
@@ -1813,7 +1813,7 @@ class ModelInterfaceTests(TestCase):
                 object_class_row["entitiesUrl"],
                 reverse(
                     "flextool3:entities",
-                    kwargs=({"pk": 1, "class_id": object_class_row["id"]}),
+                    kwargs=({"project_id": 1, "class_id": object_class_row["id"]}),
                 ),
             )
         relationship_classes = content["relationshipClasses"]
@@ -1834,7 +1834,7 @@ class ModelInterfaceTests(TestCase):
                     relationship_class["entitiesUrl"],
                     reverse(
                         "flextool3:entities",
-                        kwargs=({"pk": 1, "class_id": relationship_class["id"]}),
+                        kwargs=({"project_id": 1, "class_id": relationship_class["id"]}),
                     ),
                 )
 

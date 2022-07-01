@@ -1,3 +1,4 @@
+"""Django models for server database."""
 from bisect import bisect_left
 import datetime
 import os
@@ -8,7 +9,7 @@ import stat
 from django.contrib.auth.models import User
 from django.db import models
 from django.urls import reverse
-from .exception import FlextoolException
+from .exception import FlexToolException
 from .utils import naive_local_time
 
 PROJECT_NAME_LENGTH = 60
@@ -16,6 +17,8 @@ SUMMARY_FILE_NAME = "summary_solve.csv"
 
 
 class Project(models.Model):
+    """Model for user's FlexTool projects."""
+
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     name = models.CharField(max_length=PROJECT_NAME_LENGTH)
     path = models.CharField(max_length=500)
@@ -36,8 +39,9 @@ class Project(models.Model):
         Returns:
             Project: freshly created project
         """
+        # pylint: disable=no-member
         if Project.objects.filter(user=user, name=project_name).all():
-            raise FlextoolException("project name already in use.")
+            raise FlexToolException("project name already in use.")
         project_dir = projects_root_dir / user.username / project_name
         copytree(template_dir, project_dir)
         return Project(user=user, name=project_name, path=str(project_dir))
@@ -79,6 +83,7 @@ class Project(models.Model):
         Returns:
             dict: project list data
         """
+        # pylint: disable=no-member
         return {
             "name": self.name,
             "id": self.id,
@@ -105,6 +110,8 @@ def _find_next_summary(summary_files, time_point, timezone_offset):
 
 
 class Scenario(models.Model):
+    """Model for Toolbox scenarios."""
+
     project = models.ForeignKey(Project, on_delete=models.CASCADE)
     name = models.CharField(max_length=255, null=False)
 
@@ -124,6 +131,8 @@ def _scenario_from_filter_id(filter_id):
 
 
 class ScenarioExecution(models.Model):
+    """Model for executed scenarios."""
+
     scenario = models.ForeignKey(Scenario, on_delete=models.CASCADE)
     execution_time = models.DateTimeField(null=False)
     execution_time_offset = models.IntegerField(null=False)
@@ -136,7 +145,7 @@ class ScenarioExecution(models.Model):
             Path: path to summary file or None if no summary exists
         """
         output_directory = (
-            Path(self.scenario.project.path)
+            Path(self.scenario.project.path)  # pylint: disable=no-member
             / ".spinetoolbox"
             / "items"
             / "flextool3"

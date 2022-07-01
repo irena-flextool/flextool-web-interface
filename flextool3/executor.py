@@ -1,9 +1,10 @@
+"""Contains functions to control task loop."""
 import atexit
 import functools
 from multiprocessing import Pipe, Process, Queue
 
 from .exception import ExecutionNotFound
-from .task_loop import Error, Field, loop, Status, Task
+from .task_loop import Error, Field, loop, Task
 
 
 def _create_process():

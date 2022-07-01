@@ -1,27 +1,28 @@
+"""FlexTool3 app URL configuration."""
 from django.urls import include, path
 from . import views
 
 
-app_name = "flextool3"
+app_name = "flextool3"  # pylint: disable=invalid-name
 urlpatterns = [
     path("accounts/", include("django.contrib.auth.urls")),
     path("", views.IndexView.as_view(), name="index"),
-    path("<int:pk>/", views.detail, name="detail"),
-    path("<int:pk>/edit/", views.edit, name="edit"),
-    path("<int:pk>/edit/class/<int:class_id>", views.entities, name="entities"),
-    path("<int:pk>/edit/scenarios/", views.scenarios, name="scenarios"),
-    path("<int:pk>/run/", views.run, name="run"),
-    path("<int:pk>/results/", views.results, name="view"),
+    path("<int:project_id>/", views.detail, name="detail"),
+    path("<int:project_id>/edit/", views.edit, name="edit"),
+    path("<int:project_id>/edit/class/<int:class_id>", views.entities, name="entities"),
+    path("<int:project_id>/edit/scenarios/", views.scenarios, name="scenarios"),
+    path("<int:project_id>/run/", views.run, name="run"),
+    path("<int:project_id>/results/", views.results, name="view"),
     path("projects/", views.projects, name="projects"),
     path("model/", views.model, name="model"),
     path("executions/", views.executions, name="executions"),
     path("summary/", views.summary, name="summary"),
     path("analysis/", views.analysis, name="analysis"),
     path(
-        "<int:pk>/results_database/", views.export_model_database, name="model_export"
+        "<int:project_id>/results_database/", views.export_model_database, name="model_export"
     ),
     path(
-        "<int:pk>/upload_results_database",
+        "<int:project_id>/upload_results_database",
         views.import_model_database,
         name="model_import",
     ),

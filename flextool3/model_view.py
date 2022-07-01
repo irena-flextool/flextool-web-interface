@@ -1,16 +1,15 @@
+"""Utilities and helpers for the model interface."""
 from django.http import (
-    HttpResponse,
     HttpResponseBadRequest,
     JsonResponse,
 )
 from django.urls import reverse
 from spinedb_api import (
-    DatabaseMapping,
     to_database,
     SpineIntegrityError,
     SpineDBAPIError,
 )
-from .exception import FlextoolException
+from .exception import FlexToolException
 from .utils import Database, database_map, get_and_validate, Key
 
 
@@ -48,10 +47,16 @@ def get_objects(project, database, request_body):
     if class_id is not None and not isinstance(class_id, int):
         return HttpResponseBadRequest(f"Wrong '{Key.OBJECT_CLASS_ID}' data type.")
     with database_map(project, database) as db_map:
-        sq = db_map.object_sq
+        subquery = db_map.object_sq
         if class_id is not None:
-            sq = db_map.query(sq).filter(sq.c.class_id == class_id).subquery()
-        objects = [row._asdict() for row in db_map.query(sq).order_by(sq.c.name)]
+            subquery = (
+                db_map.query(subquery)
+                .filter(subquery.c.class_id == class_id)
+                .subquery()
+            )
+        objects = [
+            row._asdict() for row in db_map.query(subquery).order_by(subquery.c.name)
+        ]
         return JsonResponse({"objects": objects})
 
 
@@ -74,10 +79,16 @@ def get_parameter_definitions(project, database, request_body):
     if class_id is not None and not isinstance(class_id, int):
         return HttpResponseBadRequest(f"Wrong '{Key.CLASS_ID}' data type.")
     with database_map(project, database) as db_map:
-        sq = db_map.parameter_definition_sq
+        subquery = db_map.parameter_definition_sq
         if class_id is not None:
-            sq = db_map.query(sq).filter(sq.c.entity_class_id == class_id).subquery()
-        definitions = [row._asdict() for row in db_map.query(sq).order_by(sq.c.name)]
+            subquery = (
+                db_map.query(subquery)
+                .filter(subquery.c.entity_class_id == class_id)
+                .subquery()
+            )
+        definitions = [
+            row._asdict() for row in db_map.query(subquery).order_by(subquery.c.name)
+        ]
         for definition in definitions:
             value_bytes = definition["default_value"]
             if value_bytes is not None:
@@ -112,21 +123,29 @@ def get_parameter_values(project, database, request_body):
         alternative_id = get_and_validate(
             request_body, Key.ALTERNATIVE_ID.value, int, required=False
         )
-    except FlextoolException as error:
+    except FlexToolException as error:
         return HttpResponseBadRequest(str(error))
     with database_map(project, database) as db_map:
-        sq = db_map.parameter_value_sq
+        subquery = db_map.parameter_value_sq
         if class_id is not None:
-            sq = db_map.query(sq).filter(sq.c.entity_class_id == class_id).subquery()
-        elif entity_id is not None:
-            sq = db_map.query(sq).filter(sq.c.entity_id == entity_id).subquery()
-        if alternative_id is not None:
-            sq = (
-                db_map.query(sq)
-                .filter(sq.c.alternative_id == alternative_id)
+            subquery = (
+                db_map.query(subquery)
+                .filter(subquery.c.entity_class_id == class_id)
                 .subquery()
             )
-        values = [row._asdict() for row in db_map.query(sq)]
+        elif entity_id is not None:
+            subquery = (
+                db_map.query(subquery)
+                .filter(subquery.c.entity_id == entity_id)
+                .subquery()
+            )
+        if alternative_id is not None:
+            subquery = (
+                db_map.query(subquery)
+                .filter(subquery.c.alternative_id == alternative_id)
+                .subquery()
+            )
+        values = [row._asdict() for row in db_map.query(subquery)]
         for value in values:
             value_bytes = value["value"]
             if value_bytes is not None:
@@ -159,7 +178,8 @@ def _relationship_object_ids(db_map, class_id):
         class_id (int): relationship class id
 
     Returns:
-        list of dict: dicts of object ids keyed by names; the dicts are sorted by relationship dimension
+        list of dict: dicts of object ids keyed by names;
+            the dicts are sorted by relationship dimension
     """
     class_components = (
         db_map.query(db_map.ext_relationship_class_sq)
@@ -167,7 +187,7 @@ def _relationship_object_ids(db_map, class_id):
         .order_by(db_map.ext_relationship_class_sq.c.dimension)
         .all()
     )
-    object_ids = list()
+    object_ids = []
     for component in class_components:
         objects = (
             db_map.query(db_map.object_sq)
@@ -197,15 +217,21 @@ def get_relationships(project, database, request_body):
         class_id = get_and_validate(
             request_body, Key.RELATIONSHIP_CLASS_ID.value, int, required=False
         )
-    except FlextoolException as error:
+    except FlexToolException as error:
         return HttpResponseBadRequest(str(error))
     with database_map(project, database) as db_map:
-        sq = db_map.ext_relationship_sq
+        subquery = db_map.ext_relationship_sq
         if class_id is not None:
-            sq = db_map.query(sq).filter(sq.c.class_id == class_id).subquery()
+            subquery = (
+                db_map.query(subquery)
+                .filter(subquery.c.class_id == class_id)
+                .subquery()
+            )
         relationships = [
             row._asdict()
-            for row in db_map.query(sq).order_by(sq.c.name, sq.c.dimension)
+            for row in db_map.query(subquery).order_by(
+                subquery.c.name, subquery.c.dimension
+            )
         ]
         return JsonResponse({"relationships": relationships})
 
@@ -249,27 +275,27 @@ def get_parameter_value_lists(project, request_body):
 
     def concatenate_bag(bag):
         skeleton = len(bag) * [None]
-        for index, x in bag.items():
-            skeleton[index] = x
+        for index, value in bag.items():
+            skeleton[index] = value
         return skeleton
 
     try:
         list_ids = get_and_validate(
             request_body, Key.VALUE_LIST_IDS.value, list, required=False
         )
-    except FlextoolException as error:
+    except FlexToolException as error:
         return HttpResponseBadRequest(str(error))
     if list_ids is not None and any(not isinstance(id_, int) for id_ in list_ids):
         return HttpResponseBadRequest(f"Wrong data type in '{Key.VALUE_LIST_IDS}'.")
     with database_map(project, Database.MODEL) as db_map:
-        sq = db_map.ord_list_value_sq
+        subquery = db_map.ord_list_value_sq
         if list_ids is not None:
-            sq = (
-                db_map.query(sq)
-                .filter(sq.c.parameter_value_list_id.in_(list_ids))
+            subquery = (
+                db_map.query(subquery)
+                .filter(subquery.c.parameter_value_list_id.in_(list_ids))
                 .subquery()
             )
-        value_list_items = db_map.query(sq).all()
+        value_list_items = db_map.query(subquery).all()
         collected_values = {}
         collected_types = {}
         for list_item in value_list_items:
@@ -317,7 +343,7 @@ def get_commits(project):
 
 
 def make_base_alternative(project):
-    """Creates and commits an alternative called 'Base' if there aren't any alternatives in the database.
+    """Creates and commits a 'Base' alternative if no alternative exists.
 
     Args:
         project (Project): target project
@@ -330,12 +356,14 @@ def make_base_alternative(project):
             return JsonResponse({"inserted": []})
         try:
             _insert_alternatives(db_map, {"alternative": [{"name": "Base"}]})
-        except FlextoolException as e:
-            return HttpResponseBadRequest(f"Failed to create 'Base' alternative: {e}")
+        except FlexToolException as error:
+            return HttpResponseBadRequest(
+                f"Failed to create 'Base' alternative: {error}"
+            )
         try:
             db_map.commit_session("Add Base alternative.")
-        except SpineDBAPIError as e:
-            return HttpResponseBadRequest(f"Failed to commit: {e}")
+        except SpineDBAPIError as error:
+            return HttpResponseBadRequest(f"Failed to commit: {error}")
         return JsonResponse(
             {
                 "alternatives": [
@@ -360,21 +388,21 @@ def commit(project, request_body):
     """
     try:
         commit_message = get_and_validate(request_body, "message", str)
-    except FlextoolException as error:
+    except FlexToolException as error:
         return HttpResponseBadRequest(str(error))
     with database_map(project, Database.MODEL) as db_map:
         try:
             _delete_from_model(db_map, request_body)
             inserted = _insert_to_model(db_map, request_body)
             _update_model(db_map, request_body)
-        except SpineIntegrityError as e:
-            return HttpResponseBadRequest(f"Database integrity error: {e}")
-        except FlextoolException as e:
-            return HttpResponseBadRequest(str(e))
+        except SpineIntegrityError as error:
+            return HttpResponseBadRequest(f"Database integrity error: {error}")
+        except FlexToolException as error:
+            return HttpResponseBadRequest(str(error))
         try:
             db_map.commit_session(commit_message)
-        except SpineDBAPIError as e:
-            return HttpResponseBadRequest(f"Failed to commit: {e}")
+        except SpineDBAPIError as error:
+            return HttpResponseBadRequest(f"Failed to commit: {error}")
         return JsonResponse({"inserted": inserted} if inserted else {})
 
 
@@ -409,8 +437,8 @@ def _delete_from_model(db_map, request_body):
         return
     try:
         converted_deletions = {key: set(value) for key, value in deletions.items()}
-    except TypeError:
-        raise FlextoolException("Wrong data type in deletions.")
+    except TypeError as error:
+        raise FlexToolException("Wrong data type in deletions.") from error
     db_map.cascade_remove_items(cache=None, **converted_deletions)
 
 
@@ -468,9 +496,9 @@ def _update_alternatives(db_map, updates):
     try:
         _, errors = db_map.update_alternatives(*sterilized_updates, strict=True)
         if errors:
-            raise FlextoolException("Errors while updating alternatives.")
+            raise FlexToolException("Errors while updating alternatives.")
     except SpineIntegrityError as error:
-        raise FlextoolException(f"Database integrity error: {error}")
+        raise FlexToolException(f"Database integrity error: {error}") from error
 
 
 def _update_scenarios(db_map, updates):
@@ -493,9 +521,9 @@ def _update_scenarios(db_map, updates):
     try:
         _, errors = db_map.update_scenarios(*sterilized_updates, strict=True)
         if errors:
-            raise FlextoolException("Errors while updating scenarios.")
+            raise FlexToolException("Errors while updating scenarios.")
     except SpineIntegrityError as error:
-        raise FlextoolException(f"Database integrity error: {error}")
+        raise FlexToolException(f"Database integrity error: {error}") from error
 
 
 def _update_scenario_alternatives(db_map, updates):
@@ -527,9 +555,9 @@ def _update_scenario_alternatives(db_map, updates):
             *sterilized_updates, strict=True
         )
         if errors:
-            raise FlextoolException("Errors while updating scenario alternatives.")
+            raise FlexToolException("Errors while updating scenario alternatives.")
     except SpineIntegrityError as error:
-        raise FlextoolException(f"Database integrity error: {error}")
+        raise FlexToolException(f"Database integrity error: {error}") from error
 
 
 def _update_objects(db_map, updates):
@@ -552,9 +580,9 @@ def _update_objects(db_map, updates):
     try:
         _, errors = db_map.update_objects(*sterilized_updates, strict=True)
         if errors:
-            raise FlextoolException("Errors while updating objects.")
-    except SpineIntegrityError as e:
-        raise FlextoolException(f"Database integrity error: {e}")
+            raise FlexToolException("Errors while updating objects.")
+    except SpineIntegrityError as error:
+        raise FlexToolException(f"Database integrity error: {error}") from error
 
 
 def _update_relationships(db_map, updates, class_id):
@@ -571,7 +599,7 @@ def _update_relationships(db_map, updates, class_id):
     if not relationship_updates:
         return
     if class_id is None:
-        raise FlextoolException("'class_id' is required when updating relationships.")
+        raise FlexToolException("'class_id' is required when updating relationships.")
     sterilized_updates = []
     object_ids = _relationship_object_ids(db_map, class_id)
     for update in relationship_updates:
@@ -590,9 +618,9 @@ def _update_relationships(db_map, updates, class_id):
     try:
         _, errors = db_map.update_wide_relationships(*sterilized_updates, strict=True)
         if errors:
-            raise FlextoolException("Errors while updating relationships.")
-    except SpineIntegrityError as e:
-        raise FlextoolException(f"Database integrity error: {e}")
+            raise FlexToolException("Errors while updating relationships.")
+    except SpineIntegrityError as error:
+        raise FlexToolException(f"Database integrity error: {error}") from error
 
 
 def _update_parameter_values(db_map, updates):
@@ -617,15 +645,15 @@ def _update_parameter_values(db_map, updates):
             )
             sterilized["value"], _ = to_database(value)
         except KeyError as missing:
-            raise FlextoolException(f"Missing'{missing}'.")
+            raise FlexToolException(f"Missing'{missing}'.") from missing
         sterilized_updates.append(sterilized)
     del value_updates  # Don't use updates from this point onwards.
     try:
         _, errors = db_map.update_parameter_values(*sterilized_updates, strict=True)
         if errors:
-            raise FlextoolException("Errors while updating values.")
-    except SpineIntegrityError as e:
-        raise FlextoolException(f"Database integrity error: {e}")
+            raise FlexToolException("Errors while updating values.")
+    except SpineIntegrityError as error:
+        raise FlexToolException(f"Database integrity error: {error}") from error
 
 
 def _insert_alternatives(db_map, insertions):
@@ -652,9 +680,9 @@ def _insert_alternatives(db_map, insertions):
             *sterilized_insertions, strict=True, return_items=True
         )
         if errors:
-            raise FlextoolException("Errors while inserting alternatives.")
-    except SpineIntegrityError as e:
-        raise FlextoolException(f"Database integrity error: {e}")
+            raise FlexToolException("Errors while inserting alternatives.")
+    except SpineIntegrityError as error:
+        raise FlexToolException(f"Database integrity error: {error}") from error
     return {i["name"]: i["id"] for i in inserted}
 
 
@@ -680,9 +708,9 @@ def _insert_scenarios(db_map, insertions):
             *sterilized_insertions, strict=True, return_items=True
         )
         if errors:
-            raise FlextoolException("Errors while inserting scenarios.")
-    except SpineIntegrityError as e:
-        raise FlextoolException(f"Database integrity error: {e}")
+            raise FlexToolException("Errors while inserting scenarios.")
+    except SpineIntegrityError as error:
+        raise FlexToolException(f"Database integrity error: {error}") from error
     return {i["name"]: i["id"] for i in inserted}
 
 
@@ -721,9 +749,9 @@ def _insert_scenario_alternatives(db_map, insertions):
             *sterilized_insertions, strict=True, return_items=True
         )
         if errors:
-            raise FlextoolException("Errors while inserting scenario alternatives.")
-    except SpineIntegrityError as e:
-        raise FlextoolException(f"Database integrity error: {e}")
+            raise FlexToolException("Errors while inserting scenario alternatives.")
+    except SpineIntegrityError as error:
+        raise FlexToolException(f"Database integrity error: {error}") from error
     ids = {}
     for i in inserted:
         ids.setdefault(scenario_names[i["scenario_id"]], {})[i["rank"]] = i["id"]
@@ -745,7 +773,7 @@ def _insert_objects(db_map, insertions, class_id):
     if not object_insertions:
         return {}
     if class_id is None:
-        raise FlextoolException(f"'class_id' is required for object insertions")
+        raise FlexToolException("'class_id' is required for object insertions")
     sterilized_insertions = []
     for insertion in object_insertions:
         name = get_and_validate(insertion, "name", str)
@@ -756,9 +784,9 @@ def _insert_objects(db_map, insertions, class_id):
             *sterilized_insertions, strict=True, return_items=True
         )
         if errors:
-            raise FlextoolException("Errors while inserting objects.")
-    except SpineIntegrityError as e:
-        raise FlextoolException(f"Database integrity error: {e}")
+            raise FlexToolException("Errors while inserting objects.")
+    except SpineIntegrityError as error:
+        raise FlexToolException(f"Database integrity error: {error}") from error
     return {i["name"]: i["id"] for i in inserted}
 
 
@@ -779,7 +807,7 @@ def _insert_relationships(db_map, insertions, class_id):
     if not relationship_insertions:
         return {}
     if class_id is None:
-        raise FlextoolException("'class_id' is required for relationship insertions")
+        raise FlexToolException("'class_id' is required for relationship insertions")
     sterilized_insertions = []
     object_ids = _relationship_object_ids(db_map, class_id)
     for insertion in relationship_insertions:
@@ -800,9 +828,9 @@ def _insert_relationships(db_map, insertions, class_id):
             *sterilized_insertions, strict=True, return_items=True
         )
         if errors:
-            raise FlextoolException("Errors while inserting relationships.")
-    except SpineIntegrityError as e:
-        raise FlextoolException(f"Database integrity error: {e}")
+            raise FlexToolException("Errors while inserting relationships.")
+    except SpineIntegrityError as error:
+        raise FlexToolException(f"Database integrity error: {error}") from error
     return {i["name"]: i["id"] for i in inserted}
 
 
@@ -820,7 +848,7 @@ def _insert_parameter_values(db_map, insertions, class_id):
     if not value_insertions:
         return
     if class_id is None:
-        raise FlextoolException("'class_id' is required for parameter value insertions")
+        raise FlexToolException("'class_id' is required for parameter value insertions")
     sterilized_insertions = []
     definition_ids = set()
     for insertion in value_insertions:
@@ -848,13 +876,13 @@ def _insert_parameter_values(db_map, insertions, class_id):
     for insertion in sterilized_insertions:
         insertion["entity_id"] = entity_ids[insertion["entity_name"]]
     try:
-        inserted, errors = db_map.add_parameter_values(
+        _, errors = db_map.add_parameter_values(
             *sterilized_insertions, strict=True, return_items=True
         )
         if errors:
-            raise FlextoolException("Errors while inserting values.")
-    except SpineIntegrityError as e:
-        raise FlextoolException(f"Database integrity error: {e}")
+            raise FlexToolException("Errors while inserting values.")
+    except SpineIntegrityError as error:
+        raise FlexToolException(f"Database integrity error: {error}") from error
 
 
 def get_class_set(project, object_class_names):
@@ -873,7 +901,7 @@ def get_class_set(project, object_class_names):
         for relationship in relationships:
             relationship["entitiesUrl"] = reverse(
                 "flextool3:entities",
-                kwargs=dict(pk=project.id, class_id=relationship["id"]),
+                kwargs=dict(project_id=project.id, class_id=relationship["id"]),
             )
         return relationships
 
@@ -889,7 +917,7 @@ def get_class_set(project, object_class_names):
             object_class_dict = object_class_row._asdict()
             object_class_dict["entitiesUrl"] = reverse(
                 "flextool3:entities",
-                kwargs=dict(pk=project.id, class_id=object_class_row.id),
+                kwargs=dict(project_id=project.id, class_id=object_class_row.id),
             )
             object_classes.append(object_class_dict)
             relationship_class_ids = {

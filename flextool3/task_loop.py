@@ -1,5 +1,5 @@
+"""Task loop and subprocess management."""
 from enum import auto, Enum, unique
-from multiprocessing import Queue
 import queue
 from subprocess import PIPE, Popen, STDOUT
 import threading
@@ -138,6 +138,7 @@ def _read_stream(out, log_queue):
         pass
 
 
+# pylint: disable=too-many-branches
 def loop(task_queue, out_connection):
     """Event loop for the parallel process.
 

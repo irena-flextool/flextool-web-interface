@@ -1,6 +1,9 @@
-class FlextoolException(Exception):
-    pass
+"""FlexTool Exceptions."""
 
 
-class ExecutionNotFound(FlextoolException):
-    pass
+class FlexToolException(Exception):
+    """Base exception class."""
+
+
+class ExecutionNotFound(FlexToolException):
+    """Raised when executor cannot find given execution."""

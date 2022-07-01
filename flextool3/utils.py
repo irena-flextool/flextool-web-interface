@@ -1,10 +1,11 @@
+"""General purpose utilities and helpers."""
 from contextlib import contextmanager
 import datetime
 from enum import auto, Enum, unique
 from pathlib import Path
 from django.utils import timezone
 from spinedb_api import DatabaseMapping
-from .exception import FlextoolException
+from .exception import FlexToolException
 
 FLEXTOOL_PROJECT_TEMPLATE = Path(__file__).parent / "master_project"
 FLEXTOOL_PROJECTS_ROOT = Path(__file__).parent / "user_projects"
@@ -12,12 +13,16 @@ FLEXTOOL_PROJECTS_ROOT = Path(__file__).parent / "user_projects"
 
 @unique
 class Database(Enum):
+    """Tags for different databases in FlexTool3 project."""
+
     MODEL = auto()
     RESULT = auto()
 
 
 @unique
 class Key(Enum):
+    """Dictionary keys for interface requests."""
+
     ALTERNATIVE_ID = "alternative_id"
     CLASS_ID = "class_id"
     ENTITY_ID = "entity_id"
@@ -67,20 +72,20 @@ def get_and_validate(dictionary, key, expected_type, required=True):
         Any: value corresponding to key or None key is missing
     """
     try:
-        x = dictionary[key]
+        value = dictionary[key]
     except KeyError as missing:
         if required:
-            raise FlextoolException(f"Missing {missing}.")
+            raise FlexToolException(f"Missing {missing}.") from missing
         return None
-    if not isinstance(x, expected_type):
+    if not isinstance(value, expected_type):
         if isinstance(expected_type, tuple):
-            raise FlextoolException(
+            raise FlexToolException(
                 f"'{key}' is of wrong type, expected one of {expected_type}"
             )
-        raise FlextoolException(
-            f"'{key}' is of wrong type '{type(x).__name__}', expected {expected_type.__name__}"
+        raise FlexToolException(
+            f"'{key}' is of wrong type '{type(value).__name__}', expected {expected_type.__name__}"
         )
-    return x
+    return value
 
 
 def naive_local_time(time_point, time_offset):

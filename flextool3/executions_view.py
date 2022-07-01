@@ -1,3 +1,4 @@
+"""Utilities and helpers for executions interface."""
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum, unique
@@ -10,7 +11,7 @@ from django.http import (
     JsonResponse,
 )
 from django.utils import timezone
-from .exception import FlextoolException, ExecutionNotFound
+from .exception import FlexToolException, ExecutionNotFound
 from .model_utils import resolve_project
 from .models import Scenario, ScenarioExecution
 from .utils import get_and_validate
@@ -25,6 +26,8 @@ _executions = {}
 
 @unique
 class Status(Enum):
+    """Execution status codes."""
+
     YET_TO_START = "YS"
     FINISHED = "OK"
     RUNNING = "RU"
@@ -34,6 +37,8 @@ class Status(Enum):
 
 @dataclass
 class Execution:
+    """Execution information."""
+
     scenarios: list
     status: Status = Status.YET_TO_START
     log: str = ""
@@ -53,7 +58,7 @@ def current_execution(request, request_body):
     """
     try:
         project = resolve_project(request, request_body)
-    except FlextoolException as error:
+    except FlexToolException as error:
         return HttpResponseBadRequest(str(error))
     execution = _executions.get(project.id)
     if execution is None:
@@ -75,7 +80,7 @@ def abort_execution(request, request_body):
     """
     try:
         project = resolve_project(request, request_body)
-    except FlextoolException as error:
+    except FlexToolException as error:
         return HttpResponseBadRequest(str(error))
     if project.id not in _executions:
         return HttpResponseBadRequest("Execution does not exist.")
@@ -96,7 +101,7 @@ def execute(request, request_body):
     try:
         project = resolve_project(request, request_body)
         scenarios = get_and_validate(request_body, "scenarios", list)
-    except FlextoolException as error:
+    except FlexToolException as error:
         return HttpResponseBadRequest(str(error))
     execution = _executions.get(project.id)
     if execution is None:
@@ -122,7 +127,7 @@ def execution_briefing(request, request_body):
     """
     try:
         project = resolve_project(request, request_body)
-    except FlextoolException as error:
+    except FlexToolException as error:
         return HttpResponseBadRequest(str(error))
     try:
         execution = _executions[project.id]
@@ -281,7 +286,7 @@ def _make_mod_script(scenarios):
         "finally:\n",
         "    db_map.connection.close()\n",
     ]
-    temp_dir = TemporaryDirectory()
+    temp_dir = TemporaryDirectory()  # pylint: disable=consider-using-with
     script_path = Path(temp_dir.name) / _MOD_SCRIPT_NAME
     with open(script_path, "w", encoding="utf-8") as script_file:
         script_file.writelines(script_contents)
@@ -316,8 +321,9 @@ def _save_scenarios(project, scenarios, log, execution_time, execution_time_offs
     """
     for scenario_name in scenarios:
         try:
+            # pylint: disable=no-member
             scenario = Scenario.objects.get(project=project, name=scenario_name)
-        except Scenario.DoesNotExist:
+        except Scenario.DoesNotExist:  # pylint: disable=no-member
             scenario = Scenario(project=project, name=scenario_name)
             scenario.save()
         scenario_execution = ScenarioExecution(

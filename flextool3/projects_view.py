@@ -1,10 +1,10 @@
+"""Utilities and helpers for the projects interface."""
 import re
 from django.http import (
-    HttpResponse,
     HttpResponseBadRequest,
     JsonResponse,
 )
-from .exception import FlextoolException
+from .exception import FlexToolException
 from .executions_view import clear_execution
 from .models import Project, PROJECT_NAME_LENGTH
 from .utils import FLEXTOOL_PROJECTS_ROOT, FLEXTOOL_PROJECT_TEMPLATE, get_and_validate
@@ -19,6 +19,7 @@ def project_list(user_id):
     Returns:
         HttpResponse: response to client
     """
+    # pylint: disable=no-member
     response = {
         "projects": [
             project.project_list_data()
@@ -52,7 +53,7 @@ def create_project(user, request_body):
             FLEXTOOL_PROJECTS_ROOT,
             FLEXTOOL_PROJECT_TEMPLATE,
         )
-    except FlextoolException as error:
+    except FlexToolException as error:
         return HttpResponseBadRequest(str(error))
     new_project.save()
     return JsonResponse({"project": new_project.project_list_data()})
@@ -70,11 +71,12 @@ def destroy_project(user, request_body):
     """
     try:
         id_ = get_and_validate(request_body, "id", int)
-    except FlextoolException as error:
+    except FlexToolException as error:
         return HttpResponseBadRequest(str(error))
     try:
+        # pylint: disable=no-member
         project = Project.objects.get(user_id=user.id, pk=id_)
-    except Project.DoesNotExist:
+    except Project.DoesNotExist:  # pylint: disable=no-member
         return HttpResponseBadRequest("Project does not exist.")
     project.remove_project_dir()
     clear_execution(project.id)

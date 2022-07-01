@@ -1,6 +1,7 @@
+"""Utilities for the ''model'' module."""
 from .utils import get_and_validate
 from .models import Project
-from .exception import FlextoolException
+from .exception import FlexToolException
 
 
 def resolve_project(request, body):
@@ -15,7 +16,8 @@ def resolve_project(request, body):
     """
     project_id = get_and_validate(body, "projectId", int)
     try:
+        # pylint: disable=no-member
         project = Project.objects.get(id=project_id, user=request.user.id)
-    except Project.DoesNotExist:
-        raise FlextoolException("Project does not exist.")
+    except Project.DoesNotExist as error:  # pylint: disable=no-member
+        raise FlexToolException("Project does not exist.") from error
     return project

@@ -1,9 +1,9 @@
+"""Helper functions and utilities for the analysis interface."""
 from django.http import (
-    HttpResponse,
     HttpResponseBadRequest,
     JsonResponse,
 )
-from .exception import FlextoolException
+from .exception import FlexToolException
 from .utils import Database, database_map, get_and_validate, Key
 
 
@@ -37,12 +37,12 @@ def get_relationship_class_object_classes(project, request_body):
     """
     try:
         class_id = get_and_validate(request_body, Key.RELATIONSHIP_CLASS_ID.value, int)
-    except FlextoolException as error:
+    except FlexToolException as error:
         return HttpResponseBadRequest(str(error))
     with database_map(project, Database.RESULT) as db_map:
-        sq = db_map.ext_relationship_class_sq
+        subquery = db_map.ext_relationship_class_sq
         object_classes_by_dimension = {}
-        for row in db_map.query(sq).filter(sq.c.id == class_id):
+        for row in db_map.query(subquery).filter(subquery.c.id == class_id):
             object_classes_by_dimension[row.dimension] = row.object_class_name
         if not object_classes_by_dimension:
             return HttpResponseBadRequest(

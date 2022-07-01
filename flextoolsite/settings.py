@@ -30,7 +30,7 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
-    "flextool3.apps.Flextool3Config",
+    "flextool3.apps.FlexTool3Config",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
