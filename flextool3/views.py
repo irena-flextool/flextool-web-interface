@@ -50,7 +50,7 @@ from .summary_view import (
     get_scenario_list,
     get_summary,
     get_result_alternative,
-    get_output_directory,
+    get_output_directory, destroy_execution,
 )
 from .import_model_database_view import save_model_database_file
 
@@ -325,6 +325,8 @@ def summary(request):
         return get_result_alternative(project, body)
     if type_ == "output directory?":
         return get_output_directory(project, body)
+    if type_ == "destroy execution?":
+        return destroy_execution(project, body)
     return HttpResponseBadRequest("Unknown 'type'.")
 
 

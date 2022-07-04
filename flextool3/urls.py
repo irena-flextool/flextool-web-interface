@@ -19,7 +19,9 @@ urlpatterns = [
     path("summary/", views.summary, name="summary"),
     path("analysis/", views.analysis, name="analysis"),
     path(
-        "<int:project_id>/results_database/", views.export_model_database, name="model_export"
+        "<int:project_id>/results_database/",
+        views.export_model_database,
+        name="model_export",
     ),
     path(
         "<int:project_id>/upload_results_database",

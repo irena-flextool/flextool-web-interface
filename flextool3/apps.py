@@ -7,3 +7,7 @@ class FlexTool3Config(AppConfig):
 
     default_auto_field = "django.db.models.BigAutoField"
     name = "flextool3"
+
+    def ready(self):
+        """Connects Django signals."""
+        from . import signals

@@ -117,32 +117,7 @@ def get_result_alternative(project, body):
         scenario_execution = _resolve_scenario_execution(project, body)
     except FlexToolException as error:
         return HttpResponseBadRequest(str(error))
-    target_scenario_name = scenario_execution.scenario.name
-    candidate_alternatives = []
-    result_alternative_name_test = re.compile(
-        r"^.+__.+@[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}$"
-    )
-    with database_map(project, Database.RESULT) as db_map:
-        for alternative in db_map.query(db_map.alternative_sq):
-            if result_alternative_name_test.match(alternative.name) is None:
-                continue
-            scenario_name = alternative.name.partition("__")[0]
-            if scenario_name == target_scenario_name:
-                time_string = alternative.name.partition("@")[-1]
-                candidate_alternatives.append(
-                    (alternative.id, datetime.datetime.fromisoformat(time_string))
-                )
-    if not candidate_alternatives:
-        return JsonResponse({"alternative_id": None})
-    candidate_alternatives.sort(key=lambda s: s[1])
-    local_time_point = naive_local_time(
-        scenario_execution.execution_time, scenario_execution.execution_time_offset
-    )
-    i = bisect_left([s[1] for s in candidate_alternatives], local_time_point)
-    alternative_id = (
-        candidate_alternatives[i][0] if i != len(candidate_alternatives) else None
-    )
-    return JsonResponse({"alternative_id": alternative_id})
+    return JsonResponse({"alternative_id": scenario_execution.results_alternative_id()})
 
 
 def get_output_directory(project, body):
@@ -163,3 +138,21 @@ def get_output_directory(project, body):
     if summary_path is None:
         return JsonResponse({"directory": None})
     return JsonResponse({"directory": str(summary_path.parent)})
+
+
+def destroy_execution(project, body):
+    """Removes given scenario execution deleting result files and database records.
+
+    Args:
+        project (Project): a project
+        body (dict): request body
+
+    Returns:
+        HTTPResponse: a response object
+    """
+    try:
+        scenario_execution = _resolve_scenario_execution(project, body)
+    except FlexToolException as error:
+        return HttpResponseBadRequest(str(error))
+    scenario_execution.delete()
+    return JsonResponse({})

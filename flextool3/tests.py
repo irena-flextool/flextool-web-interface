@@ -171,6 +171,83 @@ class ScenarioExecutionModelTests(TestCase):
                 run_dir / "2023-05-23T15.23.05" / "output" / SUMMARY_FILE_NAME,
             )
 
+    def test_deleting_scenario_execution_removes_leftover_files_and_data(self):
+        with fake_project(self.baron) as project:
+            scenario = Scenario(project=project, name="my_scenario")
+            scenario.save()
+            scenario_execution = ScenarioExecution(
+                scenario=scenario,
+                execution_time=datetime.fromisoformat("2023-05-23T15:23:00+03:00"),
+                execution_time_offset=3 * 3600,
+                log="",
+            )
+            scenario_execution.save()
+            output_dir = (
+                Path(project.path) / ".spinetoolbox" / "items" / "flextool3" / "output"
+            )
+            failed_dir = output_dir / "failed"
+            failed_dir.mkdir(parents=True)
+            run_dir = output_dir / "dc03f1ea3aebbee9146b9cf380472f6045c0927d"
+            run_dir.mkdir(parents=True)
+            with open(run_dir / ".filter_id", "w", encoding="utf-8") as filter_id_file:
+                filter_id_file.writelines(["my_scenario, FlexTool3 - Input_data\n"])
+            runs = ["2023-05-23T14.05.23", "2023-05-23T15.23.05"]
+            for run in runs:
+                run_output_dir = run_dir / run / "output"
+                run_output_dir.mkdir(parents=True)
+                (run_output_dir / SUMMARY_FILE_NAME).touch()
+            db_map = DatabaseMapping(
+                "sqlite:///" + str(Path(project.path) / PATH_TO_RESULT_DATABASE),
+                create=True,
+            )
+            import_object_classes(db_map, ("my_object_class",))
+            import_objects(db_map, (("my_object_class", "my_object"),))
+            import_object_parameters(db_map, (("my_object_class", "my_parameter"),))
+            import_alternatives(
+                db_map,
+                (
+                    "my_scenario__Import_results@2023-05-23T14:05:30",
+                    "my_scenario__Import_results@2023-05-23T15:23:11",
+                ),
+            )
+            import_object_parameter_values(
+                db_map,
+                (
+                    (
+                        "my_object_class",
+                        "my_object",
+                        "my_parameter",
+                        2.3,
+                        "my_scenario__Import_results@2023-05-23T14:05:30",
+                    ),
+                    (
+                        "my_object_class",
+                        "my_object",
+                        "my_parameter",
+                        5.5,
+                        "my_scenario__Import_results@2023-05-23T15:23:11",
+                    ),
+                ),
+            )
+            db_map.commit_session("Add test data.")
+            deleted = scenario_execution.delete()
+            self.assertEqual(deleted[0], 1)
+            alternative_names = {
+                row.name for row in db_map.query(db_map.alternative_sq)
+            }
+            self.assertEqual(
+                alternative_names,
+                {"Base", "my_scenario__Import_results@2023-05-23T14:05:30"},
+            )
+            parameter_values = [
+                from_database(row.value)
+                for row in db_map.query(db_map.parameter_value_sq)
+            ]
+            self.assertEqual(parameter_values, [2.3])
+            db_map.connection.close()
+            self.assertTrue((run_dir / "2023-05-23T14.05.23").exists())
+            self.assertFalse((run_dir / "2023-05-23T15.23.05").exists())
+
 
 class ProjectsInterfaceTests(TestCase):
     baron = None
@@ -1834,7 +1911,9 @@ class ModelInterfaceTests(TestCase):
                     relationship_class["entitiesUrl"],
                     reverse(
                         "flextool3:entities",
-                        kwargs=({"project_id": 1, "class_id": relationship_class["id"]}),
+                        kwargs=(
+                            {"project_id": 1, "class_id": relationship_class["id"]}
+                        ),
                     ),
                 )
 

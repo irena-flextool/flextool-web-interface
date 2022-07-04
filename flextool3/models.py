@@ -10,7 +10,7 @@ from django.contrib.auth.models import User
 from django.db import models
 from django.urls import reverse
 from .exception import FlexToolException
-from .utils import naive_local_time
+from .utils import naive_local_time, database_map, Database
 
 PROJECT_NAME_LENGTH = 60
 SUMMARY_FILE_NAME = "summary_solve.csv"
@@ -188,3 +188,35 @@ class ScenarioExecution(models.Model):
                 self.execution_time_offset,
             )
         return None
+
+    def results_alternative_id(self):
+        """Finds id of the results alternative corresponding to the execution.
+
+        Returns:
+            int: alternative id or None if not found
+        """
+        target_scenario_name = self.scenario.name
+        candidate_alternatives = []
+        result_alternative_name_test = re.compile(
+            r"^.+__.+@[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}$"
+        )
+        with database_map(self.scenario.project, Database.RESULT) as db_map:
+            for alternative in db_map.query(db_map.alternative_sq):
+                if result_alternative_name_test.match(alternative.name) is None:
+                    continue
+                scenario_name = alternative.name.partition("__")[0]
+                if scenario_name == target_scenario_name:
+                    time_string = alternative.name.partition("@")[-1]
+                    candidate_alternatives.append(
+                        (alternative.id, datetime.datetime.fromisoformat(time_string))
+                    )
+        if not candidate_alternatives:
+            return None
+        candidate_alternatives.sort(key=lambda s: s[1])
+        local_time_point = naive_local_time(
+            self.execution_time, self.execution_time_offset
+        )
+        i = bisect_left([s[1] for s in candidate_alternatives], local_time_point)
+        return (
+            candidate_alternatives[i][0] if i != len(candidate_alternatives) else None
+        )
