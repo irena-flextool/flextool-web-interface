@@ -50,7 +50,8 @@ from .summary_view import (
     get_scenario_list,
     get_summary,
     get_result_alternative,
-    get_output_directory, destroy_execution,
+    get_output_directory,
+    destroy_execution,
 )
 from .import_model_database_view import save_model_database_file
 

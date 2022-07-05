@@ -21,7 +21,9 @@ def delete_result_data(sender, **kwargs):
         rmtree(tool_output_path)
     alternative_id = scenario_execution.results_alternative_id()
     if alternative_id is not None:
-        with database_map(scenario_execution.scenario.project, Database.RESULT) as db_map:
+        with database_map(
+            scenario_execution.scenario.project, Database.RESULT
+        ) as db_map:
             db_map.cascade_remove_items(alternative={alternative_id})
             db_map.commit_session(
                 f"Deleted results for scenario '{scenario_execution.scenario.name}'"
