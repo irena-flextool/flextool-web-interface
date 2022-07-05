@@ -53,8 +53,8 @@ export default {
     },
     emits: ["relationshipCreate"],
     setup(props, context) {
-        const dimensions = ref([...Array(props.availableObjects.length).keys()]);
-        const options = ref(selectOptions(props.availableObjects));
+        const dimensions = [...Array(props.availableObjects.length).keys()];
+        const options = selectOptions(props.availableObjects);
         const selection = Array(props.availableObjects.length);
         const wellDefined = ref(false);
         return {

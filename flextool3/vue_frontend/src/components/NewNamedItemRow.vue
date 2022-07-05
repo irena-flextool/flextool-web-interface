@@ -16,7 +16,7 @@
 </template>
 
 <script>
-import {computed, ref} from "vue/dist/vue.esm-bundler.js";
+import {ref} from "vue/dist/vue.esm-bundler.js";
 import {useMessage} from "naive-ui";
 
 export default {
@@ -26,7 +26,7 @@ export default {
     emits: ["create"],
     setup(props, context) {
         const currentName = ref("");
-        const placeholder = computed(() => `Enter ${props.itemName} name`);
+        const placeholder = `Enter ${props.itemName} name`;
         const message = useMessage();
         return {
             currentName: currentName,

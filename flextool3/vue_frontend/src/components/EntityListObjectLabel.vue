@@ -25,11 +25,9 @@ export default {
     },
     setup(props, context) {
         const editing = ref(false);
-        const editValue = ref(props.objectName);
         const inputInstance = ref(null);
         return {
             editing: editing,
-            editValue: editValue,
             inputInstance: inputInstance,
             showInput() {
                 editing.value = true;

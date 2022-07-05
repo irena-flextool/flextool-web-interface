@@ -7,6 +7,7 @@
         size="tiny"
         :show-arrow="false"
         class="entity-list-select"
+        :consistent-menu-width="false"
         @blur="accept"
         @keydown="handleKey"
     />
@@ -21,15 +22,14 @@ export default {
     },
     emits: ["accept", "cancel"],
     setup(props, context) {
-        const objectsList = [];
+        const options = [];
         props.availableObjects.forEach(function(object) {
-            objectsList.push({
+            options.push({
                 label: object,
                 value: object,
                 style: {"font-size": "12px"},
             });
         });
-        const options = ref(objectsList);
         const currentObject = ref(props.objectName);
         const instance = ref(null);
         onMounted(function () {

@@ -71,7 +71,7 @@ export default {
         logoUrl: {type: String, required: true},
     },
     setup(props) {
-        const links = ref(menuEntries(props));
+        const links = menuEntries(props);
         const activeKey = ref(null);
         return {
             links: links,

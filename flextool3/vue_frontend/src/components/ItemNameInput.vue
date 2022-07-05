@@ -1,8 +1,7 @@
 <template>
     <n-input
-        :value="value"
+        v-model:value="value"
         ref="instance"
-        @update:value="updateValue"
         @blur="cancel"
         @keydown="handleKey"
         maxlength=155
@@ -30,9 +29,6 @@ export default {
             cancel() {
                 value.value = props.name;
                 context.emit("cancel");
-            },
-            updateValue(newValue) {
-                value.value = newValue;
             },
             handleKey(keyInfo) {
                 const sanitized = value.value.trim();

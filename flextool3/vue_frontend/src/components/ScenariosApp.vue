@@ -168,6 +168,7 @@ export default {
                         title: "Cannot commit",
                         content: "Scenarios have issues that must be solved first."
                     });
+                    committing.value = false;
                     return;
                 }
                 if(currentScenarios !== null) {
