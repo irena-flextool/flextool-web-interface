@@ -15,12 +15,15 @@ def delete_result_data(sender, **kwargs):
         **kwargs (): signal arguments
     """
     scenario_execution = kwargs["instance"]
-    tool_output_path = scenario_execution.summary_path().parent.parent
-    rmtree(tool_output_path)
+    summary_path = scenario_execution.summary_path()
+    if summary_path is not None:
+        tool_output_path = summary_path.parent.parent
+        rmtree(tool_output_path)
     alternative_id = scenario_execution.results_alternative_id()
-    with database_map(scenario_execution.scenario.project, Database.RESULT) as db_map:
-        db_map.cascade_remove_items(alternative={alternative_id})
-        db_map.commit_session(
-            f"Deleted results for scenario '{scenario_execution.scenario.name}'"
-            + f" run on {scenario_execution.execution_time}."
-        )
+    if alternative_id is not None:
+        with database_map(scenario_execution.scenario.project, Database.RESULT) as db_map:
+            db_map.cascade_remove_items(alternative={alternative_id})
+            db_map.commit_session(
+                f"Deleted results for scenario '{scenario_execution.scenario.name}'"
+                + f" run on {scenario_execution.execution_time}."
+            )

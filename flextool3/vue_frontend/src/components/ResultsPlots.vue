@@ -39,6 +39,7 @@ async function completeFetch(
     parameterDefinitionPromise,
     parameterValuePromise,
     plotBoxes,
+    emit,
     state,
     errorMessage
 ) {
@@ -97,10 +98,14 @@ async function completeFetch(
                 });
             }
         }
-    } catch(error) {
+    }
+    catch(error) {
         state.value = Fetchable.state.error;
         errorMessage.value = error.message;
         return;
+    }
+    finally {
+        emit("busy", false);
     }
     state.value = Fetchable.state.ready;
 }
@@ -111,12 +116,13 @@ export default {
         analysisUrl: {type: String, required: true},
         summaryUrl: {type: String, required: true},
     },
+    emits: ["busy"],
     components: {
         "fetchable": Fetchable,
         "keyed-card": KeyedCard,
         "plot-figure": PlotFigure,
     },
-    setup(props) {
+    setup(props, context) {
         const plotBoxes = ref([]);
         const state = ref(Fetchable.state.waiting);
         const errorMessage = ref("");
@@ -128,6 +134,12 @@ export default {
                 plotBoxes.value.splice(index, 1);
             },
             loadPlots(scenarioInfo) {
+                if(scenarioInfo === null) {
+                    plotBoxes.value.length = 0;
+                    state.value = Fetchable.state.waiting;
+                    return;
+                }
+                context.emit("busy", true);
                 state.value = Fetchable.state.loading;
                 plotBoxes.value.length = 0;
                 const parameterValuePromise = fetchResultAlternative(
@@ -187,6 +199,7 @@ export default {
                     parameterDefinitionPromise,
                     parameterValuePromise,
                     plotBoxes,
+                    context.emit,
                     state,
                     errorMessage
                 );

@@ -22,10 +22,11 @@ import Fetchable from "./Fetchable.vue";
  * @param {string} summaryUrl Url to summary interface.
  * @param {number} scenarioExecutionId Id of selected scenario execution.
  * @param {Ref} outputDirectory Reference to results directory path.
+ * @callback emit Callback to emit "busy".
  * @param {Ref} state Reference to fetchable state.
  * @param {Ref} errorMessage Reference to error message.
  */
-function loadOutputDirectory(projectId, summaryUrl, scenarioExecutionId, outputDirectory, state, errorMessage) {
+function loadOutputDirectory(projectId, summaryUrl, scenarioExecutionId, outputDirectory, emit, state, errorMessage) {
     state.value = Fetchable.state.loading;
     fetchOutputDirectory(projectId, summaryUrl, scenarioExecutionId).then(function(data) {
         outputDirectory.value = data.directory;
@@ -33,6 +34,8 @@ function loadOutputDirectory(projectId, summaryUrl, scenarioExecutionId, outputD
     }).catch(function(error) {
         state.value = Fetchable.state.error;
         errorMessage.value = error.message;
+    }).finally(function() {
+        emit("busy", false);
     });
 }
 
@@ -41,10 +44,11 @@ export default {
         projectId: {type: Number, required: true},
         summaryUrl: {type: String, required: true},
     },
+    emits: ["busy"],
     components: {
         "fetchable": Fetchable,
     },
-    setup(props) {
+    setup(props, context) {
         const outputDirectory = ref(null);
         const state = ref(Fetchable.state.waiting);
         const errorMessage = ref("");
@@ -56,11 +60,18 @@ export default {
                 navigator.clipboard.writeText(outputDirectory.value);
             },
             loadDirectory(scenarioInfo) {
+                if(scenarioInfo === null) {
+                    outputDirectory.value = null;
+                    state.value = Fetchable.state.waiting;
+                    return;
+                }
+                context.emit("busy", true);
                 loadOutputDirectory(
                     props.projectId,
                     props.summaryUrl,
                     scenarioInfo.scenarioExecutionId,
                     outputDirectory,
+                    context.emit,
                     state,
                     errorMessage
                 );

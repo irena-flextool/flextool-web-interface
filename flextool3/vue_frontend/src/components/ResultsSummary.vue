@@ -41,10 +41,11 @@ export default {
         projectId: {type: Number, required: true},
         summaryUrl: {type: String, required: true},
     },
+    emits: ["busy"],
     components: {
         "fetchable": Fetchable,
     },
-    setup(props) {
+    setup(props, context) {
         const title = ref("");
         const tables = ref([]);
         const state = ref(Fetchable.state.waiting);
@@ -55,6 +56,13 @@ export default {
             state: state,
             errorMessage: errorMessage,
             loadSummary(scenarioInfo) {
+                if(scenarioInfo === null) {
+                    title.value = "";
+                    tables.value.length = 0;
+                    state.value = Fetchable.state.waiting;
+                    return;
+                }
+                context.emit("busy", true);
                 state.value = Fetchable.state.loading;
                 fetchSummary(
                     props.projectId,
@@ -78,6 +86,7 @@ export default {
                     if(state.value === Fetchable.state.loading) {
                         state.value = Fetchable.state.ready;
                     }
+                    context.emit("busy", false);
                 });
             },
         };

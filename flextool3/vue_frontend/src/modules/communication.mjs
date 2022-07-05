@@ -42,7 +42,7 @@ function fetchProjectList(projectsUrl) {
                 throw new Error(`Failed to load project list: ${message}`);
             });
         }
-        return response.json()
+        return response.json();
     });
 }
 
@@ -223,7 +223,7 @@ function fetchSummary(projectId, summaryUrl, scenarioExecutionId) {
                 throw new Error(`Failed to load summary: ${message}`);
             });
         }
-        return response.json()
+        return response.json();
     });
 }
 
@@ -247,7 +247,7 @@ function fetchOutputDirectory(projectId, summaryUrl, scenarioExecutionId) {
                 throw new Error(`Failed to load output directory path: ${message}`);
             });
         }
-        return response.json()
+        return response.json();
     });
 }
 
@@ -266,12 +266,12 @@ function fetchExecutedScenarioList(projectId, summaryUrl) {
                 throw new Error(`Failed to load scenarios: ${message}`);
             });
         }
-        return response.json()
+        return response.json();
     });
 }
 
 /**
- * Fetches result alternative from serer.
+ * Fetches result alternative from server.
  * @param {number} projectId Project id.
  * @param {string} summaryUrl URL to server's interface.
  * @param {string} scenarioExecutionId Scenario execution id.
@@ -286,10 +286,32 @@ function fetchResultAlternative(projectId, summaryUrl, scenarioExecutionId) {
     return fetch(summaryUrl, fetchInit).then(function(response) {
         if (!response.ok) {
             return response.text().then(function(message) {
-                throw new Error(`Failed to result alternative: ${message}`);
+                throw new Error(`Failed to fetch result alternative: ${message}`);
             });
         }
-        return response.json()
+        return response.json();
+    });
+}
+
+/**
+ * Requests server to delete a scenario execution.
+ * @param {number} projectId Project id.
+ * @param {string} summaryUrl URL to server's interface.
+ * @param {string} scenarioExecutionId Scenario execution id.
+ */
+function destroyScenarioExecution(projectId, summaryUrl, scenarioExecutionId) {
+    const fetchInit = makeFetchInit();
+    fetchInit.body = JSON.stringify({type: "destroy execution?",
+        projectId: projectId,
+        scenarioExecutionId: scenarioExecutionId,
+    });
+    return fetch(summaryUrl, fetchInit).then(function(response) {
+        if (!response.ok) {
+            return response.text().then(function(message) {
+                throw new Error(`Failed to destroy scenario execution: ${message}`);
+            });
+        }
+        return;
     });
 }
 
@@ -309,4 +331,5 @@ export {
     fetchSummary,
     fetchOutputDirectory,
     fetchResultAlternative,
+    destroyScenarioExecution,
 };

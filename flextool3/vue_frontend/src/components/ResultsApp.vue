@@ -22,6 +22,7 @@
                     :run-url="runUrl"
                     :summary-url="summaryUrl"
                     @scenarioSelect="loadResults"
+                    ref="scenarioList"
                 />
             </n-layout-sider>
             <n-layout-content content-style="margin-left: 1em; margin-right: 1em">
@@ -39,6 +40,7 @@
                     :project-id="projectId"
                     :analysis-url="analysisUrl"
                     :summary-url="summaryUrl"
+                    @busy="updateBusyStatus"
                     ref="plots"
                 />
             </n-layout-content>
@@ -78,17 +80,28 @@ export default {
         "results-output-directory": ResultsOutputDirectory,
     },
     setup() {
+        const scenarioList = ref(null);
         const summary = ref(null);
         const outputDirectory = ref(null);
         const plots = ref(null);
+        let busyness = 0;
         return {
             summary: summary,
             outputDirectory: outputDirectory,
             plots: plots,
+            scenarioList: scenarioList,
             loadResults(scenarioInfo) {
                 summary.value.loadSummary(scenarioInfo);
                 outputDirectory.value.loadDirectory(scenarioInfo);
                 plots.value.loadPlots(scenarioInfo);
+            },
+            updateBusyStatus(busy) {
+                const old = busyness;
+                busyness += busy ? 1 : -1;
+                if(old > 0 && busyness > 0) {
+                    return;
+                }
+                scenarioList.value.setSelectedBusy(busyness > 0);
             },
         };
     },
