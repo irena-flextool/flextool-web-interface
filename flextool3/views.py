@@ -86,7 +86,7 @@ class IndexView(LoginRequiredMixin, generic.ListView):
         return Project.objects.filter(user_id=self.request.user.id)
 
 
-@login_required
+@login_required(login_url="../accounts/login/")
 def detail(request, project_id):
     """Renders the Manage project page.
 
@@ -102,7 +102,7 @@ def detail(request, project_id):
     return render(request, "flextool3/detail.html", context)
 
 
-@login_required
+@login_required(login_url="../accounts/login/")
 def edit(request, project_id):
     """Renders the Edit model page.
 
@@ -121,7 +121,7 @@ def edit(request, project_id):
     return _ensure_database_up_to_date(render_edit, Database.MODEL, request, project_id)
 
 
-@login_required
+@login_required(login_url="../../accounts/login/")
 def entities(request, project_id, class_id):
     """Renders the entity editor page.
 
@@ -150,7 +150,7 @@ def entities(request, project_id, class_id):
     )
 
 
-@login_required
+@login_required(login_url="../accounts/login/")
 def scenarios(request, project_id):
     """Renders the alternative/scenario editor page.
 
@@ -171,7 +171,7 @@ def scenarios(request, project_id):
     )
 
 
-@login_required
+@login_required(login_url="../accounts/login/")
 def run(request, project_id):
     """Renders the Run page.
 
@@ -187,7 +187,7 @@ def run(request, project_id):
     return render(request, "flextool3/run.html", context)
 
 
-@login_required
+@login_required(login_url="../accounts/login/")
 def results(request, project_id):
     """Renders the Results page.
 
@@ -346,9 +346,7 @@ def analysis(request):
     def handle_specific_types(type_, project, body):
         return None
 
-    return _resolve_interface_request(
-        request, Database.RESULT, handle_specific_types
-    )
+    return _resolve_interface_request(request, Database.RESULT, handle_specific_types)
 
 
 @login_required
