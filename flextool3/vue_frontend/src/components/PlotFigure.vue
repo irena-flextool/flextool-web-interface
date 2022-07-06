@@ -9,9 +9,7 @@
                 size="small"
             />
             <n-button
-                @click="prepareDownload"
-                :loading="preparingDownload"
-                :disabled="downloadButtonDisabled"
+                @click="download"
                 size="small"
             >
                 Download CSV
@@ -23,11 +21,9 @@
 
 <script>
 import {computed, onMounted, ref} from "vue/dist/vue.esm-bundler.js";
-import {useMessage} from "naive-ui";
 import Plotly from "plotly.js-cartesian-dist-min";
+import {downloadAsCsv, makeProps} from "../modules/figures.mjs";
 import {toBasicChartData} from "../modules/plots.mjs";
-import {fetchData} from "../modules/communication.mjs";
-import {relationshipClassType} from "../modules/entityClasses.mjs";
 
 /**
  * Plots scatter plot.
@@ -81,28 +77,6 @@ function plotStackedBar(dataTable, indexNames, plotId) {
 }
 
 /**
- * Returns dimensions of an entity class.
- * @param {object} entityClass Entity class info.
- * @param {number} projectId Project id.
- * @param {string} analysisUrl Analysis interface URL.
- * @returns {String[]} Array of object class names.
- */
-async function getEntityClassNames(entityClass, projectId, analysisUrl) {
-    if(entityClass.type === relationshipClassType) {
-        const data = await fetchData(
-            "relationship class object classes?",
-            projectId,
-            analysisUrl,
-            {relationship_class_id: entityClass.id},
-        );
-        return data.object_classes;
-    }
-    else {
-        return [entityClass.name];
-    }
-}
-
-/**
  * Changes plot type.
  * @param {object} entityClass Entity class info.
  * @param {number} projectId Project id.
@@ -126,15 +100,7 @@ function replot(plotType, dataTable, indexNames, plotId) {
 }
 
 export default {
-    props: {
-        identifier: {type: [String, Number], required: true},
-        dataTable: {type: Array, required: true},
-        indexNames: {type: Array, required: true},
-        entityClass: {type: Object, required: true},
-        parameterName: {type: String, required: true},
-        projectId: {type: Number, required: true},
-        analysisUrl: {type: String, required: true},
-    },
+    props: makeProps(),
     setup(props) {
         const plotId = `plot-${props.identifier}`;
         const plotType = ref("scatter");
@@ -143,8 +109,6 @@ export default {
             {label: "Bars", value: "bar"},
             {label: "Stacked bars", value: "stacked bar"},
         ];
-        const preparingDownload = ref(false);
-        const message = useMessage();
         onMounted(function() {
             replot(plotType, props.dataTable, props.indexNames, plotId);
         });
@@ -152,30 +116,13 @@ export default {
             plotId: plotId,
             plotType: plotType,
             plotTypeOptions: plotTypeOptions,
-            preparingDownload: preparingDownload,
-            downloadButtonDisabled: computed(() => preparingDownload.value),
-            prepareDownload() {
-                preparingDownload.value = true;
-                getEntityClassNames(props.entityClass, props.projectId, props.analysisUrl).then(function(classNames) {
-                    const createCsvStringifier = require("csv-writer").createArrayCsvStringifier;
-                    const stringifier = createCsvStringifier({header: [...classNames, ...props.indexNames, "y"]});
-                    const header = stringifier.getHeaderString()
-                    const content = stringifier.stringifyRecords(props.dataTable);
-                    const aElement = document.createElement("a");
-                    aElement.setAttribute(
-                        "href",
-                        "data:text/plain;charset=utf-8," + encodeURIComponent(header + content)
-                    );
-                    aElement.setAttribute("download", `${props.entityClass.name}_${props.parameterName}.csv`);
-                    aElement.style.display = "none";
-                    document.body.appendChild(aElement);
-                    aElement.click();
-                    document.body.removeChild(aElement);
-                }).catch(function(error) {
-                    message.error(error.message);
-                }).finally(function(){
-                    preparingDownload.value = false;
-                });
+            download() {
+                downloadAsCsv(
+                    props.dataTable,
+                    props.entityClass,
+                    props.parameterName,
+                    props.indexNames,
+                );
             },
             replot() {
                 replot(plotType, props.dataTable, props.indexNames, plotId);

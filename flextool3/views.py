@@ -18,7 +18,6 @@ from spinedb_api import (
     SpineDBVersionError,
     SpineDBAPIError,
 )
-from .analysis_view import get_entity_classes, get_relationship_class_object_classes
 from .model_view import (
     get_scenarios,
     get_available_relationship_objects,
@@ -344,15 +343,11 @@ def analysis(request):
         HttpResponse: response to client
     """
 
-    def handle_result_specific_types(type_, project, body):
-        if type_ == "entity classes?":
-            return get_entity_classes(project)
-        if type_ == "relationship class object classes?":
-            return get_relationship_class_object_classes(project, body)
+    def handle_specific_types(type_, project, body):
         return None
 
     return _resolve_interface_request(
-        request, Database.RESULT, handle_result_specific_types
+        request, Database.RESULT, handle_specific_types
     )
 
 

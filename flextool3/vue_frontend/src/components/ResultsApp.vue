@@ -36,12 +36,12 @@
                     :summary-url="summaryUrl"
                     ref="outputDirectory"
                 />
-                <results-plots
+                <results-figures
                     :project-id="projectId"
                     :analysis-url="analysisUrl"
                     :summary-url="summaryUrl"
                     @busy="updateBusyStatus"
-                    ref="plots"
+                    ref="figures"
                 />
             </n-layout-content>
         </n-layout>
@@ -52,7 +52,7 @@
 import {ref} from "vue/dist/vue.esm-bundler.js";
 import Page from "./Page.vue";
 import PagePath from "./PagePath.vue";
-import ResultsPlots from "./ResultsPlots.vue";
+import ResultsFigures from "./ResultsFigures.vue";
 import ResultsScenarioList from "./ResultsScenarioList.vue";
 import ResultsSummary from "./ResultsSummary.vue";
 import ResultsOutputDirectory from "./ResultsOutputDirectory.vue";
@@ -74,7 +74,7 @@ export default {
     components: {
         "page": Page,
         "page-path": PagePath,
-        "results-plots": ResultsPlots,
+        "results-figures": ResultsFigures,
         "results-scenario-list": ResultsScenarioList,
         "results-summary": ResultsSummary,
         "results-output-directory": ResultsOutputDirectory,
@@ -83,17 +83,17 @@ export default {
         const scenarioList = ref(null);
         const summary = ref(null);
         const outputDirectory = ref(null);
-        const plots = ref(null);
+        const figures = ref(null);
         let busyness = 0;
         return {
             summary: summary,
             outputDirectory: outputDirectory,
-            plots: plots,
+            figures: figures,
             scenarioList: scenarioList,
             loadResults(scenarioInfo) {
                 summary.value.loadSummary(scenarioInfo);
                 outputDirectory.value.loadDirectory(scenarioInfo);
-                plots.value.loadPlots(scenarioInfo);
+                figures.value.loadData(scenarioInfo);
             },
             updateBusyStatus(busy) {
                 const old = busyness;
