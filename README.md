@@ -26,7 +26,7 @@ conda activate flextool3-web-interface
 conda install git
 ```
 5. `cd` to a directory where you want the store the application.
-6. Clone the repository. You'll need GitLab username and password.
+6. Clone the repository.
 ```commandline
 git clone --recurse-submodules https://github.com/irena-flextool/flextool-web-interface.git
 ```
