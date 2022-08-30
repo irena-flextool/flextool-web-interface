@@ -85,6 +85,19 @@ import {
 
 let fetchingBriefing = false;
 
+function createLastLogEntry(status) {
+    switch(status) {
+        case "OK":
+            return "Run successful.";
+        case "AB":
+            return "Run aborted.";
+        case "ER":
+            return "Run failed.";
+        default:
+            return "Unknown run status.";
+    }
+}
+
 function followExecution(
     projectId, executionsUrl, logLines, status, busyExecuting, busyAborting, message) {
     const timer = window.setInterval(function() {
@@ -97,6 +110,7 @@ function followExecution(
             status.value = briefing.status;
             logLines.value = briefing.log;
             if(briefing.status !== "RU") {
+                logLines.value = logLines.value.concat(createLastLogEntry(briefing.status));
                 busyExecuting.value = false;
                 busyAborting.value = false;
                 window.clearInterval(timer);
