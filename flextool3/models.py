@@ -52,7 +52,9 @@ class Project(models.Model):
     def remove_project_dir(self):
         """Removes project directory including all project files."""
 
-        def del_read_only_file(_, name, __):
+        def del_read_only_file(_, name, exception_info):
+            if exception_info[0] is FileNotFoundError:
+                return
             os.chmod(name, stat.S_IWRITE)
             os.remove(name)
 
