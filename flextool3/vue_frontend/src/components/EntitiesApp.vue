@@ -26,25 +26,31 @@
         <n-layout id="main-layout" has-sider position="absolute">
             <n-layout-sider :width="siderWidth">
                 <n-space>
-                    <entity-list
-                        :project-id="projectId"
-                        :model-url="modelUrl"
-                        :class-id="classId"
-                        :class-name="className"
-                        :class-type="classType"
-                        :inserted="insertedEntities"
-                        @entity-select="setSelectedEntity"
-                        @entity-insert="storeEntityInsertion"
-                        @entity-update="storeEntityUpdate"
-                        @entity-delete="storeEntityDeletion"
-                        @relationships-clash="setRelationshipsClashErrorState"
-                        @entity-dimensions-reveal="setEntityDimensions"
-                    />
-                    <alternative-selection
-                        :project-id="projectId"
-                        :model-url="modelUrl"
-                        @alternative-select="setSelectedAlternative"
-                    />
+                    <n-space vertical>
+                        <n-h2>{{ entityTypeName }}</n-h2>
+                        <entity-list
+                            :project-id="projectId"
+                            :model-url="modelUrl"
+                            :class-id="classId"
+                            :class-name="className"
+                            :class-type="classType"
+                            :inserted="insertedEntities"
+                            @entity-select="setSelectedEntity"
+                            @entity-insert="storeEntityInsertion"
+                            @entity-update="storeEntityUpdate"
+                            @entity-delete="storeEntityDeletion"
+                            @relationships-clash="setRelationshipsClashErrorState"
+                            @entity-dimensions-reveal="setEntityDimensions"
+                        />
+                    </n-space>
+                    <n-space vertical>
+                        <n-h2>Alternatives</n-h2>
+                        <alternative-selection
+                            :project-id="projectId"
+                            :model-url="modelUrl"
+                            @alternative-select="setSelectedAlternative"
+                        />
+                    </n-space>
                 </n-space>
             </n-layout-sider>
             <n-layout-content content-style="margin-left: 1em; margin-right: 1em">
@@ -126,6 +132,9 @@ export default {
         const selectedEntity = ref(null);
         const selectedAlternative = ref(null);
         const entityDimensions = ref(1);
+        const entityTypeName = computed(function() {
+            return props.classType == 1 ? "Objects" : "Relationships";
+        });
         const siderWidth = computed(function() {
             return `${10 + Math.max(20, entityDimensions.value * 10)}em`;
         });
@@ -148,6 +157,7 @@ export default {
             pendingChanges: pendingChanges,
             insertedEntities: insertedEntities,
             pendingModelChanges: pendingModelChanges,
+            entityTypeName: entityTypeName,
             siderWidth: siderWidth,
             setValueEditorData(valueData) {
                 valueEditorData.value = valueData;
