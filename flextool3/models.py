@@ -72,7 +72,7 @@ class Project(models.Model):
         """Returns path to results database.
 
         Returns:
-            Path: path to model database
+            Path: path to results database
         """
         return (
             Path(self.path)
@@ -81,6 +81,29 @@ class Project(models.Model):
             / "results"
             / "Results_F3.sqlite"
         )
+
+    def initialization_database_path(self):
+        """Returns path to initialization database.
+
+        Returns:
+            Path: path to initialization database
+        """
+        return Path(self.path) / "Init.sqlite"
+
+    def database_path(self, database):
+        """Returns path to given database.
+
+        Args:
+            database (Database): database
+
+        Returns:
+            Path: path to database
+        """
+        return {
+            Database.MODEL: self.model_database_path,
+            Database.RESULT: self.results_database_path,
+            Database.INITIALIZATION: self.initialization_database_path,
+        }[database]()
 
     def project_list_data(self):
         """Creates data dict for project index page's project list.

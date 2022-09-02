@@ -4,6 +4,7 @@ from io import StringIO
 import json
 from contextlib import contextmanager
 from pathlib import Path
+from shutil import copyfile
 import sys
 from tempfile import TemporaryDirectory
 import unittest
@@ -37,6 +38,7 @@ from . import executions_view
 
 PATH_TO_MODEL_DATABASE = Path("Input_data.sqlite")
 PATH_TO_RESULT_DATABASE = Path(".spinetoolbox", "items", "results", "Results_F3.sqlite")
+PATH_TO_INITIALIZATION_DATABASE = Path("Init.sqlite")
 
 
 def build_fake_project_template(root_dir):
@@ -2631,8 +2633,8 @@ class AnalysisInterfaceTests(TestCase):
         cls.baron.set_password("secretbaron")
         cls.baron.save()
 
-    def test_get_entity_classes(self):
-        """'analysis' view responses with object and relationship class information."""
+    def test_get_relationship_classes(self):
+        """'analysis' view responds with relationship class information."""
         with fake_project(self.baron) as project:
             db_map = DatabaseMapping(
                 "sqlite:///" + str(Path(project.path) / PATH_TO_RESULT_DATABASE),
@@ -2648,7 +2650,7 @@ class AnalysisInterfaceTests(TestCase):
                 self.assertTrue(login_successful)
                 response = self.client.post(
                     self.model_url,
-                    {"type": "entity classes?", "projectId": 1},
+                    {"type": "relationship classes?", "projectId": 1},
                     content_type="application/json",
                 )
                 self.assertEqual(response.status_code, 200)
@@ -2660,23 +2662,111 @@ class AnalysisInterfaceTests(TestCase):
                             {
                                 "commit_id": 2,
                                 "description": None,
+                                "dimension": 0,
                                 "display_icon": None,
-                                "display_order": 99,
-                                "hidden": 0,
-                                "id": 1,
-                                "name": "object_class",
-                                "type_id": 1,
-                            },
-                            {
-                                "commit_id": 2,
-                                "description": None,
-                                "display_icon": None,
-                                "display_order": 99,
-                                "hidden": 0,
                                 "id": 2,
                                 "name": "relationship_class",
-                                "type_id": 2,
+                                "object_class_id": 1,
+                                "object_class_name": "object_class",
                             },
                         ]
                     },
                 )
+
+
+class ExamplesInterfaceTests(TestCase):
+    baron = None
+    examples_url = reverse("flextool3:examples")
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.baron = User(username="baron", password="")
+        cls.baron.set_password("secretbaron")
+        cls.baron.save()
+
+    def test_get_example_list(self):
+        """'examples' view responds with a list of available examples."""
+        with fake_project(self.baron) as project:
+            db_map = DatabaseMapping(
+                "sqlite:///"
+                + str(Path(project.path) / PATH_TO_INITIALIZATION_DATABASE),
+                create=True,
+            )
+            import_alternatives(db_map, ("example_1", "example_2"))
+            db_map.commit_session("Add test data.")
+            db_map.connection.close()
+            with login_as_baron(self.client) as login_successful:
+                self.assertTrue(login_successful)
+                response = self.client.post(
+                    self.examples_url,
+                    {"type": "example list?", "projectId": 1},
+                    content_type="application/json",
+                )
+                self.assertEqual(response.status_code, 200)
+                content = json.loads(response.content)
+                self.assertEqual(
+                    content, {"examples": ["Base", "example_1", "example_2"]}
+                )
+
+    def test_add(self):
+        """'examples' view adds requested example to the model database."""
+        with fake_project(self.baron) as project:
+            _copy_initialization_database(Path(project.path))
+            _copy_model_database(Path(project.path))
+            with login_as_baron(self.client) as login_successful:
+                self.assertTrue(login_successful)
+                response = self.client.post(
+                    self.examples_url,
+                    {"type": "add to model", "projectId": 1, "name": "coal"},
+                    content_type="application/json",
+                )
+                self.assertEqual(response.status_code, 200)
+                content = json.loads(response.content)
+                self.assertEqual(content, {"status": "ok"})
+            db_map = DatabaseMapping(
+                "sqlite:///" + str(Path(project.path) / PATH_TO_MODEL_DATABASE)
+            )
+            commit_row = (
+                db_map.query(db_map.commit_sq)
+                .order_by(db_map.commit_sq.c.date.desc())
+                .first()
+            )
+            self.assertEqual(commit_row.comment, "Initialized 'coal'.")
+            alternative_row = (
+                db_map.query(db_map.alternative_sq)
+                .filter(db_map.alternative_sq.c.name == "coal")
+                .first()
+            )
+            self.assertIsNotNone(alternative_row)
+            objects = (
+                db_map.query(db_map.ext_object_sq)
+                .filter(db_map.ext_object_sq.c.class_name == "unit")
+                .all()
+            )
+            self.assertEqual(len(objects), 1)
+            self.assertEqual(objects[0].name, "coal_plant")
+            db_map.connection.close()
+
+
+def _copy_model_database(project_path):
+    """Copies model database from master project to test project.
+
+    Args:
+        project_path (Path): path to test project
+    """
+    source_path = Path(__file__).parent / "master_project" / PATH_TO_MODEL_DATABASE
+    target_path = project_path / PATH_TO_MODEL_DATABASE
+    copyfile(source_path, target_path)
+
+
+def _copy_initialization_database(project_path):
+    """Copies initialization database from master project to test project.
+
+    Args:
+        project_path (Path): path to test project
+    """
+    source_path = (
+        Path(__file__).parent / "master_project" / PATH_TO_INITIALIZATION_DATABASE
+    )
+    target_path = project_path / PATH_TO_INITIALIZATION_DATABASE
+    copyfile(source_path, target_path)

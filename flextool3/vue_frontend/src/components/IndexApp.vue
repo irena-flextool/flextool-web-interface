@@ -8,7 +8,7 @@
         <template #header>
             <page-path leaf-name="Projects"></page-path>
         </template>
-        <project-list id="list" :projects-url="projectsUrl"/>
+        <project-list id="project-list" :projects-url="projectsUrl"/>
     </page>
 </template>
 <script>
@@ -31,7 +31,7 @@ export default {
 </script>
 
 <style>
-#list {
+#project-list {
     max-width: 30em;
 }
 </style>

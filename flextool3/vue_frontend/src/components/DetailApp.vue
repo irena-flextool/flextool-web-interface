@@ -38,6 +38,12 @@
                     Links on these pages can be opened in different browser tabs or windows.
                     It is possible to e.g. open two Model editors side-by-side to compare or copy data around.
                 </n-p>
+                <n-h1>Example systems</n-h1>
+                <n-p>Add example systems to the model from the list below.</n-p>
+                <examples
+                    :project-id="projectId"
+                    :examples-url="examplesUrl"
+                />
             </n-space>
         </n-space>
     </page>
@@ -45,23 +51,27 @@
 
 <script>
 import {csrftoken} from "../modules/communication.mjs";
+import Examples from "./Examples.vue";
 import Page from "./Page.vue";
 import PagePath from "./PagePath.vue";
 
 export default {
     props: {
         projectName: {type: String, required: true},
+        projectId: {type: Number, required: true},
         projectUrl: {type: String, required: true},
         indexUrl: {type: String, required: true},
         editUrl: {type: String, required: true},
         runUrl: {type: String, required: true},
         resultsUrl: {type: String, required: true},
+        examplesUrl: {type: String, required: true},
         logoutUrl: {type: String, required: true},
         logoUrl: {type: String, required: true},
         modelExportUrl: {type: String, required: true},
         modelImportUrl: {type: String, required: true},
     },
     components: {
+        "examples": Examples,
         "page": Page,
         "page-path": PagePath,
     },
@@ -74,9 +84,3 @@ export default {
     },
 }
 </script>
-
-<style>
-.column {
-    max-width: 40em;
-}
-</style>

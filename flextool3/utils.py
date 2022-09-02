@@ -4,7 +4,7 @@ import datetime
 from enum import auto, Enum, unique
 from pathlib import Path
 from django.utils import timezone
-from spinedb_api import DatabaseMapping
+from spinedb_api import DatabaseMapping, append_filter_config
 from .exception import FlexToolException
 
 FLEXTOOL_PROJECT_TEMPLATE = Path(__file__).parent / "master_project"
@@ -17,6 +17,7 @@ class Database(Enum):
 
     MODEL = auto()
     RESULT = auto()
+    INITIALIZATION = auto()
 
 
 @unique
@@ -36,20 +37,21 @@ class Key(Enum):
 
 
 @contextmanager
-def database_map(project, database):
+def database_map(project, database, filter_configs=None):
     """Opens a database connection to project's database.
 
     Args:
         project (Project): project
         database (Database): database to connect to
+        filter_configs (Iterable of dict, optional): filter configurations
 
     Yields:
         DatabaseMapping: database mapping connected to the database.
     """
-    if database == Database.MODEL:
-        url = "sqlite:///" + str(project.model_database_path())
-    else:
-        url = "sqlite:///" + str(project.results_database_path())
+    url = "sqlite:///" + str(project.database_path(database))
+    if filter_configs is not None:
+        for config in filter_configs:
+            url = append_filter_config(url, config)
     db_map = DatabaseMapping(url)
     try:
         yield db_map

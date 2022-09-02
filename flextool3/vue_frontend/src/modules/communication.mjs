@@ -315,6 +315,45 @@ function destroyScenarioExecution(projectId, summaryUrl, scenarioExecutionId) {
     });
 }
 
+/**
+ * Fetches a list of available examples.
+ * @param {number} projectId Project id.
+ * @param {string} examplesUrl URL to server's interface.
+ * @returns {Promise} A promise that resolves to server's response.
+ */
+function fetchExampleList(projectId, examplesUrl) {
+    const fetchInit = makeFetchInit();
+    fetchInit["body"] = JSON.stringify({type: "example list?", projectId: projectId});
+    return fetch(examplesUrl, fetchInit).then(function(response) {
+        if (!response.ok) {
+            return response.text().then(function(message) {
+                throw new Error(`Failed to load example list: ${message}`);
+            });
+        }
+        return response.json();
+    });
+}
+
+/**
+ * Requests to add an example to model database.
+ * @param {number} projectId Project id.
+ * @param {string} examplesUrl URL to server's interface.
+ * @param {string} exampleName Name of the example to add.
+ * @returns {Promise} A promise that resolves to server's response.
+ */
+function addExample(projectId, examplesUrl, exampleName) {
+    const fetchInit = makeFetchInit();
+    fetchInit["body"] = JSON.stringify({type: "add to model", name: exampleName, projectId: projectId});
+    return fetch(examplesUrl, fetchInit).then(function(response) {
+        if (!response.ok) {
+            return response.text().then(function(message) {
+                throw new Error(`Failed to add example to model: ${message}`);
+            });
+        }
+        return response.json();
+    });
+}
+
 export {
     csrftoken,
     makeFetchInit,
@@ -332,4 +371,6 @@ export {
     fetchOutputDirectory,
     fetchResultAlternative,
     destroyScenarioExecution,
+    fetchExampleList,
+    addExample,
 };

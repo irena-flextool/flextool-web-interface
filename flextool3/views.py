@@ -52,6 +52,7 @@ from .summary_view import (
     get_output_directory,
     destroy_execution,
 )
+from .examples_view import get_example_list, add_example_to_model
 from .import_model_database_view import save_model_database_file
 
 PHYSICAL_OBJECT_CLASS_NAMES = {
@@ -347,6 +348,33 @@ def analysis(request):
         return None
 
     return _resolve_interface_request(request, Database.RESULT, handle_specific_types)
+
+
+@login_required
+def examples(request):
+    """Performs actions connected to model database examples.
+
+    Request's body should contain a JSON object that specifies the query to perform.
+
+    Args:
+        request (HttpRequest): request object
+
+    Returns:
+        HttpResponse: response to client
+    """
+    if request.method != "POST":
+        raise Http404()
+    body = json.loads(request.body)
+    try:
+        project = resolve_project(request, body)
+        type_ = get_and_validate(body, "type", str)
+    except FlexToolException as error:
+        return HttpResponseBadRequest(str(error))
+    if type_ == "example list?":
+        return get_example_list(project)
+    if type_ == "add to model":
+        return add_example_to_model(project, body)
+    return HttpResponseBadRequest("Unknown 'type'.")
 
 
 @login_required

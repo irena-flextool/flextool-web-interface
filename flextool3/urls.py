@@ -18,6 +18,7 @@ urlpatterns = [
     path("executions/", views.executions, name="executions"),
     path("summary/", views.summary, name="summary"),
     path("analysis/", views.analysis, name="analysis"),
+    path("examples/", views.examples, name="examples"),
     path(
         "<int:project_id>/results_database/",
         views.export_model_database,
