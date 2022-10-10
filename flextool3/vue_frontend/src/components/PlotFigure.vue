@@ -20,7 +20,7 @@
 </template>
 
 <script>
-import {computed, onMounted, ref} from "vue/dist/vue.esm-bundler.js";
+import {onMounted, ref} from "vue/dist/vue.esm-bundler.js";
 import Plotly from "plotly.js-cartesian-dist-min";
 import {downloadAsCsv, makeProps} from "../modules/figures.mjs";
 import {toBasicChartData} from "../modules/plots.mjs";
