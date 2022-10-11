@@ -368,12 +368,12 @@ def examples(request):
     try:
         project = resolve_project(request, body)
         type_ = get_and_validate(body, "type", str)
+        if type_ == "example list?":
+            return get_example_list(project)
+        if type_ == "add to model":
+            return add_example_to_model(project, body)
     except FlexToolException as error:
         return HttpResponseBadRequest(str(error))
-    if type_ == "example list?":
-        return get_example_list(project)
-    if type_ == "add to model":
-        return add_example_to_model(project, body)
     return HttpResponseBadRequest("Unknown 'type'.")
 
 

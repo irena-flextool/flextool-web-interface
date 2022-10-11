@@ -4,7 +4,7 @@ import datetime
 from enum import auto, Enum, unique
 from pathlib import Path
 from django.utils import timezone
-from spinedb_api import DatabaseMapping, append_filter_config
+from spinedb_api import DatabaseMapping, append_filter_config, SpineDBAPIError
 from .exception import FlexToolException
 
 FLEXTOOL_PROJECT_TEMPLATE = Path(__file__).parent / "master_project"
@@ -52,7 +52,10 @@ def database_map(project, database, filter_configs=None):
     if filter_configs is not None:
         for config in filter_configs:
             url = append_filter_config(url, config)
-    db_map = DatabaseMapping(url)
+    try:
+        db_map = DatabaseMapping(url)
+    except SpineDBAPIError:
+        raise FlexToolException(f"could not open database at '{project.database_path(database)}'")
     try:
         yield db_map
     finally:
