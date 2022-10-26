@@ -3,7 +3,7 @@ from pathlib import Path
 import sys
 
 print("Checking master project.")
-master_project_git_dir = Path(__file__) / "flextool3" / "master_project" / ".git"
+master_project_git_dir = Path(__file__).parent / "flextool3" / "master_project" / ".git"
 if not master_project_git_dir.exists():
     print(f"It does not look like {str(master_project_git_dir.parent)} has been set up properly.", file=sys.stderr)
     sys.exit(1)
