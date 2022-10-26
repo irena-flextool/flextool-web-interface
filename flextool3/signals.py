@@ -1,10 +1,9 @@
 from shutil import rmtree
 from django.dispatch import receiver
 from django.db.models.signals import pre_delete
-from spinedb_api import SpineDBAPIError
 
 from flextool3.models import ScenarioExecution
-from flextool3.utils import database_map, Database
+from flextool3.utils import database_map, Database, FlexToolException
 
 
 @receiver(pre_delete, sender=ScenarioExecution)
@@ -22,7 +21,7 @@ def delete_result_data(sender, **kwargs):
         rmtree(tool_output_path)
     try:
         alternative_id = scenario_execution.results_alternative_id()
-    except SpineDBAPIError:
+    except FlexToolException:
         return
     if alternative_id is not None:
         with database_map(
