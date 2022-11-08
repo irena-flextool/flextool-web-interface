@@ -268,33 +268,14 @@ def _make_mod_script(scenarios):
         tuple: temporary directory containing the script file and path to the file
     """
     quoted_scenarios = (f"'{s}'" for s in scenarios)
-    script_contents = [
-        "from spinedb_api import DatabaseMapping\n",
-        "from spinedb_api.filters.scenario_filter import SCENARIO_FILTER_TYPE\n",
-        "from spinedb_api.filters.tool_filter import TOOL_FILTER_TYPE\n",
-        "importer = project.find_item('Import_results')\n",
-        "importer['purge_before_writing'] = False\n",
-        "db_path = project.project_dir / 'Input_data.sqlite'\n",
-        "db_url = 'sqlite:///' + str(db_path)\n",
-        "db_map = DatabaseMapping(db_url)\n",
-        f"active_scenarios = {{{', '.join(quoted_scenarios)}}}\n",
-        "try:\n",
-        "    connection = project.find_connection('Input_data', 'Export_to_CSV')\n",
-        "    available_scenarios = [r.name for r in db_map.query(db_map.scenario_sq)]\n",
-        "    for name in available_scenarios:\n",
-        "        enabled = name in active_scenarios\n",
-        "        connection.set_filter_enabled('db_url@Input_data', SCENARIO_FILTER_TYPE, name, enabled)\n",
-        "    available_tools = [r.name for r in db_map.query(db_map.tool_sq)]\n",
-        "    for name in available_tools:\n",
-        "        enabled = name == 'FlexTool3'\n",
-        "        connection.set_filter_enabled('db_url@Input_data', TOOL_FILTER_TYPE, name, enabled)\n",
-        "finally:\n",
-        "    db_map.connection.close()\n",
-    ]
+    template_path = Path(__file__).parent / "project_modification_script_template.py"
+    with open(template_path) as template_file:
+        template = template_file.read()
+    script_contents = template.format(scenarios=", ".join(quoted_scenarios))
     temp_dir = TemporaryDirectory()  # pylint: disable=consider-using-with
     script_path = Path(temp_dir.name) / _MOD_SCRIPT_NAME
     with open(script_path, "w", encoding="utf-8") as script_file:
-        script_file.writelines(script_contents)
+        script_file.write(script_contents)
     return temp_dir, script_path
 
 

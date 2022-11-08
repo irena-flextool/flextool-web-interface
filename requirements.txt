@@ -1,3 +1,2 @@
 django[argon2]
-spinetoolbox>=0.6.12
-spinedb-api>=0.22.0
+spinetoolbox>=0.6.13
