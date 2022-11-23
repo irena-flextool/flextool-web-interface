@@ -644,11 +644,7 @@ class ModelInterfaceTests(TestCase):
                 self.assertTrue(login_successful)
                 response = self.client.post(
                     self.model_url,
-                    {
-                        "type": "parameter definitions?",
-                        "projectId": 1,
-                        "class_id": 2,
-                    },
+                    {"type": "parameter definitions?", "projectId": 1, "class_id": 2},
                     content_type="application/json",
                 )
                 self.assertEqual(response.status_code, 200)
@@ -669,7 +665,7 @@ class ModelInterfaceTests(TestCase):
                                 "default_type": None,
                                 "description": None,
                                 "commit_id": 2,
-                            },
+                            }
                         ]
                     },
                 )
@@ -803,11 +799,7 @@ class ModelInterfaceTests(TestCase):
                 self.assertTrue(login_successful)
                 response = self.client.post(
                     self.model_url,
-                    {
-                        "type": "parameter values?",
-                        "projectId": 1,
-                        "class_id": 2,
-                    },
+                    {"type": "parameter values?", "projectId": 1, "class_id": 2},
                     content_type="application/json",
                 )
                 self.assertEqual(response.status_code, 200)
@@ -876,11 +868,7 @@ class ModelInterfaceTests(TestCase):
                 self.assertTrue(login_successful)
                 response = self.client.post(
                     self.model_url,
-                    {
-                        "type": "parameter values?",
-                        "projectId": 1,
-                        "entity_id": 2,
-                    },
+                    {"type": "parameter values?", "projectId": 1, "entity_id": 2},
                     content_type="application/json",
                 )
                 self.assertEqual(response.status_code, 200)
@@ -951,11 +939,7 @@ class ModelInterfaceTests(TestCase):
                 self.assertTrue(login_successful)
                 response = self.client.post(
                     self.model_url,
-                    {
-                        "type": "parameter values?",
-                        "projectId": 1,
-                        "alternative_id": 2,
-                    },
+                    {"type": "parameter values?", "projectId": 1, "alternative_id": 2},
                     content_type="application/json",
                 )
                 self.assertEqual(response.status_code, 200)
@@ -1156,10 +1140,7 @@ class ModelInterfaceTests(TestCase):
                     ("class_2", "object_21"),
                 ),
             )
-            import_relationship_classes(
-                db_map,
-                (("my_class", ("class_1", "class_2")),),
-            )
+            import_relationship_classes(db_map, (("my_class", ("class_1", "class_2")),))
             db_map.commit_session("Add test data.")
             db_map.connection.close()
             with login_as_baron(self.client) as login_successful:
@@ -1265,16 +1246,8 @@ class ModelInterfaceTests(TestCase):
                     value_lists,
                     {
                         "lists": [
-                            {
-                                "id": 2,
-                                "value_list": ['"value_2"'],
-                                "type_list": [None],
-                            },
-                            {
-                                "id": 4,
-                                "value_list": ['"value_4"'],
-                                "type_list": [None],
-                            },
+                            {"id": 2, "value_list": ['"value_2"'], "type_list": [None]},
+                            {"id": 4, "value_list": ['"value_4"'], "type_list": [None]},
                         ]
                     },
                 )
@@ -1311,11 +1284,7 @@ class ModelInterfaceTests(TestCase):
                                 "comment": "Create the database",
                                 "user": "spinedb_api",
                             },
-                            {
-                                "id": 2,
-                                "comment": "My commit message.",
-                                "user": "anon",
-                            },
+                            {"id": 2, "comment": "My commit message.", "user": "anon"},
                         ]
                     },
                 )
@@ -1381,8 +1350,8 @@ class ModelInterfaceTests(TestCase):
                                     "definition_id": 1,
                                     "alternative_id": 1,
                                     "value": -5.5,
-                                },
-                            ],
+                                }
+                            ]
                         },
                         "message": "Insert new parameter value.",
                     },
@@ -1427,7 +1396,7 @@ class ModelInterfaceTests(TestCase):
                                     "alternative_id": 1,
                                     "value": -5.5,
                                 }
-                            ],
+                            ]
                         },
                         "message": "Insert new parameter value.",
                     },
@@ -1488,7 +1457,7 @@ class ModelInterfaceTests(TestCase):
                                         "data": [99],
                                     },
                                 },
-                            ],
+                            ]
                         },
                         "message": "Insert new parameter values.",
                     },
@@ -1633,9 +1602,7 @@ class ModelInterfaceTests(TestCase):
                     {
                         "type": "commit",
                         "projectId": 1,
-                        "insertions": {
-                            "alternative": [{"name": "my_alternative"}],
-                        },
+                        "insertions": {"alternative": [{"name": "my_alternative"}]},
                         "message": "Insert alternative.",
                     },
                     content_type="application/json",
@@ -1666,9 +1633,7 @@ class ModelInterfaceTests(TestCase):
                     {
                         "type": "commit",
                         "projectId": 1,
-                        "insertions": {
-                            "scenario": [{"name": "my_scenario"}],
-                        },
+                        "insertions": {"scenario": [{"name": "my_scenario"}]},
                         "message": "Insert scenario.",
                     },
                     content_type="application/json",
@@ -1719,7 +1684,7 @@ class ModelInterfaceTests(TestCase):
                                     "alternative_name": "alternative_2",
                                     "rank": 2,
                                 },
-                            ],
+                            ]
                         },
                         "message": "Insert scenario alternatives.",
                     },
@@ -1790,9 +1755,7 @@ class ModelInterfaceTests(TestCase):
                         "type": "commit",
                         "projectId": 1,
                         "class_id": 1,
-                        "insertions": {
-                            "object": [{"name": "my_object"}],
-                        },
+                        "insertions": {"object": [{"name": "my_object"}]},
                         "message": "Insert object.",
                     },
                     content_type="application/json",
@@ -1832,7 +1795,7 @@ class ModelInterfaceTests(TestCase):
                                     "name": "my_object_class_my_object",
                                     "object_name_list": ["my_object"],
                                 }
-                            ],
+                            ]
                         },
                         "message": "Insert relationship.",
                     },
@@ -1875,10 +1838,7 @@ class ModelInterfaceTests(TestCase):
                 self.assertTrue(login_successful)
                 response = self.client.post(
                     self.model_url,
-                    {
-                        "type": "physical classes?",
-                        "projectId": 1,
-                    },
+                    {"type": "physical classes?", "projectId": 1},
                     content_type="application/json",
                 )
                 self.assertEqual(response.status_code, 200)
@@ -2415,10 +2375,7 @@ NonSync, JustA, p2025, 3298.2
                 self.assertTrue(login_successful)
                 response = self.client.post(
                     self.summary_url,
-                    {
-                        "type": "scenario list?",
-                        "projectId": 1,
-                    },
+                    {"type": "scenario list?", "projectId": 1},
                     content_type="application/json",
                 )
                 self.assertEqual(response.status_code, 200)
@@ -2484,11 +2441,7 @@ NonSync, JustA, p2025, 3298.2
                 self.assertTrue(login_successful)
                 response = self.client.post(
                     self.summary_url,
-                    {
-                        "type": "summary?",
-                        "projectId": 1,
-                        "scenarioExecutionId": 1,
-                    },
+                    {"type": "summary?", "projectId": 1, "scenarioExecutionId": 1},
                     content_type="application/json",
                 )
                 self.assertEqual(response.status_code, 200)
@@ -2537,11 +2490,7 @@ NonSync, JustA, p2025, 3298.2
                 self.assertTrue(login_successful)
                 response = self.client.post(
                     self.summary_url,
-                    {
-                        "type": "summary?",
-                        "projectId": 1,
-                        "scenarioExecutionId": 1,
-                    },
+                    {"type": "summary?", "projectId": 1, "scenarioExecutionId": 1},
                     content_type="application/json",
                 )
                 self.assertEqual(response.status_code, 200)
@@ -2668,7 +2617,7 @@ class AnalysisInterfaceTests(TestCase):
                                 "name": "relationship_class",
                                 "object_class_id": 1,
                                 "object_class_name": "object_class",
-                            },
+                            }
                         ]
                     },
                 )
@@ -2692,7 +2641,7 @@ class ExamplesInterfaceTests(TestCase):
                 + str(Path(project.path) / PATH_TO_INITIALIZATION_DATABASE),
                 create=True,
             )
-            import_alternatives(db_map, ("example_1", "example_2"))
+            import_scenarios(db_map, ("example_1", "example_2", "bad_example"))
             db_map.commit_session("Add test data.")
             db_map.connection.close()
             with login_as_baron(self.client) as login_successful:
@@ -2705,7 +2654,7 @@ class ExamplesInterfaceTests(TestCase):
                 self.assertEqual(response.status_code, 200)
                 content = json.loads(response.content)
                 self.assertEqual(
-                    content, {"examples": ["Base", "example_1", "example_2"]}
+                    content, {"examples": ["bad_example", "example_1", "example_2"]}
                 )
 
     def test_add(self):
@@ -2738,14 +2687,25 @@ class ExamplesInterfaceTests(TestCase):
                 .first()
             )
             self.assertIsNotNone(alternative_row)
-            objects = (
-                db_map.query(db_map.ext_object_sq)
-                .filter(db_map.ext_object_sq.c.class_name == "unit")
-                .all()
+            self._assert_values_exist("unit", "is_active", {"coal_plant"}, db_map)
+            self._assert_values_exist(
+                "node", "is_active", {"coal_market", "west"}, db_map
             )
-            self.assertEqual(len(objects), 1)
-            self.assertEqual(objects[0].name, "coal_plant")
+            self._assert_values_exist(
+                "group", "output_results", {"electricity"}, db_map
+            )
             db_map.connection.close()
+
+    def _assert_values_exist(self, object_class, parameter, object_names, db_map):
+        subquery = db_map.object_parameter_value_sq
+        values = (
+            db_map.query(subquery)
+            .filter(subquery.c.object_class_name == object_class)
+            .filter(subquery.c.parameter_name == parameter)
+            .all()
+        )
+        self.assertEqual(len(values), len(object_names))
+        self.assertEqual({v.object_name for v in values}, object_names)
 
 
 def _copy_model_database(project_path):
