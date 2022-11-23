@@ -53,9 +53,9 @@ import TableFigure from "./TableFigure.vue";
 
 const suggestedTabulatedParameters = new Set([
     "capacity",
-    "co2 [Mt]",
+    "co2",
     "cost",
-    "flow_d",
+    "flow",
     "indicator",
 ]);
 
