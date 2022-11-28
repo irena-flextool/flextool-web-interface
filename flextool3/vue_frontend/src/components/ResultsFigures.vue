@@ -43,7 +43,7 @@
 </template>
 
 <script>
-import {ref} from "vue/dist/vue.esm-bundler.js";
+import {onMounted, ref} from "vue/dist/vue.esm-bundler.js";
 import {tabulate} from "../modules/parameterValues.mjs";
 import {fetchData, fetchResultAlternative} from "../modules/communication.mjs";
 import Fetchable from "./Fetchable.vue";
@@ -163,7 +163,7 @@ export default {
         analysisUrl: {type: String, required: true},
         summaryUrl: {type: String, required: true},
     },
-    emits: ["busy"],
+    emits: ["busy", "ready"],
     components: {
         "fetchable": Fetchable,
         "keyed-card": KeyedCard,
@@ -175,6 +175,9 @@ export default {
         const tableBoxes = ref([]);
         const state = ref(Fetchable.state.waiting);
         const errorMessage = ref("");
+        onMounted(function() {
+            context.emit("ready");
+        });
         return {
             plotBoxes: plotBoxes,
             tableBoxes: tableBoxes,

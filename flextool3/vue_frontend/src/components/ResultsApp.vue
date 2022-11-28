@@ -26,23 +26,36 @@
                 />
             </n-layout-sider>
             <n-layout-content content-style="margin-left: 1em; margin-right: 1em">
-                <results-summary
-                    :project-id="projectId"
-                    :summary-url="summaryUrl"
-                    ref="summary"
-                />
-                <results-output-directory
-                    :project-id="projectId"
-                    :summary-url="summaryUrl"
-                    ref="outputDirectory"
-                />
-                <results-figures
-                    :project-id="projectId"
-                    :analysis-url="analysisUrl"
-                    :summary-url="summaryUrl"
-                    @busy="updateBusyStatus"
-                    ref="figures"
-                />
+                <n-tabs
+                    @update:value="loadTabContentsOnDemand"
+                >
+                    <n-tab-pane name="Summary" display-directive="show:lazy">
+                        <results-summary
+                            :project-id="projectId"
+                            :summary-url="summaryUrl"
+                            @ready="loadSummary"
+                            ref="summary"
+                        />
+                    </n-tab-pane>
+                    <n-tab-pane name="Plots and tables" display-directive="show:lazy">
+                        <results-figures
+                            :project-id="projectId"
+                            :analysis-url="analysisUrl"
+                            :summary-url="summaryUrl"
+                            @busy="updateBusyStatus"
+                            @ready="loadFigures"
+                            ref="figures"
+                        />
+                    </n-tab-pane>
+                    <n-tab-pane name="CSV files" display-directive="show:lazy">
+                        <results-output-directory
+                            :project-id="projectId"
+                            :summary-url="summaryUrl"
+                            @ready="loadOutputDirectory"
+                            ref="outputDirectory"
+                        />
+                    </n-tab-pane>
+                </n-tabs>
             </n-layout-content>
         </n-layout>
     </page>
@@ -85,15 +98,23 @@ export default {
         const outputDirectory = ref(null);
         const figures = ref(null);
         let busyness = 0;
+        let currentScenarioInfo = null;
         return {
             summary: summary,
             outputDirectory: outputDirectory,
             figures: figures,
             scenarioList: scenarioList,
             loadResults(scenarioInfo) {
-                summary.value.loadSummary(scenarioInfo);
-                outputDirectory.value.loadDirectory(scenarioInfo);
-                figures.value.loadData(scenarioInfo);
+                currentScenarioInfo = scenarioInfo;
+                if(summary.value !== null) {
+                    summary.value.loadSummary(scenarioInfo);
+                }
+                if(outputDirectory.value !== null) {
+                    outputDirectory.value.loadDirectory(scenarioInfo);
+                }
+                if(figures.value !== null) {
+                    figures.value.loadData(scenarioInfo);
+                }
             },
             updateBusyStatus(busy) {
                 const old = busyness;
@@ -102,6 +123,24 @@ export default {
                     return;
                 }
                 scenarioList.value.setSelectedBusy(busyness > 0);
+            },
+            loadSummary() {
+                if(currentScenarioInfo === null) {
+                    return;
+                }
+                summary.value.loadSummary(currentScenarioInfo);
+            },
+            loadFigures() {
+                if(currentScenarioInfo === null) {
+                    return;
+                }
+                figures.value.loadData(currentScenarioInfo);
+            },
+            loadOutputDirectory() {
+                if(currentScenarioInfo === null) {
+                    return;
+                }
+                outputDirectory.value.loadDirectory(currentScenarioInfo);
             },
         };
     },

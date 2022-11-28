@@ -31,7 +31,7 @@
 </template>
 
 <script>
-import {ref} from "vue/dist/vue.esm-bundler.js";
+import {onMounted, ref} from "vue/dist/vue.esm-bundler.js";
 import {fetchSummary} from "../modules/communication.mjs";
 import {parseSummary} from "../modules/summaries.mjs";
 import Fetchable from "./Fetchable.vue";
@@ -41,7 +41,7 @@ export default {
         projectId: {type: Number, required: true},
         summaryUrl: {type: String, required: true},
     },
-    emits: ["busy"],
+    emits: ["busy", "ready"],
     components: {
         "fetchable": Fetchable,
     },
@@ -50,6 +50,9 @@ export default {
         const tables = ref([]);
         const state = ref(Fetchable.state.waiting);
         const errorMessage = ref("");
+        onMounted(function() {
+            context.emit("ready");
+        });
         return {
             title: title,
             tables: tables,
