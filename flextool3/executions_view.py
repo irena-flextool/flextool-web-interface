@@ -12,7 +12,7 @@ from django.http import (
 )
 from django.utils import timezone
 from .exception import FlexToolException, ExecutionNotFound
-from .model_utils import resolve_project
+from .view_utils import resolve_project
 from .models import Scenario, ScenarioExecution
 from .utils import get_and_validate
 from . import executor, task_loop

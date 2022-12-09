@@ -1,82 +1,62 @@
-function tabulateArray(array) {
-    return array.data.map((x, i) => [i + 1, x]);
-}
-
-function assignToTable(table, index, value) {
-    if(value === null || typeof(value) !== "object") {
-        table.push([index, value]);
-    }
-    else {
-        const subTable = mapToTable(value.data);
-        for(const subRow of subTable) {
-            table.push([index, ...subRow]);
-        }
-    }
-}
-
-function mapToTable(mapData) {
-    const table = new Array();
-    if(Array.isArray(mapData)) {
-        for(const row of mapData) {
-            const index = row[0];
-            const value = row[1];
-            assignToTable(table, index, value);
-        }
-    }
-    else {
-        for(const index in mapData) {
-            const value = mapData[index];
-            assignToTable(table, index, value);
-        }
-    }
-    return table;
-}
-
-function tabulateMap(map) {
-    return mapToTable(map.data);
-}
-
-function arrayIndexName(array) {
-    if(array.index_name !== undefined) {
-        return [array.index_name];
-    }
-    else {
-        return ["x"];
-    }
-}
-
-function mapIndexNames(map, current = [], depth = 0) {
-    depth += 1;
-    if(current.length < depth) {
-        current.push(map.index_name !== undefined ? map.index_name : "x");
-    }
+/**Flattens a Spine Map recursively.
+ * @param {object} map Map to flatten.
+ * @callback indexNameTransformation
+ * @param {number} depth Current recursion depth.
+ * @returns {object[]} Flattened Map.
+ */
+function flatDicts(map, indexNameTransformation, depth=0) {
+    const dicts = [];
+    const indexName = indexNameTransformation(map.index_name !== undefined ? map.index_name : `x_${depth}`);
     if(Array.isArray(map.data)) {
-        for(const row of map.data) {
-            const value = row[1];
-            if(value !== null && typeof(value) === "object") {
-                current = mapIndexNames(value, current, depth);
+        for(const [x, y] of map.data) {
+            const dict = {
+                [indexName]: x,
+            };
+            if(y === null || typeof(y) !== "object") {
+                dict["y"] = y;
+                dicts.push(dict);
+            }
+            else {
+                const nestedDicts = flatDicts(y, indexNameTransformation, depth + 1);
+                for(const nested of nestedDicts) {
+                    dicts.push({...dict, ...nested});
+                }
             }
         }
     }
     else {
-        for(const index in map.data) {
-            const value = map.data[index];
-            if(value !== null && typeof(value) === "object") {
-                current = mapIndexNames(value, current, depth);
+        for(const x in map.data) {
+            const dict = {
+                [indexName]: x,
+            };
+            const y = map.data[index];
+            if(y === null || typeof(y) !== "object") {
+                dict["y"] = y;
+                dicts.push(dict);
+            }
+            else {
+                const nestedDicts = flatDicts(y, indexNameTransformation, depth + 1);
+                for(const nested of nestedDicts) {
+                    dicts.push(...dict, ...nested);
+                }
             }
         }
     }
-    return current;
+    return dicts;
 }
 
-function tabulate(value, type) {
-    if(type === "array") {
-        return {indexNames: arrayIndexName(value), table: tabulateArray(value)};
+
+/**Turns parameter value into an array of objects.
+ * @param {object} value Parameter value.
+ * @param {string} type Value's type.
+ * @callback indexNameTransformation Function to transform index names.
+ * @returns {object[]} Value objects.
+ */
+function objectify(value, type, indexNameTransformation) {
+    if(type !== "map") {
+        throw new Error("Unknown parameter value type.");
     }
-    else if(type === "map") {
-        return {indexNames: mapIndexNames(value), table: tabulateMap(value)};
-    }
-    throw new Error("Unknown parameter value type.");
+    return flatDicts(value, indexNameTransformation);
 }
 
-export {tabulate};
+export {objectify};

@@ -13,11 +13,7 @@ from django.http import (
 )
 from django.shortcuts import get_object_or_404, render
 from django.views import generic
-from spinedb_api import (
-    DatabaseMapping,
-    SpineDBVersionError,
-    SpineDBAPIError,
-)
+from spinedb_api import DatabaseMapping, SpineDBVersionError, SpineDBAPIError
 from .model_view import (
     get_scenarios,
     get_available_relationship_objects,
@@ -36,7 +32,7 @@ from .model_view import (
 )
 from .models import Project
 from .exception import FlexToolException
-from .model_utils import resolve_project
+from .view_utils import resolve_project
 from .utils import Database, get_and_validate
 from .executions_view import (
     abort_execution,
@@ -45,6 +41,7 @@ from .executions_view import (
     current_execution,
 )
 from .projects_view import project_list, create_project, destroy_project
+from . import analysis_view
 from .summary_view import (
     get_scenario_list,
     get_summary,
@@ -65,12 +62,7 @@ PHYSICAL_OBJECT_CLASS_NAMES = {
     "unit",
 }
 
-MODEL_OBJECT_CLASS_NAMES = {
-    "model",
-    "timeblockSet",
-    "timeline",
-    "solve",
-}
+MODEL_OBJECT_CLASS_NAMES = {"model", "timeblockSet", "timeline", "solve"}
 
 
 # pylint: disable=too-many-ancestors
@@ -248,7 +240,32 @@ def model(request):
         HttpResponse: response to client
     """
     # pylint: disable=too-many-return-statements
-    def handle_model_specific_types(type_, project, body):
+    if request.method != "POST":
+        raise Http404()
+    body = json.loads(request.body)
+    try:
+        project = resolve_project(request, body)
+    except FlexToolException as error:
+        return HttpResponseBadRequest(str(error))
+    try:
+        type_ = body["type"]
+    except KeyError as missing:
+        return HttpResponseBadRequest(f"Missing '{missing}'.")
+    try:
+        if type_ == "object classes?":
+            return get_object_classes(project, Database.MODEL)
+        if type_ == "objects?":
+            return get_objects(project, Database.MODEL, body)
+        if type_ == "relationship classes?":
+            return get_relationship_classes(project, Database.MODEL)
+        if type_ == "relationships?":
+            return get_relationships(project, Database.MODEL, body)
+        if type_ == "parameter definitions?":
+            return get_parameter_definitions(project, Database.MODEL, body)
+        if type_ == "parameter values?":
+            return get_parameter_values(project, Database.MODEL, body)
+        if type_ == "alternatives?":
+            return get_alternatives(project, Database.MODEL)
         if type_ == "scenarios?":
             return get_scenarios(project)
         if type_ == "available relationship objects?":
@@ -265,11 +282,9 @@ def model(request):
             return make_base_alternative(project)
         if type_ == "commit":
             return commit(project, body)
-        return None
-
-    return _resolve_interface_request(
-        request, Database.MODEL, handle_model_specific_types
-    )
+    except SpineDBVersionError:
+        return HttpResponseBadRequest("Error: database version mismatch.")
+    return HttpResponseBadRequest("Unknown 'type'.")
 
 
 @login_required
@@ -343,11 +358,29 @@ def analysis(request):
     Returns:
         HttpResponse: response to client
     """
-
-    def handle_specific_types(type_, project, body):
-        return None
-
-    return _resolve_interface_request(request, Database.RESULT, handle_specific_types)
+    if request.method != "POST":
+        raise Http404()
+    body = json.loads(request.body)
+    try:
+        project = resolve_project(request, body)
+        type_ = get_and_validate(body, "type", str)
+        if type_ == "entity classes?":
+            return analysis_view.get_entity_classes(project)
+        if type_ == "entities?":
+            return analysis_view.get_entities(project, body)
+        if type_ == "parameters?":
+            return analysis_view.get_parameters(project, body)
+        if type_ == "value indexes?":
+            return analysis_view.get_value_indexes(project, body)
+        if type_ == "values?":
+            return analysis_view.get_parameter_values(project, body)
+        if type_ == "plot specification?":
+            return analysis_view.get_plot_specification(project)
+        if type_ == "store plot specification":
+            return analysis_view.set_plot_specification(project, body)
+    except FlexToolException as error:
+        return HttpResponseBadRequest(str(error))
+    return HttpResponseBadRequest("Unknown 'type'.")
 
 
 @login_required
@@ -462,49 +495,3 @@ def _backup_database(database_path):
     """
     backup_path = database_path.parent / (database_path.name + ".backup")
     copyfile(database_path, backup_path)
-
-
-# pylint: disable=too-many-return-statements
-def _resolve_interface_request(request, database, additional_type_handler):
-    """Resolves model or analysis interface request.
-
-    Args:
-        request (HTTPRequest): request
-        database (Database): target database
-        additional_type_handler (Callable): callable that handles additional types
-
-    Returns:
-        HttpResponse: response to client
-    """
-    if request.method != "POST":
-        raise Http404()
-    body = json.loads(request.body)
-    try:
-        project = resolve_project(request, body)
-    except FlexToolException as error:
-        return HttpResponseBadRequest(str(error))
-    try:
-        type_ = body["type"]
-    except KeyError as missing:
-        return HttpResponseBadRequest(f"Missing '{missing}'.")
-    try:
-        if type_ == "object classes?":
-            return get_object_classes(project, database)
-        if type_ == "objects?":
-            return get_objects(project, database, body)
-        if type_ == "relationship classes?":
-            return get_relationship_classes(project, database)
-        if type_ == "relationships?":
-            return get_relationships(project, database, body)
-        if type_ == "parameter definitions?":
-            return get_parameter_definitions(project, database, body)
-        if type_ == "parameter values?":
-            return get_parameter_values(project, database, body)
-        if type_ == "alternatives?":
-            return get_alternatives(project, database)
-        response = additional_type_handler(type_, project, body)
-        if response is not None:
-            return response
-    except SpineDBVersionError:
-        return HttpResponseBadRequest("Error: database version mismatch.")
-    return HttpResponseBadRequest("Unknown 'type'.")

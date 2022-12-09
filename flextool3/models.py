@@ -41,7 +41,7 @@ class Project(models.Model):
         """
         # pylint: disable=no-member
         if Project.objects.filter(user=user, name=project_name).all():
-            raise FlexToolException("project name already in use.")
+            raise FlexToolException("Project name already in use.")
         project_dir = projects_root_dir / user.username / project_name
         ignored = ignore_patterns(
             "docs", "tests", "execution_tests", ".git*", "*.zip", "*.txt", "*.md"
@@ -117,6 +117,22 @@ class Project(models.Model):
             "id": self.id,
             "url": reverse("flextool3:detail", args=(self.id,)),
         }
+
+    def plot_specification_path(self):
+        """Returns path to plot specification.
+
+        Returns:
+            Path: path to the specification file
+        """
+        return Path(self.path) / "result_plots.json"
+
+    def default_plot_specification_path(self):
+        """Returns path to default plot specification.
+
+        Returns:
+            Path: path to the default specification file
+        """
+        return Path(self.path) / "default_result_plots.json"
 
 
 def _find_next_summary(summary_files, time_point, timezone_offset):
@@ -211,9 +227,7 @@ class ScenarioExecution(models.Model):
             if not summary_files:
                 continue
             return _find_next_summary(
-                summary_files,
-                self.execution_time,
-                self.execution_time_offset,
+                summary_files, self.execution_time, self.execution_time_offset
             )
         return None
 

@@ -9,10 +9,11 @@
                     <n-tree
                         :data="scenario.executions"
                         selectable
+                        :multiple="isMultiSelection"
                         block-line
                         :selected-keys="scenario.selected"
                         :render-suffix="renderSuffix"
-                        @update:selected-keys="emitScenarioSelect"
+                        @update:selected-keys="scenario.emitScenarioSelect"
                     />
                 </n-thing>
             </n-list-item>
@@ -21,9 +22,10 @@
 </template>
 
 <script>
-import {computed, h, onMounted, ref} from "vue/dist/vue.esm-bundler.js";
+import {computed, h, onMounted, ref, toRef, watch} from "vue/dist/vue.esm-bundler.js";
 import {NButton, useMessage} from 'naive-ui'
 import {fetchExecutedScenarioList, destroyScenarioExecution} from "../modules/communication.mjs";
+import {timeFormat} from "../modules/scenarios.mjs";
 import Fetchable from "./Fetchable.vue";
 
 let busyDeletingId = null;
@@ -71,6 +73,7 @@ export default {
         projectId: {type: Number, required: true},
         runUrl: {type: String, required: true},
         summaryUrl: {type: String, required: true},
+        isMultiSelection: {type: Boolean, required: true},
     },
     emits: ["scenarioSelect"],
     components: {
@@ -82,9 +85,61 @@ export default {
         const errorMessage = ref("");
         const hasScenarios = computed(() => scenarios.value.length > 0);
         const message = useMessage();
+        watch(toRef(props, "isMultiSelection"), function() {
+            if(!props.isMultiSelection) {
+                let selectedDeclared = false;
+                for(const scenario of scenarios.value) {
+                    if(scenario.selected.length > 0) {
+                        if(!selectedDeclared) {
+                            scenario.selected = [scenario.selected[0]];
+                            selectedDeclared = true;
+                        }
+                        else {
+                            scenario.selected.length = 0;
+                        }
+                    }
+                }
+            }
+        });
+        const emitScenarioSelect = function(keys, options, scenarioName) {
+            if(busyDeletingId !== null) {
+                const ignoredKeyIndex = keys.findIndex((key) => key === busyDeletingId);
+                if(ignoredKeyIndex !== -1) {
+                    keys.splice(ignoredKeyIndex, 1);
+                    options.splice(ignoredKeyIndex, 1);
+                }
+            }
+            if(keys.length === 0 && !props.isMultiSelection) {
+                return;
+            }
+            const scenario = scenarios.value.find((s) => s.name === scenarioName);
+            if(!props.isMultiSelection) {
+                for(const otherScenario of scenarios.value) {
+                    otherScenario.selected.length = 0;
+                }
+                scenario.selected = [keys[0]];
+                const option = options[0];
+                context.emit("scenarioSelect", [{scenario: option.scenario, scenarioExecutionId: option.key}]);
+            }
+            else {
+                scenario.selected = keys;
+                const scenarioInfoList = [];
+                for(const scenario of scenarios.value) {
+                    if(scenario.selected.length === 0) {
+                        continue;
+                    }
+                    const selectedLookup = new Set(scenario.selected);
+                    for(const execution of scenario.executions) {
+                        if(selectedLookup.has(execution.key)) {
+                            scenarioInfoList.push({scenario: execution.scenario, scenarioExecutionId: execution.key});
+                        }
+                    }
+                }
+                context.emit("scenarioSelect", scenarioInfoList);
+            }
+        };
         onMounted(function() {
             fetchExecutedScenarioList(props.projectId, props.summaryUrl).then(function(response) {
-                const timeFormat = Intl.DateTimeFormat([], {dateStyle: "short", timeStyle: "short"});
                 for(const scenarioName in response.scenarios) {
                     const scenarioInfoList = [];
                     for(const executionInfo of response.scenarios[scenarioName]) {
@@ -111,6 +166,7 @@ export default {
                         name: scenarioName,
                         executions: executions,
                         selected: [],
+                        emitScenarioSelect: (keys, options) => emitScenarioSelect(keys, options, scenarioName),
                     };
                     scenarios.value.push(scenario);
                 }
@@ -125,44 +181,26 @@ export default {
             hasScenarios: hasScenarios,
             state: state,
             errorMessage: errorMessage,
-            emitScenarioSelect(keys, options) {
-                if(keys.length === 0) {
-                    return;
-                }
-                if(busyDeletingId !== null) {
-                    const ignoredKeyIndex = keys.findIndex((key) => key === busyDeletingId);
-                    if(ignoredKeyIndex !== -1) {
-                        keys.splice(ignoredKeyIndex, 1);
-                        if(keys.length === 0) {
-                            return;
+            setSelectedBusy(busy) {
+                for(const scenario of scenarios.value) {
+                    if(scenario.selected.length > 0) {
+                        for(const execution of scenario.executions) {
+                            if(scenario.selected.find((selected) => selected === execution.key) !== undefined) {
+                                execution.deleteDisabled = busy;
+                            }
+                            else if(execution.deleteDisabled) {
+                                execution.deleteDisabled = false;
+                            }
                         }
                     }
                     else {
-                        for(const scenario of scenarios.value) {
-                            const selectedIndex = scenario.selected.findIndex((id) => id === busyDeletingId);
-                            if(selectedIndex !== -1) {
-                                scenario.selected.splice(selectedIndex, 1);
-                                context.emit("scenarioSelect", null);
-                                return;
+                        for(const execution of scenario.executions) {
+                            if(execution.deleteDisabled) {
+                                execution.deleteDisabled = false;
                             }
                         }
                     }
                 }
-                for(const scenario of scenarios.value) {
-                    let selectedFound = false;
-                    for(const execution of scenario.executions) {
-                        if(execution.key === keys[0]) {
-                            scenario.selected = [keys[0]];
-                            selectedFound = true;
-                            break;
-                        }
-                    }
-                    if(!selectedFound) {
-                        scenario.selected.length = 0;
-                    }
-                }
-                const option = options[0];
-                context.emit("scenarioSelect", {scenario: option.scenario, scenarioExecutionId: option.key});
             },
             renderSuffix(info) {
                 return h(NButton, {
@@ -184,27 +222,6 @@ export default {
                 }, {
                     default: () => "Delete"
                 });
-            },
-            setSelectedBusy(busy) {
-                for(const scenario of scenarios.value) {
-                    if(scenario.selected.length > 0) {
-                        for(const execution of scenario.executions) {
-                            if(scenario.selected.find((selected) => selected === execution.key) !== undefined) {
-                                execution.deleteDisabled = busy;
-                            }
-                            else if(execution.deleteDisabled) {
-                                execution.deleteDisabled = false;
-                            }
-                        }
-                    }
-                    else {
-                        for(const execution of scenario.executions) {
-                            if(execution.deleteDisabled) {
-                                execution.deleteDisabled = false;
-                            }
-                        }
-                    }
-                }
             },
         };
     },

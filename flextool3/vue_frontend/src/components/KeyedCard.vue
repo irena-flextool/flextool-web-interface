@@ -3,6 +3,7 @@
         closable
         :title="title"
         @close="emitClose"
+        size="small"
     >
         <slot></slot>
     </n-card>

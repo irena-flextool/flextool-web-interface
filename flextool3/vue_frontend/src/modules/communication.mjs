@@ -85,7 +85,7 @@ function destroyProject(projectId, projectsUrl) {
 }
 
 /**
- * Fetches model or analysis data from server.
+ * Fetches model data from server.
  * @param {string} queryType Fetch query type.
  * @param {number} projectId Project id.
  * @param {string} url URL to server's interface.
@@ -271,29 +271,6 @@ function fetchExecutedScenarioList(projectId, summaryUrl) {
 }
 
 /**
- * Fetches result alternative from server.
- * @param {number} projectId Project id.
- * @param {string} summaryUrl URL to server's interface.
- * @param {string} scenarioExecutionId Scenario execution id.
- * @returns {Promise} A promise that resolves to server's response.
- */
-function fetchResultAlternative(projectId, summaryUrl, scenarioExecutionId) {
-    const fetchInit = makeFetchInit();
-    fetchInit.body = JSON.stringify({type: "result alternative?",
-        projectId: projectId,
-        scenarioExecutionId: scenarioExecutionId,
-    });
-    return fetch(summaryUrl, fetchInit).then(function(response) {
-        if (!response.ok) {
-            return response.text().then(function(message) {
-                throw new Error(`Failed to fetch result alternative: ${message}`);
-            });
-        }
-        return response.json();
-    });
-}
-
-/**
  * Requests server to delete a scenario execution.
  * @param {number} projectId Project id.
  * @param {string} summaryUrl URL to server's interface.
@@ -312,6 +289,180 @@ function destroyScenarioExecution(projectId, summaryUrl, scenarioExecutionId) {
             });
         }
         return;
+    });
+}
+
+/**
+ * Fetches result entity classes from server.
+ * @param {number} projectId Project id.
+ * @param {string} analysisUrl URL to server's analysis interface.
+ * @returns {Promise} A promise that resolves to server's response.
+ */
+ function fetchResultEntityClasses(projectId, analysisUrl) {
+    const fetchInit = makeFetchInit();
+    fetchInit.body = JSON.stringify({
+        type: "entity classes?",
+        projectId: projectId,
+    });
+    return fetch(analysisUrl, fetchInit).then(function(response) {
+        if (!response.ok) {
+            return response.text().then(function(message) {
+                throw new Error(`Failed to fetch entity classes: ${message}`);
+            });
+        }
+        return response.json();
+    });
+}
+
+/**
+ * Fetches result entities from server.
+ * @param {number} projectId Project id.
+ * @param {string} analysisUrl URL to server's analysis interface.
+ * @param {string[]} classes Entity classes.
+ * @returns {Promise} A promise that resolves to server's response.
+ */
+ function fetchResultEntities(projectId, analysisUrl, classes) {
+    const fetchInit = makeFetchInit();
+    fetchInit.body = JSON.stringify({
+        type: "entities?",
+        projectId: projectId,
+        classes: classes,
+    });
+    return fetch(analysisUrl, fetchInit).then(function(response) {
+        if (!response.ok) {
+            return response.text().then(function(message) {
+                throw new Error(`Failed to fetch entities: ${message}`);
+            });
+        }
+        return response.json();
+    });
+}
+
+/**
+ * Fetches result parameters from server.
+ * @param {number} projectId Project id.
+ * @param {string} analysisUrl URL to server's analysis interface.
+ * @param {string[]} classes Entity classes.
+ * @returns {Promise} A promise that resolves to server's response.
+ */
+function fetchResultParameters(projectId, analysisUrl, classes) {
+    const fetchInit = makeFetchInit();
+    fetchInit.body = JSON.stringify({
+        type: "parameters?",
+        projectId: projectId,
+        classes: classes,
+    });
+    return fetch(analysisUrl, fetchInit).then(function(response) {
+        if (!response.ok) {
+            return response.text().then(function(message) {
+                throw new Error(`Failed to fetch parameters: ${message}`);
+            });
+        }
+        return response.json();
+    });
+}
+
+/**
+ * Fetches result parameter value indexes from server.
+ * @param {number} projectId Project id.
+ * @param {string} analysisUrl URL to server's analysis interface.
+ * @param {number[]} scenarioExecutionIds Scenario execution ids.
+ * @param {string[]} classes Entity class names.
+ * @param {string[]} parameters: Parameter names.
+ * @returns {Promise} A promise that resolves to server's response.
+ */
+function fetchResultParameterValueIndexes(projectId, analysisUrl, scenarioExecutionIds, classes, parameters) {
+    const fetchInit = makeFetchInit();
+    fetchInit.body = JSON.stringify({
+        type: "value indexes?",
+        projectId: projectId,
+        scenarioExecutionIds: scenarioExecutionIds,
+        classes: classes,
+        parameters: parameters,
+    });
+    return fetch(analysisUrl, fetchInit).then(function(response) {
+        if (!response.ok) {
+            return response.text().then(function(message) {
+                throw new Error(`Failed to fetch parameter value indexes: ${message}`);
+            });
+        }
+        return response.json();
+    });
+}
+
+/**
+ * Fetches result parameter values from server.
+ * @param {number} projectId Project id.
+ * @param {string} analysisUrl URL to server's analysis interface.
+ * @param {number[]} scenarioExecutionIds Scenario execution ids.
+ * @param {string[]} classes Entity class names.
+ * @param {Array[]} objects Object names per dimension.
+ * @param {string[]} parameters: Parameter names.
+ * @returns {Promise} A promise that resolves to server's response.
+ */
+function fetchResultParameterValues(projectId, analysisUrl, scenarioExecutionIds, classes, objects, parameters) {
+    const fetchInit = makeFetchInit();
+    fetchInit.body = JSON.stringify({
+        type: "values?",
+        projectId: projectId,
+        scenarioExecutionIds: scenarioExecutionIds,
+        classes: classes,
+        objects: objects,
+        parameters: parameters,
+    });
+    return fetch(analysisUrl, fetchInit).then(function(response) {
+        if (!response.ok) {
+            return response.text().then(function(message) {
+                throw new Error(`Failed to fetch parameter values: ${message}`);
+            });
+        }
+        return response.json();
+    });
+}
+
+/**
+ * Fetches plot specification from server.
+ * @param {number} projectId Project id.
+ * @param {string} analysisUrl URL to server's analysis interface.
+ * @returns {Promise} A promise that resolves to server's response.
+ */
+function fetchPlotSpecification(projectId, analysisUrl) {
+    const fetchInit = makeFetchInit();
+    fetchInit.body = JSON.stringify({
+        type: "plot specification?",
+        projectId: projectId,
+    });
+    return fetch(analysisUrl, fetchInit).then(function(response) {
+        if (!response.ok) {
+            return response.text().then(function(message) {
+                throw new Error(`Failed to fetch plot specification: ${message}`);
+            });
+        }
+        return response.json();
+    });
+}
+
+/**
+ * Fetches plot specification from server.
+ * @param {number} projectId Project id.
+ * @param {string} analysisUrl URL to server's analysis interface.
+ * @param {object} specification Plot specification
+ * @returns {Promise} A promise that resolves to server's response.
+ */
+function storePlotSpecification(projectId, analysisUrl, specification) {
+    const fetchInit = makeFetchInit();
+    fetchInit.body = JSON.stringify({
+        type: "store plot specification",
+        projectId: projectId,
+        specification: specification,
+    });
+    return fetch(analysisUrl, fetchInit).then(function(response) {
+        if (!response.ok) {
+            return response.text().then(function(message) {
+                throw new Error(`Failed to store plot specification: ${message}`);
+            });
+        }
+        return response.json();
     });
 }
 
@@ -369,8 +520,14 @@ export {
     fetchExecutedScenarioList,
     fetchSummary,
     fetchOutputDirectory,
-    fetchResultAlternative,
     destroyScenarioExecution,
+    fetchResultEntityClasses,
+    fetchResultEntities,
+    fetchResultParameters,
+    fetchResultParameterValueIndexes,
+    fetchResultParameterValues,
+    fetchPlotSpecification,
+    storePlotSpecification,
     fetchExampleList,
     addExample,
 };

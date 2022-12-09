@@ -27,6 +27,7 @@ from spinedb_api import (
     Array,
     import_scenarios,
     import_scenario_alternatives,
+    import_relationship_parameter_values,
 )
 
 from .exception import FlexToolException
@@ -2574,7 +2575,7 @@ NonSync, JustA, p2025, 3298.2
 
 class AnalysisInterfaceTests(TestCase):
     baron = None
-    model_url = reverse("flextool3:analysis")
+    analysis_url = reverse("flextool3:analysis")
 
     @classmethod
     def setUpTestData(cls):
@@ -2582,24 +2583,93 @@ class AnalysisInterfaceTests(TestCase):
         cls.baron.set_password("secretbaron")
         cls.baron.save()
 
-    def test_get_relationship_classes(self):
-        """'analysis' view responds with relationship class information."""
+    def test_get_object_values(self):
         with fake_project(self.baron) as project:
+            scenario = Scenario(project=project, name="Base")
+            scenario.save()
+            scenario_execution = ScenarioExecution(
+                scenario=scenario,
+                execution_time=datetime.fromisoformat("2022-06-01T14:14:00+03:00"),
+                execution_time_offset=3 * 3600,
+                log="",
+            )
+            scenario_execution.save()
             db_map = DatabaseMapping(
                 "sqlite:///" + str(Path(project.path) / PATH_TO_RESULT_DATABASE),
                 create=True,
             )
-            import_object_classes(db_map, ("object_class",))
-            import_relationship_classes(
-                db_map, (("relationship_class", ("object_class",)),)
+            _, errors = import_alternatives(
+                db_map, ("Base__Import_Flex3@2022-06-01T14:15:00",)
             )
+            self.assertEqual(errors, [])
+            _, errors = import_object_classes(db_map, ("my_class", "other_class"))
+            self.assertEqual(errors, [])
+            _, errors = import_object_parameters(
+                db_map,
+                (
+                    ("my_class", "object_parameter"),
+                    ("my_class", "uninteresting_parameter"),
+                    ("other_class", "other_parameter"),
+                ),
+            )
+            self.assertEqual(errors, [])
+            _, errors = import_objects(
+                db_map,
+                (
+                    ("my_class", "my_object"),
+                    ("my_class", "discarded_object"),
+                    ("other_class", "other_object"),
+                ),
+            )
+            self.assertEqual(errors, [])
+            import_object_parameter_values(
+                db_map,
+                (
+                    (
+                        "my_class",
+                        "my_object",
+                        "object_parameter",
+                        99.0,
+                        "Base__Import_Flex3@2022-06-01T14:15:00",
+                    ),
+                    (
+                        "my_class",
+                        "my_object",
+                        "uninteresting_parameter",
+                        98.0,
+                        "Base__Import_Flex3@2022-06-01T14:15:00",
+                    ),
+                    (
+                        "my_class",
+                        "discarded_object",
+                        "object_parameter",
+                        97.0,
+                        "Base__Import_Flex3@2022-06-01T14:15:00",
+                    ),
+                    (
+                        "other_class",
+                        "other_object",
+                        "other_parameter",
+                        96.0,
+                        "Base__Import_Flex3@2022-06-01T14:15:00",
+                    ),
+                ),
+            )
+            self.assertEqual(errors, [])
             db_map.commit_session("Add test data.")
             db_map.connection.close()
             with login_as_baron(self.client) as login_successful:
                 self.assertTrue(login_successful)
                 response = self.client.post(
-                    self.model_url,
-                    {"type": "relationship classes?", "projectId": 1},
+                    self.analysis_url,
+                    {
+                        "type": "values?",
+                        "projectId": 1,
+                        "classes": ["my_class"],
+                        "parameters": ["object_parameter"],
+                        "objects": [["my_object"]],
+                        "scenarioExecutionIds": [scenario_execution.id],
+                    },
                     content_type="application/json",
                 )
                 self.assertEqual(response.status_code, 200)
@@ -2607,20 +2677,1060 @@ class AnalysisInterfaceTests(TestCase):
                 self.assertEqual(
                     content,
                     {
-                        "classes": [
+                        "values": [
                             {
-                                "commit_id": 2,
-                                "description": None,
-                                "dimension": 0,
-                                "display_icon": None,
-                                "id": 2,
-                                "name": "relationship_class",
-                                "object_class_id": 1,
-                                "object_class_name": "object_class",
+                                "class": "my_class",
+                                "object_classes": ["my_class"],
+                                "objects": ["my_object"],
+                                "parameter": "object_parameter",
+                                "scenario": "Base",
+                                "time_stamp": "2022-06-01T11:14:00+00:00",
+                                "type": None,
+                                "value": "99.0",
                             }
                         ]
                     },
                 )
+
+    def test_get_multidimensional_relationship_values(self):
+        with fake_project(self.baron) as project:
+            scenario = Scenario(project=project, name="Base")
+            scenario.save()
+            scenario_execution = ScenarioExecution(
+                scenario=scenario,
+                execution_time=datetime.fromisoformat("2022-06-01T14:14:00+03:00"),
+                execution_time_offset=3 * 3600,
+                log="",
+            )
+            scenario_execution.save()
+            db_map = DatabaseMapping(
+                "sqlite:///" + str(Path(project.path) / PATH_TO_RESULT_DATABASE),
+                create=True,
+            )
+            _, errors = import_alternatives(
+                db_map, ("Base__Import_Flex3@2022-06-01T14:15:00",)
+            )
+            self.assertEqual(errors, [])
+            _, errors = import_object_classes(db_map, ("my_class", "other_class"))
+            self.assertEqual(errors, [])
+            _, errors = import_objects(
+                db_map,
+                (
+                    ("my_class", "my_object"),
+                    ("other_class", "other_object"),
+                    ("other_class", "still_another_object"),
+                ),
+            )
+            self.assertEqual(errors, [])
+            _, errors = import_relationship_classes(
+                db_map, (("my_relation_class", ("my_class", "other_class")),)
+            )
+            self.assertEqual(errors, [])
+            _, errors = import_relationships(
+                db_map,
+                (
+                    ("my_relation_class", ("my_object", "other_object")),
+                    ("my_relation_class", ("my_object", "still_another_object")),
+                ),
+            )
+            self.assertEqual(errors, [])
+            _, errors = import_relationship_parameters(
+                db_map, (("my_relation_class", "relation_parameter"),)
+            )
+            self.assertEqual(errors, [])
+            _, errors = import_relationship_parameter_values(
+                db_map,
+                (
+                    (
+                        "my_relation_class",
+                        ["my_object", "other_object"],
+                        "relation_parameter",
+                        99.0,
+                        "Base__Import_Flex3@2022-06-01T14:15:00",
+                    ),
+                    (
+                        "my_relation_class",
+                        ["my_object", "still_another_object"],
+                        "relation_parameter",
+                        98.0,
+                        "Base__Import_Flex3@2022-06-01T14:15:00",
+                    ),
+                ),
+            )
+            self.assertEqual(errors, [])
+            db_map.commit_session("Add test data.")
+            db_map.connection.close()
+            with login_as_baron(self.client) as login_successful:
+                self.assertTrue(login_successful)
+                response = self.client.post(
+                    self.analysis_url,
+                    {
+                        "type": "values?",
+                        "projectId": 1,
+                        "classes": ["my_relation_class"],
+                        "parameters": ["relation_parameter"],
+                        "objects": [["my_object"], ["still_another_object"]],
+                        "scenarioExecutionIds": [scenario_execution.id],
+                    },
+                    content_type="application/json",
+                )
+                self.assertEqual(response.status_code, 200)
+                content = json.loads(response.content)
+                self.assertEqual(
+                    content,
+                    {
+                        "values": [
+                            {
+                                "class": "my_relation_class",
+                                "object_classes": ["my_class", "other_class"],
+                                "objects": ["my_object", "still_another_object"],
+                                "parameter": "relation_parameter",
+                                "scenario": "Base",
+                                "time_stamp": "2022-06-01T11:14:00+00:00",
+                                "type": None,
+                                "value": "98.0",
+                            }
+                        ]
+                    },
+                )
+
+    def test_get_entity_classes(self):
+        with fake_project(self.baron) as project:
+            db_map = DatabaseMapping(
+                "sqlite:///" + str(Path(project.path) / PATH_TO_RESULT_DATABASE),
+                create=True,
+            )
+            import_object_classes(db_map, ("my_class",))
+            import_relationship_classes(db_map, (("my_relation_class", ("my_class",)),))
+            db_map.commit_session("Add test data.")
+            db_map.connection.close()
+            with login_as_baron(self.client) as login_successful:
+                self.assertTrue(login_successful)
+                response = self.client.post(
+                    self.analysis_url,
+                    {"type": "entity classes?", "projectId": 1},
+                    content_type="application/json",
+                )
+                self.assertEqual(response.status_code, 200)
+                content = json.loads(response.content)
+                self.assertEqual(
+                    content,
+                    {
+                        "entity_classes": [
+                            {"name": "my_class"},
+                            {"name": "my_relation_class"},
+                        ]
+                    },
+                )
+
+    def test_get_parameters(self):
+        with fake_project(self.baron) as project:
+            db_map = DatabaseMapping(
+                "sqlite:///" + str(Path(project.path) / PATH_TO_RESULT_DATABASE),
+                create=True,
+            )
+            import_object_classes(db_map, ("my_class",))
+            import_object_parameters(db_map, (("my_class", "object_parameter"),))
+            import_relationship_classes(db_map, (("my_relation_class", ("my_class",)),))
+            _, errors = import_relationship_parameters(
+                db_map, (("my_relation_class", "relation_parameter"),)
+            )
+            self.assertEqual(errors, [])
+            db_map.commit_session("Add test data.")
+            db_map.connection.close()
+            with login_as_baron(self.client) as login_successful:
+                self.assertTrue(login_successful)
+                response = self.client.post(
+                    self.analysis_url,
+                    {
+                        "type": "parameters?",
+                        "projectId": 1,
+                        "classes": ["my_class", "my_relation_class"],
+                    },
+                    content_type="application/json",
+                )
+                self.assertEqual(response.status_code, 200)
+                content = json.loads(response.content)
+                self.assertEqual(
+                    content,
+                    {
+                        "parameters": [
+                            {"name": "object_parameter", "class_name": "my_class"},
+                            {
+                                "name": "relation_parameter",
+                                "class_name": "my_relation_class",
+                            },
+                        ]
+                    },
+                )
+
+    def test_get_entities(self):
+        with fake_project(self.baron) as project:
+            db_map = DatabaseMapping(
+                "sqlite:///" + str(Path(project.path) / PATH_TO_RESULT_DATABASE),
+                create=True,
+            )
+            import_object_classes(db_map, ("my_class",))
+            import_objects(db_map, (("my_class", "object_1"),))
+            import_relationship_classes(db_map, (("my_relation_class", ("my_class",)),))
+            import_relationships(db_map, (("my_relation_class", ("object_1",)),))
+            db_map.commit_session("Add test data.")
+            db_map.connection.close()
+            with login_as_baron(self.client) as login_successful:
+                self.assertTrue(login_successful)
+                response = self.client.post(
+                    self.analysis_url,
+                    {
+                        "type": "entities?",
+                        "projectId": 1,
+                        "classes": ["my_class", "my_relation_class"],
+                    },
+                    content_type="application/json",
+                )
+                self.assertEqual(response.status_code, 200)
+                content = json.loads(response.content)
+                self.assertEqual(
+                    content,
+                    {
+                        "entities": [
+                            {"names": ["object_1"], "class_name": "my_class"},
+                            {"names": ["object_1"], "class_name": "my_relation_class"},
+                        ]
+                    },
+                )
+
+    def test_get_parameter_value_indexes(self):
+        with fake_project(self.baron) as project:
+            scenario = Scenario(project=project, name="Base")
+            scenario.save()
+            scenario_execution = ScenarioExecution(
+                scenario=scenario,
+                execution_time=datetime.fromisoformat("2022-06-01T14:14:00+03:00"),
+                execution_time_offset=3 * 3600,
+                log="",
+            )
+            scenario_execution.save()
+            db_map = DatabaseMapping(
+                "sqlite:///" + str(Path(project.path) / PATH_TO_RESULT_DATABASE),
+                create=True,
+            )
+            _, errors = import_alternatives(
+                db_map, ("Base__Import_Flex3@2022-06-01T14:15:00",)
+            )
+            self.assertEqual(errors, [])
+            _, errors = import_object_classes(db_map, ("my_class",))
+            self.assertEqual(errors, [])
+            _, errors = import_object_parameters(
+                db_map, (("my_class", "object_parameter"),)
+            )
+            self.assertEqual(errors, [])
+            _, errors = import_objects(db_map, (("my_class", "my_object"),))
+            self.assertEqual(errors, [])
+            _, errors = import_object_parameter_values(
+                db_map,
+                (
+                    (
+                        "my_class",
+                        "my_object",
+                        "object_parameter",
+                        Map(
+                            ["A", "B"],
+                            [
+                                Map(["a", "b"], [2.3, -2.3], index_name="index 2"),
+                                Map(["a", "b"], [5.5, -5.5], index_name="index 2"),
+                            ],
+                            index_name="index 1",
+                        ),
+                        "Base__Import_Flex3@2022-06-01T14:15:00",
+                    ),
+                ),
+            )
+            self.assertEqual(errors, [])
+            db_map.commit_session("Add test data.")
+            db_map.connection.close()
+            with login_as_baron(self.client) as login_successful:
+                self.assertTrue(login_successful)
+                response = self.client.post(
+                    self.analysis_url,
+                    {
+                        "type": "value indexes?",
+                        "projectId": 1,
+                        "scenarioExecutionIds": [scenario_execution.id],
+                        "classes": ["my_class"],
+                        "parameters": ["object_parameter"],
+                    },
+                    content_type="application/json",
+                )
+                self.assertEqual(response.status_code, 200)
+                content = json.loads(response.content)
+                expected = {
+                    "indexes": [
+                        {
+                            "index_name": "index 1",
+                            "indexes": ["A", "B"],
+                            "depth": 0,
+                            "class_names": ["my_class"],
+                            "parameter_names": ["object_parameter"],
+                        },
+                        {
+                            "index_name": "index 2",
+                            "indexes": ["a", "b"],
+                            "depth": 1,
+                            "class_names": ["my_class"],
+                            "parameter_names": ["object_parameter"],
+                        },
+                    ]
+                }
+                self.assertEqual(content, expected)
+
+    def test_get_parameter_value_indexes_works_without_scenario_execution_ids(self):
+        with fake_project(self.baron) as project:
+            scenario = Scenario(project=project, name="Base")
+            scenario.save()
+            scenario_execution = ScenarioExecution(
+                scenario=scenario,
+                execution_time=datetime.fromisoformat("2022-06-01T14:14:00+03:00"),
+                execution_time_offset=3 * 3600,
+                log="",
+            )
+            scenario_execution.save()
+            db_map = DatabaseMapping(
+                "sqlite:///" + str(Path(project.path) / PATH_TO_RESULT_DATABASE),
+                create=True,
+            )
+            _, errors = import_alternatives(
+                db_map, ("Base__Import_Flex3@2022-06-01T14:15:00",)
+            )
+            self.assertEqual(errors, [])
+            _, errors = import_object_classes(db_map, ("my_class",))
+            self.assertEqual(errors, [])
+            _, errors = import_object_parameters(
+                db_map, (("my_class", "object_parameter"),)
+            )
+            self.assertEqual(errors, [])
+            _, errors = import_objects(db_map, (("my_class", "my_object"),))
+            self.assertEqual(errors, [])
+            _, errors = import_object_parameter_values(
+                db_map,
+                (
+                    (
+                        "my_class",
+                        "my_object",
+                        "object_parameter",
+                        Map(
+                            ["A", "B"],
+                            [
+                                Map(["a", "b"], [2.3, -2.3], index_name="index 2"),
+                                Map(["a", "b"], [5.5, -5.5], index_name="index 2"),
+                            ],
+                            index_name="index 1",
+                        ),
+                        "Base__Import_Flex3@2022-06-01T14:15:00",
+                    ),
+                ),
+            )
+            self.assertEqual(errors, [])
+            db_map.commit_session("Add test data.")
+            db_map.connection.close()
+            with login_as_baron(self.client) as login_successful:
+                self.assertTrue(login_successful)
+                response = self.client.post(
+                    self.analysis_url,
+                    {
+                        "type": "value indexes?",
+                        "projectId": 1,
+                        "scenarioExecutionIds": [],
+                        "classes": ["my_class"],
+                        "parameters": ["object_parameter"],
+                    },
+                    content_type="application/json",
+                )
+                self.assertEqual(response.status_code, 200)
+                content = json.loads(response.content)
+                expected = {
+                    "indexes": [
+                        {
+                            "index_name": "index 1",
+                            "indexes": ["A", "B"],
+                            "depth": 0,
+                            "class_names": ["my_class"],
+                            "parameter_names": ["object_parameter"],
+                        },
+                        {
+                            "index_name": "index 2",
+                            "indexes": ["a", "b"],
+                            "depth": 1,
+                            "class_names": ["my_class"],
+                            "parameter_names": ["object_parameter"],
+                        },
+                    ]
+                }
+                self.assertEqual(content, expected)
+
+    def test_get_parameter_value_indexes_gathers_all_nested_indexes_from_diffent_alternatives(
+        self
+    ):
+        with fake_project(self.baron) as project:
+            scenario_1 = Scenario(project=project, name="Base+Coal")
+            scenario_1.save()
+            scenario_execution_1 = ScenarioExecution(
+                scenario=scenario_1,
+                execution_time=datetime.fromisoformat("2022-06-01T14:14:00+03:00"),
+                execution_time_offset=3 * 3600,
+                log="",
+            )
+            scenario_execution_1.save()
+            scenario_2 = Scenario(project=project, name="Base+Wind")
+            scenario_2.save()
+            scenario_execution_2 = ScenarioExecution(
+                scenario=scenario_2,
+                execution_time=datetime.fromisoformat("2023-01-09T09:00:00+02:00"),
+                execution_time_offset=2 * 3600,
+                log="",
+            )
+            scenario_execution_2.save()
+            db_map = DatabaseMapping(
+                "sqlite:///" + str(Path(project.path) / PATH_TO_RESULT_DATABASE),
+                create=True,
+            )
+            _, errors = import_alternatives(
+                db_map,
+                (
+                    "Base+Coal__Import_Flex3@2022-06-01T14:15:00",
+                    "Base+Wind__Import_Flex3@2023-01-09T09:01:00",
+                ),
+            )
+            self.assertEqual(errors, [])
+            _, errors = import_object_classes(db_map, ("my_class",))
+            self.assertEqual(errors, [])
+            _, errors = import_object_parameters(
+                db_map, (("my_class", "object_parameter"),)
+            )
+            self.assertEqual(errors, [])
+            _, errors = import_objects(
+                db_map, (("my_class", "my_object"), ("my_class", "your_object"))
+            )
+            self.assertEqual(errors, [])
+            _, errors = import_object_parameter_values(
+                db_map,
+                (
+                    (
+                        "my_class",
+                        "my_object",
+                        "object_parameter",
+                        Map(
+                            ["A"],
+                            [Map(["a", "b"], [2.3, -2.3], index_name="index 2")],
+                            index_name="index 1",
+                        ),
+                        "Base+Coal__Import_Flex3@2022-06-01T14:15:00",
+                    ),
+                    (
+                        "my_class",
+                        "your_object",
+                        "object_parameter",
+                        Map(
+                            ["A"],
+                            [Map(["c", "d"], [2.3, -2.3], index_name="index 2")],
+                            index_name="index 1",
+                        ),
+                        "Base+Wind__Import_Flex3@2023-01-09T09:01:00",
+                    ),
+                ),
+            )
+            self.assertEqual(errors, [])
+            db_map.commit_session("Add test data.")
+            db_map.connection.close()
+            with login_as_baron(self.client) as login_successful:
+                self.assertTrue(login_successful)
+                response = self.client.post(
+                    self.analysis_url,
+                    {
+                        "type": "value indexes?",
+                        "projectId": 1,
+                        "scenarioExecutionIds": [
+                            scenario_execution_1.id,
+                            scenario_execution_2.id,
+                        ],
+                        "classes": ["my_class"],
+                        "parameters": ["object_parameter"],
+                    },
+                    content_type="application/json",
+                )
+                self.assertEqual(response.status_code, 200)
+                content = json.loads(response.content)
+                expected = {
+                    "indexes": [
+                        {
+                            "index_name": "index 1",
+                            "indexes": ["A"],
+                            "depth": 0,
+                            "class_names": ["my_class"],
+                            "parameter_names": ["object_parameter"],
+                        },
+                        {
+                            "index_name": "index 2",
+                            "indexes": ["a", "b", "c", "d"],
+                            "depth": 1,
+                            "class_names": ["my_class"],
+                            "parameter_names": ["object_parameter"],
+                        },
+                    ]
+                }
+                self.assertEqual(content, expected)
+
+    def test_get_parameter_value_indexes_returns_single_record_for_multiple_objects(
+        self
+    ):
+        with fake_project(self.baron) as project:
+            scenario = Scenario(project=project, name="Base")
+            scenario.save()
+            scenario_execution = ScenarioExecution(
+                scenario=scenario,
+                execution_time=datetime.fromisoformat("2022-06-01T14:14:00+03:00"),
+                execution_time_offset=3 * 3600,
+                log="",
+            )
+            scenario_execution.save()
+            db_map = DatabaseMapping(
+                "sqlite:///" + str(Path(project.path) / PATH_TO_RESULT_DATABASE),
+                create=True,
+            )
+            _, errors = import_alternatives(
+                db_map, ("Base__Import_Flex3@2022-06-01T14:15:00",)
+            )
+            self.assertEqual(errors, [])
+            _, errors = import_object_classes(db_map, ("my_class",))
+            self.assertEqual(errors, [])
+            _, errors = import_object_parameters(
+                db_map, (("my_class", "object_parameter"),)
+            )
+            self.assertEqual(errors, [])
+            _, errors = import_objects(
+                db_map, (("my_class", "my_object"), ("my_class", "another_object"))
+            )
+            self.assertEqual(errors, [])
+            _, errors = import_object_parameter_values(
+                db_map,
+                (
+                    (
+                        "my_class",
+                        "my_object",
+                        "object_parameter",
+                        Map(
+                            ["A", "B"],
+                            [
+                                Map(["a", "b"], [2.3, -2.3], index_name="index 2"),
+                                Map(["a", "b"], [5.5, -5.5], index_name="index 2"),
+                            ],
+                            index_name="index 1",
+                        ),
+                        "Base__Import_Flex3@2022-06-01T14:15:00",
+                    ),
+                    (
+                        "my_class",
+                        "another_object",
+                        "object_parameter",
+                        Map(
+                            ["A", "B"],
+                            [
+                                Map(["a", "b"], [-2.3, 2.3], index_name="index 2"),
+                                Map(["a", "b"], [-5.5, 5.5], index_name="index 2"),
+                            ],
+                            index_name="index 1",
+                        ),
+                        "Base__Import_Flex3@2022-06-01T14:15:00",
+                    ),
+                ),
+            )
+            self.assertEqual(errors, [])
+            db_map.commit_session("Add test data.")
+            db_map.connection.close()
+            with login_as_baron(self.client) as login_successful:
+                self.assertTrue(login_successful)
+                response = self.client.post(
+                    self.analysis_url,
+                    {
+                        "type": "value indexes?",
+                        "projectId": 1,
+                        "scenarioExecutionIds": [scenario_execution.id],
+                        "classes": ["my_class"],
+                        "parameters": ["object_parameter"],
+                    },
+                    content_type="application/json",
+                )
+                self.assertEqual(response.status_code, 200)
+                content = json.loads(response.content)
+                expected = {
+                    "indexes": [
+                        {
+                            "index_name": "index 1",
+                            "indexes": ["A", "B"],
+                            "depth": 0,
+                            "class_names": ["my_class"],
+                            "parameter_names": ["object_parameter"],
+                        },
+                        {
+                            "index_name": "index 2",
+                            "indexes": ["a", "b"],
+                            "depth": 1,
+                            "class_names": ["my_class"],
+                            "parameter_names": ["object_parameter"],
+                        },
+                    ]
+                }
+                self.assertEqual(content, expected)
+
+    def test_get_parameter_value_indexes_returns_single_record_for_multiple_alternatives(
+        self
+    ):
+        with fake_project(self.baron) as project:
+            scenario = Scenario(project=project, name="Base")
+            scenario.save()
+            scenario_execution = ScenarioExecution(
+                scenario=scenario,
+                execution_time=datetime.fromisoformat("2022-06-01T14:14:00+03:00"),
+                execution_time_offset=3 * 3600,
+                log="",
+            )
+            scenario_execution.save()
+            db_map = DatabaseMapping(
+                "sqlite:///" + str(Path(project.path) / PATH_TO_RESULT_DATABASE),
+                create=True,
+            )
+            _, errors = import_alternatives(
+                db_map,
+                (
+                    "Base__Import_Flex3@2022-06-01T14:15:00",
+                    "coal__Import_Flex3@2022-06-01T14:15:0s0",
+                ),
+            )
+            self.assertEqual(errors, [])
+            _, errors = import_object_classes(db_map, ("my_class",))
+            self.assertEqual(errors, [])
+            _, errors = import_object_parameters(
+                db_map, (("my_class", "object_parameter"),)
+            )
+            self.assertEqual(errors, [])
+            _, errors = import_objects(db_map, (("my_class", "my_object"),))
+            self.assertEqual(errors, [])
+            _, errors = import_object_parameter_values(
+                db_map,
+                (
+                    (
+                        "my_class",
+                        "my_object",
+                        "object_parameter",
+                        Map(
+                            ["A", "B"],
+                            [
+                                Map(["a", "b"], [2.3, -2.3], index_name="index 2"),
+                                Map(["a", "b"], [5.5, -5.5], index_name="index 2"),
+                            ],
+                            index_name="index 1",
+                        ),
+                        "Base__Import_Flex3@2022-06-01T14:15:00",
+                    ),
+                    (
+                        "my_class",
+                        "my_object",
+                        "object_parameter",
+                        Map(
+                            ["A", "B"],
+                            [
+                                Map(["a", "b"], [-2.3, 2.3], index_name="index 2"),
+                                Map(["a", "b"], [-5.5, 5.5], index_name="index 2"),
+                            ],
+                            index_name="index 1",
+                        ),
+                        "coal__Import_Flex3@2022-06-01T14:15:0s0",
+                    ),
+                ),
+            )
+            self.assertEqual(errors, [])
+            db_map.commit_session("Add test data.")
+            db_map.connection.close()
+            with login_as_baron(self.client) as login_successful:
+                self.assertTrue(login_successful)
+                response = self.client.post(
+                    self.analysis_url,
+                    {
+                        "type": "value indexes?",
+                        "projectId": 1,
+                        "scenarioExecutionIds": [scenario_execution.id],
+                        "classes": ["my_class"],
+                        "parameters": ["object_parameter"],
+                    },
+                    content_type="application/json",
+                )
+                self.assertEqual(response.status_code, 200)
+                content = json.loads(response.content)
+                expected = {
+                    "indexes": [
+                        {
+                            "index_name": "index 1",
+                            "indexes": ["A", "B"],
+                            "depth": 0,
+                            "class_names": ["my_class"],
+                            "parameter_names": ["object_parameter"],
+                        },
+                        {
+                            "index_name": "index 2",
+                            "indexes": ["a", "b"],
+                            "depth": 1,
+                            "class_names": ["my_class"],
+                            "parameter_names": ["object_parameter"],
+                        },
+                    ]
+                }
+                self.assertEqual(content, expected)
+
+    def test_get_parameter_value_indexes_returns_single_record_for_multiple_object_classes(
+        self
+    ):
+        with fake_project(self.baron) as project:
+            scenario = Scenario(project=project, name="Base")
+            scenario.save()
+            scenario_execution = ScenarioExecution(
+                scenario=scenario,
+                execution_time=datetime.fromisoformat("2022-06-01T14:14:00+03:00"),
+                execution_time_offset=3 * 3600,
+                log="",
+            )
+            scenario_execution.save()
+            db_map = DatabaseMapping(
+                "sqlite:///" + str(Path(project.path) / PATH_TO_RESULT_DATABASE),
+                create=True,
+            )
+            _, errors = import_alternatives(
+                db_map, ("Base__Import_Flex3@2022-06-01T14:15:00",)
+            )
+            self.assertEqual(errors, [])
+            _, errors = import_object_classes(db_map, ("my_class", "another_class"))
+            self.assertEqual(errors, [])
+            _, errors = import_object_parameters(
+                db_map,
+                (
+                    ("my_class", "object_parameter"),
+                    ("another_class", "object_parameter"),
+                ),
+            )
+            self.assertEqual(errors, [])
+            _, errors = import_objects(
+                db_map, (("my_class", "my_object"), ("another_class", "my_object"))
+            )
+            self.assertEqual(errors, [])
+            _, errors = import_object_parameter_values(
+                db_map,
+                (
+                    (
+                        "my_class",
+                        "my_object",
+                        "object_parameter",
+                        Map(
+                            ["A", "B"],
+                            [
+                                Map(["a", "b"], [2.3, -2.3], index_name="index 2"),
+                                Map(["a", "b"], [5.5, -5.5], index_name="index 2"),
+                            ],
+                            index_name="index 1",
+                        ),
+                        "Base__Import_Flex3@2022-06-01T14:15:00",
+                    ),
+                    (
+                        "another_class",
+                        "my_object",
+                        "object_parameter",
+                        Map(
+                            ["A", "B"],
+                            [
+                                Map(["a", "b"], [-2.3, 2.3], index_name="index 2"),
+                                Map(["a", "b"], [-5.5, 5.5], index_name="index 2"),
+                            ],
+                            index_name="index 1",
+                        ),
+                        "Base__Import_Flex3@2022-06-01T14:15:00",
+                    ),
+                ),
+            )
+            self.assertEqual(errors, [])
+            db_map.commit_session("Add test data.")
+            db_map.connection.close()
+            with login_as_baron(self.client) as login_successful:
+                self.assertTrue(login_successful)
+                response = self.client.post(
+                    self.analysis_url,
+                    {
+                        "type": "value indexes?",
+                        "projectId": 1,
+                        "scenarioExecutionIds": [scenario_execution.id],
+                        "classes": ["my_class", "another_class"],
+                        "parameters": ["object_parameter"],
+                    },
+                    content_type="application/json",
+                )
+                self.assertEqual(response.status_code, 200)
+                content = json.loads(response.content)
+                expected = {
+                    "indexes": [
+                        {
+                            "index_name": "index 1",
+                            "indexes": ["A", "B"],
+                            "depth": 0,
+                            "class_names": ["my_class", "another_class"],
+                            "parameter_names": ["object_parameter", "object_parameter"],
+                        },
+                        {
+                            "index_name": "index 2",
+                            "indexes": ["a", "b"],
+                            "depth": 1,
+                            "class_names": ["my_class", "another_class"],
+                            "parameter_names": ["object_parameter", "object_parameter"],
+                        },
+                    ]
+                }
+                self.assertEqual(content, expected)
+
+    def test_get_parameter_value_indexes_returns_single_record_for_multiple_parameters(
+        self
+    ):
+        with fake_project(self.baron) as project:
+            scenario = Scenario(project=project, name="Base")
+            scenario.save()
+            scenario_execution = ScenarioExecution(
+                scenario=scenario,
+                execution_time=datetime.fromisoformat("2022-06-01T14:14:00+03:00"),
+                execution_time_offset=3 * 3600,
+                log="",
+            )
+            scenario_execution.save()
+            db_map = DatabaseMapping(
+                "sqlite:///" + str(Path(project.path) / PATH_TO_RESULT_DATABASE),
+                create=True,
+            )
+            _, errors = import_alternatives(
+                db_map, ("Base__Import_Flex3@2022-06-01T14:15:00",)
+            )
+            self.assertEqual(errors, [])
+            _, errors = import_object_classes(db_map, ("my_class",))
+            self.assertEqual(errors, [])
+            _, errors = import_object_parameters(
+                db_map,
+                (("my_class", "object_parameter"), ("my_class", "other_parameter")),
+            )
+            self.assertEqual(errors, [])
+            _, errors = import_objects(db_map, (("my_class", "my_object"),))
+            self.assertEqual(errors, [])
+            _, errors = import_object_parameter_values(
+                db_map,
+                (
+                    (
+                        "my_class",
+                        "my_object",
+                        "object_parameter",
+                        Map(
+                            ["A", "B"],
+                            [
+                                Map(["a", "b"], [2.3, -2.3], index_name="index 2"),
+                                Map(["a", "b"], [5.5, -5.5], index_name="index 2"),
+                            ],
+                            index_name="index 1",
+                        ),
+                        "Base__Import_Flex3@2022-06-01T14:15:00",
+                    ),
+                    (
+                        "my_class",
+                        "my_object",
+                        "other_parameter",
+                        Map(
+                            ["A", "B"],
+                            [
+                                Map(["a", "b"], [-2.3, 2.3], index_name="index 2"),
+                                Map(["a", "b"], [-5.5, 5.5], index_name="index 2"),
+                            ],
+                            index_name="index 1",
+                        ),
+                        "Base__Import_Flex3@2022-06-01T14:15:00",
+                    ),
+                ),
+            )
+            self.assertEqual(errors, [])
+            db_map.commit_session("Add test data.")
+            db_map.connection.close()
+            with login_as_baron(self.client) as login_successful:
+                self.assertTrue(login_successful)
+                response = self.client.post(
+                    self.analysis_url,
+                    {
+                        "type": "value indexes?",
+                        "projectId": 1,
+                        "scenarioExecutionIds": [scenario_execution.id],
+                        "classes": ["my_class"],
+                        "parameters": ["object_parameter", "other_parameter"],
+                    },
+                    content_type="application/json",
+                )
+                self.assertEqual(response.status_code, 200)
+                content = json.loads(response.content)
+                expected = {
+                    "indexes": [
+                        {
+                            "index_name": "index 1",
+                            "indexes": ["A", "B"],
+                            "depth": 0,
+                            "class_names": ["my_class", "my_class"],
+                            "parameter_names": ["object_parameter", "other_parameter"],
+                        },
+                        {
+                            "index_name": "index 2",
+                            "indexes": ["a", "b"],
+                            "depth": 1,
+                            "class_names": ["my_class", "my_class"],
+                            "parameter_names": ["object_parameter", "other_parameter"],
+                        },
+                    ]
+                }
+                self.assertEqual(content, expected)
+
+    def test_get_parameter_value_indexes_numbers_unknown_index_names(self):
+        with fake_project(self.baron) as project:
+            scenario = Scenario(project=project, name="Base")
+            scenario.save()
+            scenario_execution = ScenarioExecution(
+                scenario=scenario,
+                execution_time=datetime.fromisoformat("2022-06-01T14:14:00+03:00"),
+                execution_time_offset=3 * 3600,
+                log="",
+            )
+            scenario_execution.save()
+            db_map = DatabaseMapping(
+                "sqlite:///" + str(Path(project.path) / PATH_TO_RESULT_DATABASE),
+                create=True,
+            )
+            _, errors = import_alternatives(
+                db_map, ("Base__Import_Flex3@2022-06-01T14:15:00",)
+            )
+            self.assertEqual(errors, [])
+            _, errors = import_object_classes(db_map, ("my_class",))
+            self.assertEqual(errors, [])
+            _, errors = import_object_parameters(
+                db_map, (("my_class", "object_parameter"),)
+            )
+            self.assertEqual(errors, [])
+            _, errors = import_objects(db_map, (("my_class", "my_object"),))
+            self.assertEqual(errors, [])
+            _, errors = import_object_parameter_values(
+                db_map,
+                (
+                    (
+                        "my_class",
+                        "my_object",
+                        "object_parameter",
+                        Map(["A"], [Map(["a"], [2.3])]),
+                        "Base__Import_Flex3@2022-06-01T14:15:00",
+                    ),
+                ),
+            )
+            self.assertEqual(errors, [])
+            db_map.commit_session("Add test data.")
+            db_map.connection.close()
+            with login_as_baron(self.client) as login_successful:
+                self.assertTrue(login_successful)
+                response = self.client.post(
+                    self.analysis_url,
+                    {
+                        "type": "value indexes?",
+                        "projectId": 1,
+                        "scenarioExecutionIds": [scenario_execution.id],
+                        "classes": ["my_class"],
+                        "parameters": ["object_parameter"],
+                    },
+                    content_type="application/json",
+                )
+                self.assertEqual(response.status_code, 200)
+                content = json.loads(response.content)
+                expected = {
+                    "indexes": [
+                        {
+                            "index_name": "x_0",
+                            "indexes": ["A"],
+                            "depth": 0,
+                            "class_names": ["my_class"],
+                            "parameter_names": ["object_parameter"],
+                        },
+                        {
+                            "index_name": "x_1",
+                            "indexes": ["a"],
+                            "depth": 1,
+                            "class_names": ["my_class"],
+                            "parameter_names": ["object_parameter"],
+                        },
+                    ]
+                }
+                self.assertEqual(content, expected)
+
+    def test_get_plot_specification(self):
+        test_specification = {"hello": "world"}
+        with fake_project(self.baron) as project:
+            project.plot_specification_path().write_text(
+                json.dumps(test_specification), encoding="utf-8"
+            )
+            with login_as_baron(self.client) as login_successful:
+                self.assertTrue(login_successful)
+                response = self.client.post(
+                    self.analysis_url,
+                    {"type": "plot specification?", "projectId": 1},
+                    content_type="application/json",
+                )
+                self.assertEqual(response.status_code, 200)
+                content = json.loads(response.content)
+                self.assertEqual(len(content), 1)
+                self.assertIn("plot_specification", content)
+                self.assertEqual(
+                    json.loads(content["plot_specification"]), test_specification
+                )
+
+    def test_get_default_plot_specification(self):
+        test_specification = {"hello": "world"}
+        with fake_project(self.baron) as project:
+            project.default_plot_specification_path().write_text(
+                json.dumps(test_specification), encoding="utf-8"
+            )
+            with login_as_baron(self.client) as login_successful:
+                self.assertTrue(login_successful)
+                response = self.client.post(
+                    self.analysis_url,
+                    {"type": "plot specification?", "projectId": 1},
+                    content_type="application/json",
+                )
+                self.assertEqual(response.status_code, 200)
+                content = json.loads(response.content)
+                self.assertEqual(len(content), 1)
+                self.assertIn("plot_specification", content)
+                self.assertEqual(
+                    json.loads(content["plot_specification"]), test_specification
+                )
+
+    def test_set_plot_specification(self):
+        with fake_project(self.baron) as project:
+            with login_as_baron(self.client) as login_successful:
+                self.assertTrue(login_successful)
+                response = self.client.post(
+                    self.analysis_url,
+                    {
+                        "type": "store plot specification",
+                        "projectId": project.id,
+                        "specification": {"hello": "world"},
+                    },
+                    content_type="application/json",
+                )
+                self.assertEqual(response.status_code, 200)
+                content = json.loads(response.content)
+                self.assertEqual(content, {"status": "ok"})
+            specification = json.loads(
+                project.plot_specification_path().read_text(encoding="utf-8")
+            )
+            self.assertEqual(specification, {"hello": "world"})
 
 
 class ExamplesInterfaceTests(TestCase):
@@ -2692,7 +3802,7 @@ class ExamplesInterfaceTests(TestCase):
                 "node", "is_active", {"coal_market", "west"}, db_map
             )
             self._assert_values_exist(
-                "group", "output_results", {"electricity"}, db_map
+                "group", "output_results", {"electricity", "to_west_node"}, db_map
             )
             db_map.connection.close()
 
@@ -2704,8 +3814,8 @@ class ExamplesInterfaceTests(TestCase):
             .filter(subquery.c.parameter_name == parameter)
             .all()
         )
-        self.assertEqual(len(values), len(object_names))
-        self.assertEqual({v.object_name for v in values}, object_names)
+        objects_in_values = {v.object_name for v in values}
+        self.assertEqual(objects_in_values, object_names)
 
 
 def _copy_model_database(project_path):

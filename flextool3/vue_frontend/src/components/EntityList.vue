@@ -112,9 +112,9 @@ function fetchRelationships(
                 if(emblem1 === emblem2) {
                     continue;
                 }
-                return emblem1 > emblem2;
+                return emblem1 < emblem2 ? -1 : 1;
             }
-            return false;
+            return 0;
         });
         entityList.value = list;
         state.value = Fetchable.state.ready;

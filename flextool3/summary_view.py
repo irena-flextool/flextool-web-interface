@@ -1,14 +1,11 @@
 """Utilities and helpers for the summary interface."""
-from bisect import bisect_left
 import csv
-import datetime
-import re
 
 from django.http import HttpResponseBadRequest, JsonResponse
 
 from .exception import FlexToolException
 from .models import Scenario, ScenarioExecution
-from .utils import Database, database_map, get_and_validate, naive_local_time
+from .view_utils import resolve_scenario_execution
 
 
 def number_to_float(value):
@@ -55,31 +52,6 @@ def get_scenario_list(project):
     return JsonResponse({"scenarios": scenarios_and_executions})
 
 
-def _resolve_scenario_execution(project, body):
-    """Resolves scenario execution.
-
-    Args:
-        project (Project): a project
-        body (dict): request body
-
-    Returns:
-        ScenarioExecution: scenario execution
-    """
-    scenario_execution_id = get_and_validate(body, "scenarioExecutionId", int)
-    try:
-        # pylint: disable=no-member
-        scenario_execution = ScenarioExecution.objects.get(id=scenario_execution_id)
-    except ScenarioExecution.DoesNotExist as error:  # pylint: disable=no-member
-        raise FlexToolException(
-            f"Scenario execution with id {scenario_execution_id} doesn't exist."
-        ) from error
-    if scenario_execution.scenario.project.id != project.id:
-        raise FlexToolException(
-            f"Scenario execution with id {scenario_execution_id} doesn't exist."
-        )
-    return scenario_execution
-
-
 def get_summary(project, body):
     """Generates a response that contains project's latest execution summary.
 
@@ -91,7 +63,7 @@ def get_summary(project, body):
         HTTPResponse: a response object
     """
     try:
-        scenario_execution = _resolve_scenario_execution(project, body)
+        scenario_execution = resolve_scenario_execution(project, body)
     except FlexToolException as error:
         return HttpResponseBadRequest(str(error))
     summary_path = scenario_execution.summary_path()
@@ -114,7 +86,7 @@ def get_result_alternative(project, body):
         HTTPResponse: a response object
     """
     try:
-        scenario_execution = _resolve_scenario_execution(project, body)
+        scenario_execution = resolve_scenario_execution(project, body)
     except FlexToolException as error:
         return HttpResponseBadRequest(str(error))
     return JsonResponse({"alternative_id": scenario_execution.results_alternative_id()})
@@ -131,7 +103,7 @@ def get_output_directory(project, body):
         HTTPResponse: a response object
     """
     try:
-        scenario_execution = _resolve_scenario_execution(project, body)
+        scenario_execution = resolve_scenario_execution(project, body)
     except FlexToolException as error:
         return HttpResponseBadRequest(str(error))
     summary_path = scenario_execution.summary_path()
@@ -151,7 +123,7 @@ def destroy_execution(project, body):
         HTTPResponse: a response object
     """
     try:
-        scenario_execution = _resolve_scenario_execution(project, body)
+        scenario_execution = resolve_scenario_execution(project, body)
     except FlexToolException as error:
         return HttpResponseBadRequest(str(error))
     scenario_execution.delete()

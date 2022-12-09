@@ -1,7 +1,7 @@
 """General purpose utilities and helpers."""
 from contextlib import contextmanager
 import datetime
-from enum import auto, Enum, unique
+from enum import auto, Enum, IntEnum, unique
 from pathlib import Path
 from django.utils import timezone
 from spinedb_api import DatabaseMapping, append_filter_config, SpineDBAPIError
@@ -34,6 +34,12 @@ class Key(Enum):
 
     def __str__(self):
         return self.value
+
+
+@unique
+class EntityType(IntEnum):
+    OBJECT = 1
+    RELATIONSHIP = 2
 
 
 @contextmanager
