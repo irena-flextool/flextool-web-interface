@@ -93,7 +93,7 @@ Install [Miniconda](https://docs.conda.io/en/latest/miniconda.html) if you don't
    ```commandline
    git pull
    ```
-6. Make sure the Python environment and server database are up-to-date:
+5. Make sure the Python environment and server database are up-to-date:
    ```commandline
    python upgrade.py
    ```
@@ -118,6 +118,18 @@ git checkout master
 git pull
 cd ..
 cd ..
+```
+
+Before committing the changes it is good idea to run the unit tests to ensure
+that the master project is still compatible with the website.
+
+```commandline
+python manage.py test
+```
+
+It is OK to commit if the tests pass:
+
+```commandline
 git add -A
 git commit
 ```

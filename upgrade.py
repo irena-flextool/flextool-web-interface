@@ -12,3 +12,7 @@ if status != 0:
 status = os.system(sys.executable + " manage.py migrate")
 if status != 0:
     sys.exit(status)
+print("*** Upgrading master project ***")
+status = os.system("git submodule update")
+if status != 0:
+    sys.exit(status)

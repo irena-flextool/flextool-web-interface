@@ -34,11 +34,12 @@ from .exception import FlexToolException
 from . import executor, task_loop, views
 from .models import Project, Scenario, ScenarioExecution, SUMMARY_FILE_NAME
 from .summary_view import number_to_float
+from .utils import FLEXTOOL_PROJECT_TEMPLATE
 from . import executions_view
 
 
 PATH_TO_MODEL_DATABASE = Path("Input_data.sqlite")
-PATH_TO_RESULT_DATABASE = Path(".spinetoolbox", "items", "results", "Results_F3.sqlite")
+PATH_TO_RESULT_DATABASE = Path("Results.sqlite")
 PATH_TO_INITIALIZATION_DATABASE = Path("Init.sqlite")
 
 
@@ -56,7 +57,7 @@ def build_fake_project_template(root_dir):
     model_database_file = project_dir / PATH_TO_MODEL_DATABASE
     model_database_file.touch()
     result_database_dir = project_dir / PATH_TO_RESULT_DATABASE.parent
-    result_database_dir.mkdir(parents=True)
+    result_database_dir.mkdir(parents=True, exist_ok=True)
     result_database_file = result_database_dir / PATH_TO_RESULT_DATABASE.name
     result_database_file.touch()
     return project_dir
@@ -129,9 +130,53 @@ class ProjectModelTests(TestCase):
         user = User(username="baron", password="it's a secret")
         user.save()
         with fake_project(user) as project:
-            project = Project.objects.get(name="my_test_project")
             project.remove_project_dir()
             self.assertFalse(Path(project.path).exists())
+
+    def test_model_database_path_is_correct(self):
+        spine_project_file_path = (
+            FLEXTOOL_PROJECT_TEMPLATE / ".spinetoolbox" / "project.json"
+        )
+        with open(spine_project_file_path, encoding="utf-8") as project_file:
+            spine_project = json.load(project_file)
+        database_relative_path = spine_project["items"]["Input_data"]["url"][
+            "database"
+        ]["path"]
+        user = User(username="baron", password="it's a secret")
+        user.save()
+        with fake_project(user) as project:
+            expected_path = Path(project.path) / database_relative_path
+            self.assertEqual(project.model_database_path(), expected_path)
+
+    def test_result_database_path_is_correct(self):
+        spine_project_file_path = (
+            FLEXTOOL_PROJECT_TEMPLATE / ".spinetoolbox" / "project.json"
+        )
+        with open(spine_project_file_path, encoding="utf-8") as project_file:
+            spine_project = json.load(project_file)
+        database_relative_path = spine_project["items"]["Results"]["url"]["database"][
+            "path"
+        ]
+        user = User(username="baron", password="it's a secret")
+        user.save()
+        with fake_project(user) as project:
+            expected_path = Path(project.path) / database_relative_path
+            self.assertEqual(project.results_database_path(), expected_path)
+
+    def test_initialization_database_path_is_correct(self):
+        spine_project_file_path = (
+            FLEXTOOL_PROJECT_TEMPLATE / ".spinetoolbox" / "project.json"
+        )
+        with open(spine_project_file_path, encoding="utf-8") as project_file:
+            spine_project = json.load(project_file)
+        database_relative_path = spine_project["items"]["Init"]["url"]["database"][
+            "path"
+        ]
+        user = User(username="baron", password="it's a secret")
+        user.save()
+        with fake_project(user) as project:
+            expected_path = Path(project.path) / database_relative_path
+            self.assertEqual(project.initialization_database_path(), expected_path)
 
 
 class ScenarioExecutionModelTests(TestCase):
@@ -3824,7 +3869,7 @@ def _copy_model_database(project_path):
     Args:
         project_path (Path): path to test project
     """
-    source_path = Path(__file__).parent / "master_project" / PATH_TO_MODEL_DATABASE
+    source_path = FLEXTOOL_PROJECT_TEMPLATE / PATH_TO_MODEL_DATABASE
     target_path = project_path / PATH_TO_MODEL_DATABASE
     copyfile(source_path, target_path)
 
@@ -3835,8 +3880,6 @@ def _copy_initialization_database(project_path):
     Args:
         project_path (Path): path to test project
     """
-    source_path = (
-        Path(__file__).parent / "master_project" / PATH_TO_INITIALIZATION_DATABASE
-    )
+    source_path = FLEXTOOL_PROJECT_TEMPLATE / PATH_TO_INITIALIZATION_DATABASE
     target_path = project_path / PATH_TO_INITIALIZATION_DATABASE
     copyfile(source_path, target_path)

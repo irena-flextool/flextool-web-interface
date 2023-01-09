@@ -74,13 +74,7 @@ class Project(models.Model):
         Returns:
             Path: path to results database
         """
-        return (
-            Path(self.path)
-            / ".spinetoolbox"
-            / "items"
-            / "results"
-            / "Results_F3.sqlite"
-        )
+        return Path(self.path) / "Results.sqlite"
 
     def initialization_database_path(self):
         """Returns path to initialization database.
