@@ -7,60 +7,28 @@
             <n-space>
                 <n-space vertical>
                     <n-text strong>x-axis:</n-text>
-                    <n-select
-                        class="dimension-select"
-                        v-model:value="plotSpecification.dimensions.x1"
-                        filterable
-                        tag
-                        clearable
-                        placeholder="Use default"
-                        :options="availableIndexNames"
-                        @update:value="resolveDimensionConflictsX1"
-                        :consistent-menu-width="false"
-                    />
+                    <n-select class="dimension-select" v-model:value="plotSpecification.dimensions.x1" filterable tag
+                        clearable placeholder="Use default" :options="availableIndexNames"
+                        @update:value="resolveDimensionConflictsX1" :consistent-menu-width="false" />
                 </n-space>
                 <n-space vertical>
                     <n-text strong>1st x-category:</n-text>
-                    <n-select
-                        class="dimension-select"
-                        v-model:value="plotSpecification.dimensions.x2"
-                        filterable
-                        tag
-                        clearable
-                        placeholder="No category"
-                        :options="availableIndexNames"
-                        @update:value="resolveDimensionConflictsX2"
-                        :consistent-menu-width="false"
-                    />
+                    <n-select class="dimension-select" v-model:value="plotSpecification.dimensions.x2" filterable tag
+                        clearable placeholder="No category" :options="availableIndexNames"
+                        @update:value="resolveDimensionConflictsX2" :consistent-menu-width="false" />
                 </n-space>
                 <n-space vertical>
                     <n-text strong>2nd x-category:</n-text>
-                    <n-select
-                        class="dimension-select"
-                        v-model:value="plotSpecification.dimensions.x3"
-                        filterable
-                        tag
-                        clearable
-                        placeholder="No category"
-                        :options="availableIndexNames"
-                        @update:value="resolveDimensionConflictsX3"
-                        :consistent-menu-width="false"
-                    />
+                    <n-select class="dimension-select" v-model:value="plotSpecification.dimensions.x3" filterable tag
+                        clearable placeholder="No category" :options="availableIndexNames"
+                        @update:value="resolveDimensionConflictsX3" :consistent-menu-width="false" />
                 </n-space>
                 <n-space vertical>
                     <n-text strong>Subplot by:</n-text>
-                    <n-select
-                        class="dimension-select"
-                        v-model:value="plotSpecification.dimensions.separate_window"
-                        filterable
-                        tag
-                        clearable
-                        placeholder="No subplots"
-                        :options="availableIndexNames"
-                        @update:value="resolveDimensionConflictsSeparateWindow"
-                        :consistent-menu-width="false"
-                    />
-                
+                    <n-select class="dimension-select" v-model:value="plotSpecification.dimensions.separate_window"
+                        filterable tag clearable placeholder="No subplots" :options="availableIndexNames"
+                        @update:value="resolveDimensionConflictsSeparateWindow" :consistent-menu-width="false" />
+
                 </n-space>
             </n-space>
         </n-thing>
@@ -69,63 +37,39 @@
                 Selection
             </template>
             <n-space>
-                <n-space vertical  v-for="(select, index) in selectionSelects" :key="index">
+                <n-space vertical v-for="(select, index) in selectionSelects" :key="index">
                     <n-text strong>{{ select.label }}:</n-text>
-                    <n-select
-                        class="multi-item-select"
-                        value-field="label"
-                        v-model:value="plotSpecification.selection[select.type]"
-                        multiple
-                        filterable
-                        tag
-                        clearable
-                        size="small"
-                        :placeholder="select.placeholder"
-                        :options="select.options"
-                        @update:value="select.updateCallback"
-                        :consistent-menu-width="false"
-                        :max-tag-count="5"
-                    />
+                    <n-select class="multi-item-select" value-field="label"
+                        v-model:value="plotSpecification.selection[select.type]" multiple filterable tag clearable
+                        size="small" :placeholder="select.placeholder" :options="select.options"
+                        @update:value="select.updateCallback" :consistent-menu-width="false" :max-tag-count="5" />
                 </n-space>
             </n-space>
         </n-thing>
-            <n-thing>
-                <template #header>
-                    Plot type
-                </template>
+        <n-thing>
+            <template #header>
+                Plot type
+            </template>
             <n-space align="end">
-                    <n-select
-                        class="plot-type-select"
-                        v-model:value="plotSpecification.plot_type"
-                        :options="plotTypeOptions"
-                        :consistent-menu-width="false"
-                    />
+                <n-select class="plot-type-select" v-model:value="plotSpecification.plot_type"
+                    :options="plotTypeOptions" :consistent-menu-width="false" />
             </n-space>
         </n-thing>
-        <plot-figure
-            v-if="plottingPossible"
-            :identifier="identifier"
-            :projectId="projectId"
-            :analysisUrl="analysisUrl"
-            :scenario-execution-ids="scenarioExecutionIds"
-            :plot-specification="plotSpecification"
-            />
-        <n-empty
-            v-else
-            :description="cannotPlotMessage"
-        />
+        <plot-figure v-if="plottingPossible" :identifier="identifier" :projectId="projectId" :analysisUrl="analysisUrl"
+            :scenario-execution-ids="scenarioExecutionIds" :plot-specification="plotSpecification" />
+        <n-empty v-else :description="cannotPlotMessage" />
     </n-space>
 </template>
 
 <script>
-import {computed, onMounted, ref, toRef, watch} from "vue/dist/vue.esm-bundler.js";
+import { computed, onMounted, ref, toRef, watch } from "vue/dist/vue.esm-bundler.js";
 import {
     fetchResultEntityClasses,
     fetchResultEntities,
     fetchResultParameters,
     fetchResultParameterValueIndexes,
 } from "../modules/communication.mjs";
-import {isParameterIndexName, plotSpecifications} from "../modules/plots.mjs";
+import { isParameterIndexName, plotSpecifications } from "../modules/plots.mjs";
 import {
     addFetchedEntities,
     addFetchedParameters,
@@ -142,7 +86,7 @@ import {
     scenarioKey,
     scenarioTimeStampKey,
     valueIndexKeyPrefix,
-parameterKey,
+    parameterKey,
 } from "../modules/plotEditors.mjs";
 import PlotFigure from "./PlotFigure.vue";
 
@@ -158,7 +102,7 @@ const indexNameLabels = new Map([
  * @returns {number} Comparison result.
  */
 function comparePriorities(a, b) {
-    return b.priority - a.priority ;
+    return b.priority - a.priority;
 }
 
 /**Sets conflicting plot specification dimensions to null.
@@ -167,16 +111,16 @@ function comparePriorities(a, b) {
  * @param {object} plotDimensions Plot dimensions specification. 
  */
 function nullifyDuplicateDimensions(value, priorityDimension, plotDimensions) {
-    if(priorityDimension !== "x1" && value === plotDimensions.x1) {
+    if (priorityDimension !== "x1" && value === plotDimensions.x1) {
         plotDimensions.x1 = null;
     }
-    if(priorityDimension !== "x2" && value === plotDimensions.x2) {
+    if (priorityDimension !== "x2" && value === plotDimensions.x2) {
         plotDimensions.x2 = null;
     }
-    if(priorityDimension !== "x3" && value === plotDimensions.x3) {
+    if (priorityDimension !== "x3" && value === plotDimensions.x3) {
         plotDimensions.x3 = null;
     }
-    if(priorityDimension !== "separate_window" && value === plotDimensions.separate_window) {
+    if (priorityDimension !== "separate_window" && value === plotDimensions.separate_window) {
         plotDimensions.separate_window = null;
     }
 }
@@ -196,70 +140,70 @@ async function updateParameterIndexes(projectId, analysisUrl, scenarioExecutionI
     const existingClasses = new Set();
     const existingParameters = new Set();
     const lostIndexNames = new Set();
-    for(const [indexName, options] of selectionOptions.entries()) {
-        if(!isParameterIndexName(indexName)) {
+    for (const [indexName, options] of selectionOptions.entries()) {
+        if (!isParameterIndexName(indexName)) {
             continue;
         }
-        for(let optionIndex = options.value.length - 1; optionIndex != -1; --optionIndex) {
+        for (let optionIndex = options.value.length - 1; optionIndex != -1; --optionIndex) {
             const option = options.value[optionIndex];
-            for(let i = option.parents.length - 1; i != -1; --i) {
+            for (let i = option.parents.length - 1; i != -1; --i) {
                 const parent = option.parents[i];
                 const classExists = classes.has(parent.entityClass);
                 const parameterExists = parameters.has(parent.parameter);
-                if(!classExists || !parameterExists) {
+                if (!classExists || !parameterExists) {
                     option.parents.splice(i, 1);
                     continue
                 }
-                if(classExists) {
+                if (classExists) {
                     existingClasses.add(parent.entityClass);
                 }
-                if(parameterExists) {
+                if (parameterExists) {
                     existingParameters.add(parent.parameter);
                 }
             }
-            if(option.parents.length === 0) {
+            if (option.parents.length === 0) {
                 options.value.splice(optionIndex, 1);
             }
         }
-        if(options.value.length === 0) {
+        if (options.value.length === 0) {
             lostIndexNames.add(indexName);
             selectionOptions.delete(indexName);
-            for(const [i, select] of selectionSelects.value.entries()) {
-                if(select.type === indexName) {
+            for (const [i, select] of selectionSelects.value.entries()) {
+                if (select.type === indexName) {
                     selectionSelects.value.splice(i, 1);
                     break;
                 }
             }
-            for(const [i, option] of dimensionsOptions.value.entries()) {
-                if(option.value === indexName) {
+            for (const [i, option] of dimensionsOptions.value.entries()) {
+                if (option.value === indexName) {
                     dimensionsOptions.value.splice(i, 1);
                     break;
                 }
             }
-            for(const key in plotSpecification.dimensions) {
+            for (const key in plotSpecification.dimensions) {
                 const value = plotSpecification.dimensions[key];
-                if(value === indexName) {
+                if (value === indexName) {
                     plotSpecification.dimensions[key] = null;
                     break;
                 }
             }
         }
     }
-    for(let i = dimensionsOptions.value.length - 1; i != -1; --i) {
-        if(lostIndexNames.has(dimensionsOptions.value[i].value)) {
+    for (let i = dimensionsOptions.value.length - 1; i != -1; --i) {
+        if (lostIndexNames.has(dimensionsOptions.value[i].value)) {
             dimensionsOptions.splice(i, 1);
         }
     }
-    if(classes.size === 0 || parameters.size === 0) {
+    if (classes.size === 0 || parameters.size === 0) {
         return;
     }
     const addedClasses = differingElements(classes, existingClasses);
     const addedParameters = differingElements(parameters, existingParameters)
-    if(addedClasses.size === 0 && addedParameters.size === 0) {
+    if (addedClasses.size === 0 && addedParameters.size === 0) {
         return;
     }
     let fetchParameters = [];
-    if(addedClasses.size === 0) {
+    if (addedClasses.size === 0) {
         fetchParameters = [...addedParameters];
     }
     else {
@@ -271,41 +215,41 @@ async function updateParameterIndexes(projectId, analysisUrl, scenarioExecutionI
         scenarioExecutionIds,
         [...classes],
         fetchParameters,
-    ).then(function(data) {
+    ).then(function (data) {
         const indexes = data.indexes;
         const existingDimensionsValues = new Set();
-        for(const option of dimensionsOptions.value) {
+        for (const option of dimensionsOptions.value) {
             existingDimensionsValues.add(option.value);
         }
-        for(const indexRecord of indexes) {
+        for (const indexRecord of indexes) {
             indexRecord.index_name = valueIndexKeyPrefix + indexRecord.index_name;
-            if(!existingDimensionsValues.has(indexRecord.index_name)) {
+            if (!existingDimensionsValues.has(indexRecord.index_name)) {
                 dimensionsOptions.value.push({
                     label: indexNameFromKey(indexRecord.index_name),
                     value: indexRecord.index_name,
                 });
                 existingDimensionsValues.add(indexRecord.index_name);
             }
-            if(plotSpecification.selection[indexRecord.index_name] === undefined) {
+            if (plotSpecification.selection[indexRecord.index_name] === undefined) {
                 plotSpecification.selection[indexRecord.index_name] = [];
             }
             let options = selectionOptions.get(indexRecord.index_name);
-            if(options === undefined) {
+            if (options === undefined) {
                 options = ref([]);
                 selectionOptions.set(indexRecord.index_name, options);
             }
             const existingOptionParents = new Map();
-            for(const option of options.value) {
+            for (const option of options.value) {
                 existingOptionParents.set(option.label, option.parents);
             }
-            for(const index of indexRecord.indexes) {
+            for (const index of indexRecord.indexes) {
                 const newParents = [];
                 const zip = (a, b) => a.map((n, i) => [n, b[i]])
-                for(const [class_name, parameter] of zip(indexRecord.class_names, indexRecord.parameter_names)) {
-                    newParents.push({entityClass: class_name, parameter: parameter});
+                for (const [class_name, parameter] of zip(indexRecord.class_names, indexRecord.parameter_names)) {
+                    newParents.push({ entityClass: class_name, parameter: parameter });
                 }
                 const parents = existingOptionParents.get(index);
-                if(parents !== undefined) {
+                if (parents !== undefined) {
                     parents.splice(parents.length, 0, ...newParents);
                 }
                 else {
@@ -316,14 +260,14 @@ async function updateParameterIndexes(projectId, analysisUrl, scenarioExecutionI
                 }
             }
             let selectFound = false;
-            for(const select of selectionSelects.value) {
-                if(select.type === indexRecord.index_name) {
+            for (const select of selectionSelects.value) {
+                if (select.type === indexRecord.index_name) {
                     select.priority = indexNamePriority(indexRecord.depth);
                     selectFound = true;
                     break;
                 }
             }
-            if(!selectFound) {
+            if (!selectFound) {
                 selectionSelects.value.push(makeValueIndexSelectionSelect(
                     indexRecord.index_name,
                     options,
@@ -343,7 +287,7 @@ async function updateParameterIndexes(projectId, analysisUrl, scenarioExecutionI
  * @param {Ref} dimensionsOptions Dimensions select options.
  * @callback updateValueIndexesCallback Callback to update value index selects.
 */
- async function fetchData(    
+async function fetchData(
     projectId,
     analysisUrl,
     plotSpecification,
@@ -354,17 +298,17 @@ async function updateParameterIndexes(projectId, analysisUrl, scenarioExecutionI
 ) {
     const classes = new Set(plotSpecification.selection.entity_class);
     const currentlyRequiredClasses = new Set();
-    for(const [itemType, options] of selectionOptions.entries()) {
-        if(itemType.startsWith(objectKeyPrefix) || itemType === parameterKey) {
-            for(const option of options.value) {
-                for(const parent of option.parents) {
+    for (const [itemType, options] of selectionOptions.entries()) {
+        if (itemType.startsWith(objectKeyPrefix) || itemType === parameterKey) {
+            for (const option of options.value) {
+                for (const parent of option.parents) {
                     currentlyRequiredClasses.add(parent.entityClass);
                 }
             }
         }
     }
     const newClasses = differingElements(classes, currentlyRequiredClasses);
-    if(newClasses.length === 0) {
+    if (newClasses.length === 0) {
         return;
     }
     const entityPromise = fetchResultEntities(
@@ -385,7 +329,7 @@ async function updateParameterIndexes(projectId, analysisUrl, scenarioExecutionI
     const entityData = await entityPromise;
     addFetchedEntities(
         entityData.entities,
-        selectionOptions, 
+        selectionOptions,
         selectionSelects,
         plotSpecification,
         dimensionsOptions,
@@ -427,17 +371,17 @@ async function updateEntityClassDependentSelects(
 
 export default {
     props: {
-        identifier: {type: Number, required: true},
-        projectId: {type: Number, required: true},
-        analysisUrl: {type: String, required: true},
-        scenarioExecutionIds: {type: Array, required: true},
+        identifier: { type: Number, required: true },
+        projectId: { type: Number, required: true },
+        analysisUrl: { type: String, required: true },
+        scenarioExecutionIds: { type: Array, required: true },
     },
     components: {
         "plot-figure": PlotFigure,
     },
     setup(props) {
         const initialIndexNames = [];
-        for(const [value, label] of indexNameLabels) {
+        for (const [value, label] of indexNameLabels) {
             initialIndexNames.push({
                 label: label, value: value, protected: true
             });
@@ -445,7 +389,7 @@ export default {
         const dimensionsOptions = ref(initialIndexNames);
         const selectionOptions = new Map([[entityClassKey, ref([])]]);
         const plotSpecification = plotSpecifications.get(props.identifier);
-        const parameterIndexUpdateCallback = function() {
+        const parameterIndexUpdateCallback = function () {
             updateParameterIndexes(
                 props.projectId,
                 props.analysisUrl,
@@ -454,12 +398,12 @@ export default {
                 selectionSelects,
                 selectionOptions,
                 dimensionsOptions
-            ).finally(function() {
+            ).finally(function () {
                 selectionSelects.value.sort(comparePriorities);
                 dimensionsOptions.value.sort(compareLabels);
             });
         }
-        const updateClassSelection = function() {
+        const updateClassSelection = function () {
             updateEntityClassDependentSelects(
                 props.projectId,
                 props.analysisUrl,
@@ -468,7 +412,7 @@ export default {
                 selectionOptions,
                 dimensionsOptions,
                 parameterIndexUpdateCallback,
-            ).finally(function() {
+            ).finally(function () {
                 selectionSelects.value.sort(comparePriorities);
                 dimensionsOptions.value.sort(compareLabels);
             });
@@ -479,57 +423,57 @@ export default {
                 updateClassSelection),
         ]);
         const plotTypeOptions = [
-            {label: "Line", value: "line"},
-            {label: "Stacked line", value: "stacked line"},
-            {label: "Bars", value: "bar"},
-            {label: "Stacked bars", value: "stacked bar"},
-            {label: "Heatmap", value: "heatmap"},
-            {label: "Table", value: "table"},
+            { label: "Line", value: "line" },
+            { label: "Stacked line", value: "stacked line" },
+            { label: "Bars", value: "bar" },
+            { label: "Stacked bars", value: "stacked bar" },
+            { label: "Heatmap", value: "heatmap" },
+            { label: "Table", value: "table" },
         ];
-        const cannotPlotMessage = computed(function() {
-            if(props.scenarioExecutionIds.length === 0) {
+        const cannotPlotMessage = computed(function () {
+            if (props.scenarioExecutionIds.length === 0) {
                 return "Select scenario from the left.";
             }
-            if(plotSpecification.selection.entity_class.length === 0) {
+            if (plotSpecification.selection.entity_class.length === 0) {
                 return "Select entity classes from above.";
             }
-            if(plotSpecification.selection.parameter.length === 0) {
+            if (plotSpecification.selection.parameter.length === 0) {
                 return "Select parameters from above."
             }
             return "";
         });
-        const plottingPossible = computed(function() {
+        const plottingPossible = computed(function () {
             return (
                 props.scenarioExecutionIds.length > 0
                 && plotSpecification.selection.entity_class.length > 0
                 && plotSpecification.selection.parameter.length > 0
             );
         });
-        watch(toRef(props, "scenarioExecutionIds"), function() {
+        watch(toRef(props, "scenarioExecutionIds"), function () {
             parameterIndexUpdateCallback();
         });
-        onMounted(function(){
+        onMounted(function () {
             fetchResultEntityClasses(
                 props.projectId, props.analysisUrl
-            ).then(function(data) {
+            ).then(function (data) {
                 const classes = data.entity_classes;
                 const options = selectionOptions.get(entityClassKey);
                 const existingOptionLabels = new Set();
-                for(const option of options.value) {
+                for (const option of options.value) {
                     existingOptionLabels.add(option.label);
                 }
-                for(const entityClass of classes) {
-                    if(!existingOptionLabels.has(entityClass.name)) {
-                        options.value.push({label: entityClass.name});
+                for (const entityClass of classes) {
+                    if (!existingOptionLabels.has(entityClass.name)) {
+                        options.value.push({ label: entityClass.name });
                     }
                 }
-                if(plotSpecification.selection.entity_class.length > 0) {
+                if (plotSpecification.selection.entity_class.length > 0) {
                     const valueToOption = new Map();
-                    for(const option of options.value) {
+                    for (const option of options.value) {
                         valueToOption.set(option.value, option);
                     }
                     const currentlySelectedOptions = [];
-                    for(const value of plotSpecification.selection.entity_class) {
+                    for (const value of plotSpecification.selection.entity_class) {
                         currentlySelectedOptions.push(valueToOption.get(value));
                     }
                     updateClassSelection(plotSpecification.selection.entity_class, currentlySelectedOptions);
@@ -564,9 +508,11 @@ export default {
 .dimension-select {
     min-width: 8em;
 }
+
 .multi-item-select {
     min-width: 15em;
 }
+
 .plot-type-select {
     max-width: 12em;
 }

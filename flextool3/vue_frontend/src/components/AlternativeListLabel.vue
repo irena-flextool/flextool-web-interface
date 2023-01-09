@@ -1,23 +1,18 @@
 <template>
     <n-space align="baseline">
         <n-text v-if="!editing" @dblclick="showInput"> {{ alternativeName }}</n-text>
-        <item-name-input
-            v-else
-            :name="alternativeName"
-            @accept="emitRename"
-            @cancel="hideInput"
-        />
+        <item-name-input v-else :name="alternativeName" @accept="emitRename" @cancel="hideInput" />
     </n-space>
 </template>
 
 <script>
-import {ref} from "vue/dist/vue.esm-bundler.js";
+import { ref } from "vue/dist/vue.esm-bundler.js";
 import ItemNameInput from "./ItemNameInput.vue";
 
 export default {
     props: {
-        alternativeName: {type: String, required: true},
-        alternativeId: {type: Number, required: false},
+        alternativeName: { type: String, required: true },
+        alternativeId: { type: Number, required: false },
     },
     emits: ["rename"],
     components: {
@@ -39,7 +34,7 @@ export default {
             },
             emitRename(name) {
                 editing.value = false;
-                context.emit("rename", {id: props.alternativeId, previousName: props.alternativeName, name: name});
+                context.emit("rename", { id: props.alternativeId, previousName: props.alternativeName, name: name });
             }
         };
     }

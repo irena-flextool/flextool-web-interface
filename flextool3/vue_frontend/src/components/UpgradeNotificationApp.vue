@@ -5,7 +5,7 @@
 <script>
 export default {
     props: {
-        database: {type: String, required: true},
+        database: { type: String, required: true },
     },
     setup() {
         return {

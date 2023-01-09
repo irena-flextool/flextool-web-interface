@@ -1,18 +1,13 @@
 <template>
     <fetchable :state="state" :error-message="errorMessage">
-        <n-tree
-            selectable
-            block-node
-            :data="alternatives"
-            :selected-keys="selectedIds"
-            @update:selected-keys="emitSelected"
-        />
+        <n-tree selectable block-node :data="alternatives" :selected-keys="selectedIds"
+            @update:selected-keys="emitSelected" />
     </fetchable>
 </template>
 
 <script>
-import {onMounted, ref} from "vue/dist/vue.esm-bundler.js";
-import {fetchData} from "../modules/communication.mjs";
+import { onMounted, ref } from "vue/dist/vue.esm-bundler.js";
+import { fetchData } from "../modules/communication.mjs";
 import Fetchable from "./Fetchable.vue";
 
 /**
@@ -24,15 +19,15 @@ import Fetchable from "./Fetchable.vue";
 function makeBaseAlternative(projectId, modelUrl) {
     return fetchData(
         "make base alternative", projectId, modelUrl, {}
-    ).then(function(data) {
+    ).then(function (data) {
         return data.alternatives;
     });
 }
 
 export default {
     props: {
-        projectId: {type: Number, required: true},
-        modelUrl: {type: String, required: true},
+        projectId: { type: Number, required: true },
+        modelUrl: { type: String, required: true },
     },
     emits: ["alternativeSelect"],
     components: {
@@ -43,18 +38,18 @@ export default {
         const selectedIds = ref([]);
         const state = ref(Fetchable.state.loading);
         const errorMessage = ref("");
-        onMounted(function() {
+        onMounted(function () {
             fetchData(
                 "alternatives?", props.projectId, props.modelUrl
-            ).then(async function(data) {
-                if(data.alternatives.length === 0) {
+            ).then(async function (data) {
+                if (data.alternatives.length === 0) {
                     data.alternatives = await makeBaseAlternative(props.projectId, props.modelUrl);
                 }
-                for(const alternative of data.alternatives) {
-                    alternatives.value.push({label: alternative.name, key: alternative.id});
+                for (const alternative of data.alternatives) {
+                    alternatives.value.push({ label: alternative.name, key: alternative.id });
                 }
                 state.value = Fetchable.state.ready;
-            }).catch(function(error) {
+            }).catch(function (error) {
                 state.value = Fetchable.state.error;
                 errorMessage.value = error.message;
             });

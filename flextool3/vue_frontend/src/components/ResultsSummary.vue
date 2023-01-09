@@ -15,10 +15,7 @@
                         </n-thead>
                         <n-tbody>
                             <n-tr v-for="(row, rowIndex) in table.rows" :key="rowIndex">
-                                <n-td
-                                    v-for="(column, bodyColumnIndex) in row"
-                                    :key="bodyColumnIndex"
-                                >
+                                <n-td v-for="(column, bodyColumnIndex) in row" :key="bodyColumnIndex">
                                     {{ column }}
                                 </n-td>
                             </n-tr>
@@ -31,15 +28,15 @@
 </template>
 
 <script>
-import {onMounted, ref} from "vue/dist/vue.esm-bundler.js";
-import {fetchSummary} from "../modules/communication.mjs";
-import {parseSummary} from "../modules/summaries.mjs";
+import { onMounted, ref } from "vue/dist/vue.esm-bundler.js";
+import { fetchSummary } from "../modules/communication.mjs";
+import { parseSummary } from "../modules/summaries.mjs";
 import Fetchable from "./Fetchable.vue";
 
 export default {
     props: {
-        projectId: {type: Number, required: true},
-        summaryUrl: {type: String, required: true},
+        projectId: { type: Number, required: true },
+        summaryUrl: { type: String, required: true },
     },
     emits: ["busy", "ready"],
     components: {
@@ -50,7 +47,7 @@ export default {
         const tables = ref([]);
         const state = ref(Fetchable.state.waiting);
         const errorMessage = ref("");
-        onMounted(function() {
+        onMounted(function () {
             context.emit("ready");
         });
         return {
@@ -59,7 +56,7 @@ export default {
             state: state,
             errorMessage: errorMessage,
             loadSummary(scenarioInfo) {
-                if(scenarioInfo === null) {
+                if (scenarioInfo === null) {
                     title.value = "";
                     tables.value.length = 0;
                     state.value = Fetchable.state.waiting;
@@ -71,22 +68,22 @@ export default {
                     props.projectId,
                     props.summaryUrl,
                     scenarioInfo.scenarioExecutionId
-                ).then(function(data) {
+                ).then(function (data) {
                     const summaryData = data.summary;
-                    if(summaryData.length === 0) {
+                    if (summaryData.length === 0) {
                         return;
                     }
                     const titleRows = summaryData.splice(0, 1);
                     title.value = titleRows[0][0]
-                    if(summaryData.length === 0) {
+                    if (summaryData.length === 0) {
                         return;
                     }
                     tables.value = parseSummary(summaryData);
-                }).catch(function(error) {
+                }).catch(function (error) {
                     errorMessage.value = error.message;
                     state.value = Fetchable.state.error;
-                }).finally(function() {
-                    if(state.value === Fetchable.state.loading) {
+                }).finally(function () {
+                    if (state.value === Fetchable.state.loading) {
                         state.value = Fetchable.state.ready;
                     }
                     context.emit("busy", false);

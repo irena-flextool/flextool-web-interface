@@ -2,17 +2,17 @@
  * Add padding to table header and rows such that all are of same length.
  */
 function evenOutRows(table, width) {
-    const fill = function(row, width) {
+    const fill = function (row, width) {
         const filler = new Array(width - row.length);
         filler.fill("");
         row.splice(row.length, 0, ...filler);
     };
 
-    if(table.header !== null && table.header.length < width) {
+    if (table.header !== null && table.header.length < width) {
         fill(table.header, width)
     }
-    for(const row of table.rows) {
-        if(row.length < width) {
+    for (const row of table.rows) {
+        if (row.length < width) {
             fill(row, width)
         }
     }
@@ -24,7 +24,7 @@ function evenOutRows(table, width) {
  * @returns {object[]} Summary's subtables.
  */
 function parseSummary(rawSummary) {
-    const makeTable = function() {
+    const makeTable = function () {
         return {
             title: "",
             header: [""],
@@ -35,9 +35,9 @@ function parseSummary(rawSummary) {
     let currentTable = null;
     let tableRowIndex = 0;
     let width = -1;
-    for(const row of rawSummary) {
-        if(row.length === 0) {
-            if(currentTable !== null) {
+    for (const row of rawSummary) {
+        if (row.length === 0) {
+            if (currentTable !== null) {
                 evenOutRows(currentTable, width);
             }
             currentTable = makeTable();
@@ -45,9 +45,9 @@ function parseSummary(rawSummary) {
             tableRowIndex = 0;
             continue;
         }
-        if(tableRowIndex === 0) {
+        if (tableRowIndex === 0) {
             currentTable.title = row[0]
-            if(row.length > 1) {
+            if (row.length > 1) {
                 currentTable.header.splice(currentTable.header.length, 0, ...row.slice(1));
             }
             else {
@@ -60,10 +60,10 @@ function parseSummary(rawSummary) {
         width = Math.max(width, row.length);
         ++tableRowIndex;
     }
-    if(currentTable !== null) {
+    if (currentTable !== null) {
         evenOutRows(currentTable, width);
     }
     return tables;
 }
 
-export {parseSummary};
+export { parseSummary };

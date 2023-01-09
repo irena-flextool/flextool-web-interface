@@ -1,21 +1,12 @@
 <template>
     <n-space justify="space-between" align="baseline">
         <n-space align="start">
-            <n-image
-                :src="logoUrl"
-                alt="FlexTool"
-                :width="90"
-                preview-disabled
-            />
-            <n-menu
-                :default-value="current"
-                mode="horizontal"
-                :options="links"
-            />
+            <n-image :src="logoUrl" alt="FlexTool" :width="90" preview-disabled />
+            <n-menu :default-value="current" mode="horizontal" :options="links" />
         </n-space>
         <n-space align="baseline">
             <n-a href="https://irena-flextool.github.io/flextool/">User guide</n-a>
-            <n-divider vertical/>
+            <n-divider vertical />
             <n-button @click="logout">
                 Log out
             </n-button>
@@ -24,13 +15,13 @@
 </template>
 
 <script>
-import {h, ref} from "vue/dist/vue.esm-bundler.js";
-import {NA} from "naive-ui";
+import { h, ref } from "vue/dist/vue.esm-bundler.js";
+import { NA } from "naive-ui";
 
 function linkLabel(label, url) {
     return () => h(
         NA,
-        {href: url},
+        { href: url },
         () => label,
     );
 }
@@ -49,11 +40,11 @@ function menuEntries(props) {
         "Results": props.resultsUrl,
     };
     const entries = [];
-    for(const name in pages) {
+    for (const name in pages) {
         const url = pages[name];
         const hasUrl = url !== null;
         const label = hasUrl ? linkLabel(name, url) : name;
-        entries.push({label: label, key: name, disabled: !hasUrl});
+        entries.push({ label: label, key: name, disabled: !hasUrl });
     }
     return entries;
 }
@@ -61,14 +52,14 @@ function menuEntries(props) {
 
 export default {
     props: {
-        current: {type: String, required: true},
-        indexUrl: {type: String, required: true},
-        projectUrl: {type: String, required: false, default: null},
-        editUrl: {type: String, required: false, default: null},
-        runUrl: {type: String, required: false, default: null},
-        resultsUrl: {type: String, required: false, default: null},
-        logoutUrl: {type: String, required: true},
-        logoUrl: {type: String, required: true},
+        current: { type: String, required: true },
+        indexUrl: { type: String, required: true },
+        projectUrl: { type: String, required: false, default: null },
+        editUrl: { type: String, required: false, default: null },
+        runUrl: { type: String, required: false, default: null },
+        resultsUrl: { type: String, required: false, default: null },
+        logoutUrl: { type: String, required: true },
+        logoUrl: { type: String, required: true },
     },
     setup(props) {
         const links = menuEntries(props);

@@ -5,7 +5,7 @@
 <script>
 export default {
     props: {
-        emblem: {type: [String, Array], required: true}
+        emblem: { type: [String, Array], required: true }
     },
     emits: ["delete"],
     setup(props, context) {

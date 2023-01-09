@@ -1,39 +1,19 @@
 <template>
     <n-space>
-        <n-select
-            :options="species"
-            :value="currentSpecie"
-            size="tiny"
-            :consistent-menu-width="false"
-            @update:value="changeState"
-        />
-        <n-input
-            v-if="state === 'single value'"
-            :value="currentValue"
-            @update:value="changeSingleValue"
-            size="tiny"
-        />
-        <n-select
-            v-else-if="state === 'value list'"
-            :value="currentValue"
-            :options="valueOptions"
-            size="tiny"
-            :consistent-menu-width="false"
-            @update:value="changeSingleValue"
-        />
-        <n-button
-            v-else-if="state === 'indexed value'"
-            size="tiny"
-            @click="emitOpenValueEditorRequest"
-            >
+        <n-select :options="species" :value="currentSpecie" size="tiny" :consistent-menu-width="false"
+            @update:value="changeState" />
+        <n-input v-if="state === 'single value'" :value="currentValue" @update:value="changeSingleValue" size="tiny" />
+        <n-select v-else-if="state === 'value list'" :value="currentValue" :options="valueOptions" size="tiny"
+            :consistent-menu-width="false" @update:value="changeSingleValue" />
+        <n-button v-else-if="state === 'indexed value'" size="tiny" @click="emitOpenValueEditorRequest">
             Edit
         </n-button>
     </n-space>
 </template>
 
 <script>
-import {ref, toRefs, watch} from "vue/dist/vue.esm-bundler.js";
-import {singleValueFromString} from "../modules/singleValueFromString.mjs";
+import { ref, toRefs, watch } from "vue/dist/vue.esm-bundler.js";
+import { singleValueFromString } from "../modules/singleValueFromString.mjs";
 
 /**
  * Builds list of possible specie infos depending on which ones are allowed.
@@ -41,15 +21,15 @@ import {singleValueFromString} from "../modules/singleValueFromString.mjs";
  * @returns {Object[]} Specie infos.
  */
 function makeSpecies(allowedSpecies) {
-    const species = [{label: "none", value: "none"}];
+    const species = [{ label: "none", value: "none" }];
     if (allowedSpecies.constant) {
-        species.push({label: "constant", value: "constant"});
+        species.push({ label: "constant", value: "constant" });
     }
     if (allowedSpecies.period) {
-        species.push({label: "period", value: "period"});
+        species.push({ label: "period", value: "period" });
     }
     if (allowedSpecies.time) {
-        species.push({label: "time", value: "time"});
+        species.push({ label: "time", value: "time" });
     }
     return species;
 }
@@ -82,8 +62,8 @@ function makeValueOptions(allowedValues) {
         return undefined;
     }
     const options = [];
-    allowedValues.forEach(function(value) {
-        options.push({label: value, value: value});
+    allowedValues.forEach(function (value) {
+        options.push({ label: value, value: value });
     });
     return options
 }
@@ -93,7 +73,7 @@ function chooseInitialValue(currentSpecie, originalSpecie, currentValue, origina
         return undefined;
     }
     else if (currentSpecie === "constant") {
-        switch(typeof currentValue) {
+        switch (typeof currentValue) {
             case "string":
                 return currentValue;
             case "number":
@@ -103,7 +83,7 @@ function chooseInitialValue(currentSpecie, originalSpecie, currentValue, origina
                     return originalValue !== null ? new String(originalValue) : "";
                 }
                 else {
-                    if(allowedValues) {
+                    if (allowedValues) {
                         return allowedValues[0];
                     }
                     else {
@@ -116,19 +96,19 @@ function chooseInitialValue(currentSpecie, originalSpecie, currentValue, origina
         if (typeof currentValue === "object") {
             return currentValue;
         }
-        else if (typeof originalValue === "object"){
+        else if (typeof originalValue === "object") {
             return originalValue;
         }
         else {
-            return {"type": "map", "index_type": "str", "index_name": currentSpecie, "data": [["T0001", 0.0]]};
+            return { "type": "map", "index_type": "str", "index_name": currentSpecie, "data": [["T0001", 0.0]] };
         }
     }
 }
 
 export default {
     props: {
-        valueData: {type: Object, required: true},
-        valueId: {type: Number, required: false},
+        valueData: { type: Object, required: true },
+        valueId: { type: Number, required: false },
     },
     emits: ["openValueEditorRequest", "closeValueEditorRequest", "valueInsert", "valueUpdate", "valueDelete"],
     setup(props, context) {
@@ -143,7 +123,7 @@ export default {
             props.valueData.allowedValues
         ));
         const valueOptions = ref(makeValueOptions(props.valueData.allowedValues));
-        watch(toRefs(props).valueData, function(valueData) {
+        watch(toRefs(props).valueData, function (valueData) {
             species.value = makeSpecies(valueData.allowedSpecies);
             state.value = makeState(valueData.specie, valueData.allowedValues);
             currentSpecie.value = valueData.specie;
@@ -165,7 +145,7 @@ export default {
             changeState(specie) {
                 currentSpecie.value = specie;
                 const newState = makeState(specie, props.valueData.allowedValues)
-                if(state.value === "indexed value") {
+                if (state.value === "indexed value") {
                     context.emit("closeValueEditorRequest");
                 }
                 state.value = newState;
@@ -176,28 +156,28 @@ export default {
                     props.valueData.parameterValue,
                     props.valueData.allowedValues
                 );
-                if(initialValue === undefined) {
-                    context.emit("valueDelete", {id: props.valueId});
+                if (initialValue === undefined) {
+                    context.emit("valueDelete", { id: props.valueId });
                 }
-                else{
+                else {
                     const isIndexed = typeof initialValue === "object";
                     const value = isIndexed ? initialValue : singleValueFromString(initialValue);
-                    if(props.valueId === undefined) {
-                        context.emit("valueInsert", {value: value});
+                    if (props.valueId === undefined) {
+                        context.emit("valueInsert", { value: value });
                     }
                     else {
-                        context.emit("valueUpdate", {id: props.valueId, value: value});
+                        context.emit("valueUpdate", { id: props.valueId, value: value });
                     }
                 }
                 currentValue.value = initialValue;
             },
             changeSingleValue(value) {
                 const typedValue = singleValueFromString(value);
-                if(props.valueId === undefined) {
-                    context.emit("valueInsert", {value: typedValue});
+                if (props.valueId === undefined) {
+                    context.emit("valueInsert", { value: typedValue });
                 }
                 else {
-                    context.emit("valueUpdate", {id: props.valueId, value: typedValue})
+                    context.emit("valueUpdate", { id: props.valueId, value: typedValue })
                 }
                 currentValue.value = value;
             },

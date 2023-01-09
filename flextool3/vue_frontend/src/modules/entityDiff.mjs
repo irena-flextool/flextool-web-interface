@@ -1,5 +1,5 @@
-import {singleValueFromString} from "./singleValueFromString.mjs";
-import {emblemToName, relationshipName} from "./entityEmblem.mjs";
+import { singleValueFromString } from "./singleValueFromString.mjs";
+import { emblemToName, relationshipName } from "./entityEmblem.mjs";
 
 const insert = Symbol("insert action");
 const del = Symbol("delete action");
@@ -10,7 +10,7 @@ class PendingEntity {
     /**
      * @param {Symbol} action Commit action.
      */
-    constructor(action=undefined) {
+    constructor(action = undefined) {
         this.action = action;
         this.parameters = new Map();
     }
@@ -24,7 +24,7 @@ class PendingEntity {
  */
 function getAlternatives(pendingObject, definitionId) {
     let alternatives = pendingObject.parameters.get(definitionId);
-    if(alternatives === undefined) {
+    if (alternatives === undefined) {
         alternatives = new Map();
         pendingObject.parameters.set(definitionId, alternatives);
     }
@@ -37,26 +37,26 @@ function getAlternatives(pendingObject, definitionId) {
  * @return Value.
  */
 function semiValueToValue(value) {
-    if(typeof value !== "object" || !("content" in value)) {
+    if (typeof value !== "object" || !("content" in value)) {
         return value;
     }
     const data = [];
-    value.content.split("\n").forEach(function(line) {
+    value.content.split("\n").forEach(function (line) {
         line = line.trim();
-        if(!line) {
+        if (!line) {
             return;
         }
         const columns = line.split(/\s+/);
-        if(columns.length === 1) {
+        if (columns.length === 1) {
             data.push(singleValueFromString(columns[0]));
         }
         else {
             data.push([columns[0], singleValueFromString(columns[1])]);
         }
     });
-    if(!data || data[0].length > 1) {
+    if (!data || data[0].length > 1) {
         return {
-            type:  "map",
+            type: "map",
             index_type: "str",
             index_name: value.index_name,
             data: data
@@ -64,7 +64,7 @@ function semiValueToValue(value) {
     }
     else {
         return {
-            type:  "array",
+            type: "array",
             value_type: (typeof data[0] === "number") ? "float" : "str",
             data: data
         };
@@ -101,26 +101,26 @@ class EntityDiff {
         const valueInsertions = [];
         const valueUpdates = [];
         const valueDeletions = [];
-        this.#pendingEntities.forEach(function(pending, entityName) {
+        this.#pendingEntities.forEach(function (pending, entityName) {
             const action = pending.action;
-            if(action) {
-                if(action.action === insert) {
-                    if(action.objectNames === undefined) {
-                        objectInsertions.push({name: action.name});
+            if (action) {
+                if (action.action === insert) {
+                    if (action.objectNames === undefined) {
+                        objectInsertions.push({ name: action.name });
                     }
                     else {
-                        relationshipInsertions.push({name: action.name, object_name_list: action.objectNames});
+                        relationshipInsertions.push({ name: action.name, object_name_list: action.objectNames });
                     }
                 }
-                else if(action.action === update) {
-                    if(action.objects === undefined) {
-                        objectUpdates.push({id: action.id, name: action.name});
+                else if (action.action === update) {
+                    if (action.objects === undefined) {
+                        objectUpdates.push({ id: action.id, name: action.name });
                     }
                     else {
-                        relationshipUpdates.push({id: action.id, name: action.name, object_name_list: action.objects});
+                        relationshipUpdates.push({ id: action.id, name: action.name, object_name_list: action.objects });
                     }
                 }
-                else if(action.action === del) {
+                else if (action.action === del) {
                     objectDeletions.push(action.id)
                     return;
                 }
@@ -128,9 +128,9 @@ class EntityDiff {
                     throw Error("Unknown object action.");
                 }
             }
-            pending.parameters.forEach(function(alternatives, definitionId) {
-                alternatives.forEach(function(valueAction, alternativeId) {
-                    if(valueAction.action === insert) {
+            pending.parameters.forEach(function (alternatives, definitionId) {
+                alternatives.forEach(function (valueAction, alternativeId) {
+                    if (valueAction.action === insert) {
                         valueInsertions.push({
                             entity_name: entityName,
                             definition_id: definitionId,
@@ -138,13 +138,13 @@ class EntityDiff {
                             value: semiValueToValue(valueAction.value)
                         });
                     }
-                    else if(valueAction.action === update) {
+                    else if (valueAction.action === update) {
                         valueUpdates.push({
                             id: valueAction.id,
                             value: semiValueToValue(valueAction.value)
                         });
                     }
-                    else if(valueAction.action === del) {
+                    else if (valueAction.action === del) {
                         valueDeletions.push(valueAction.id);
                     }
                 });
@@ -191,7 +191,7 @@ class EntityDiff {
     getPendingEntity(emblem) {
         const name = emblemToName(this.#className, emblem);
         let pendingEntity = this.#pendingEntities.get(name);
-        if(pendingEntity === undefined) {
+        if (pendingEntity === undefined) {
             pendingEntity = new PendingEntity();
             this.#pendingEntities.set(name, pendingEntity);
         }
@@ -203,8 +203,8 @@ class EntityDiff {
      * @param {(string|string[])} emblem Entity's emblem.
      */
     insertEntity(emblem) {
-        if(typeof emblem === "string") {
-            this.#pendingEntities.set(emblem, new PendingEntity({action: insert, name: emblem}));
+        if (typeof emblem === "string") {
+            this.#pendingEntities.set(emblem, new PendingEntity({ action: insert, name: emblem }));
         }
         else {
             const name = relationshipName(this.#className, emblem);
@@ -221,21 +221,21 @@ class EntityDiff {
      * @param {(string, string[])} emblem Entity's new emblem.
      */
     updateEntity(previousEmblem, id, emblem) {
-        const isNoOperationOrUpdate = function(action, name) {
+        const isNoOperationOrUpdate = function (action, name) {
             return action === undefined || (action.action === update && name !== action.originalName);
         };
-        if(typeof emblem === "string") {
+        if (typeof emblem === "string") {
             const pending = this.#pendingEntities.get(previousEmblem);
-            if(pending === undefined) {
+            if (pending === undefined) {
                 this.#pendingEntities.set(
-                    emblem, new PendingEntity({action: update, id: id, name: emblem, originalName: previousEmblem})
+                    emblem, new PendingEntity({ action: update, id: id, name: emblem, originalName: previousEmblem })
                 );
             }
             else {
-                if(isNoOperationOrUpdate(pending.action, emblem)) {
-                    pending.action = {action: update, id: id, name: emblem, originalName: pending.action.originalName};
+                if (isNoOperationOrUpdate(pending.action, emblem)) {
+                    pending.action = { action: update, id: id, name: emblem, originalName: pending.action.originalName };
                 }
-                else if(pending.action.action === insert) {
+                else if (pending.action.action === insert) {
                     pending.action.name = emblem;
                 }
             }
@@ -244,7 +244,7 @@ class EntityDiff {
             const previousName = relationshipName(this.#className, previousEmblem);
             const name = relationshipName(this.#className, emblem);
             const pending = this.#pendingEntities.get(previousName);
-            if(pending === undefined) {
+            if (pending === undefined) {
                 this.#pendingEntities.set(
                     name,
                     new PendingEntity({
@@ -258,7 +258,7 @@ class EntityDiff {
                 );
             }
             else {
-                if(isNoOperationOrUpdate(pending.action, name)) {
+                if (isNoOperationOrUpdate(pending.action, name)) {
                     pending.action = {
                         action: update,
                         id: id,
@@ -268,7 +268,7 @@ class EntityDiff {
                         originalEmblem: previousEmblem
                     };
                 }
-                else if(pending.action.action === insert) {
+                else if (pending.action.action === insert) {
                     pending.action.name = name;
                     pending.action.objectNames = emblem;
                 }
@@ -284,12 +284,12 @@ class EntityDiff {
     deleteEntity(id, emblem) {
         const name = emblemToName(this.#className, emblem);
         const pending = this.#pendingEntities.get(name);
-        if(pending === undefined) {
-            this.#pendingEntities.set(name, new PendingEntity({action: del, id: id}));
+        if (pending === undefined) {
+            this.#pendingEntities.set(name, new PendingEntity({ action: del, id: id }));
         }
         else {
-            if(pending.action === undefined || pending.action.action !== insert) {
-                pending.action = {action: del, id: id};
+            if (pending.action === undefined || pending.action.action !== insert) {
+                pending.action = { action: del, id: id };
                 pending.parameters.clear();
             }
             else {
@@ -331,7 +331,7 @@ class EntityDiff {
         const pendingEntity = this.getPendingEntity(entityEmblem);
         const alternatives = getAlternatives(pendingEntity, definitionId);
         let valueAction = undefined;
-        if(id === undefined) {
+        if (id === undefined) {
             valueAction = {
                 action: insert,
                 entity_name: emblemToName(this.#className, entityEmblem),
@@ -360,17 +360,17 @@ class EntityDiff {
     deleteValue(id, entityEmblem, definitionId, alternativeId) {
         const pendingEntity = this.getPendingEntity(entityEmblem);
         const alternatives = getAlternatives(pendingEntity, definitionId);
-        if(id === undefined) {
+        if (id === undefined) {
             alternatives.delete(alternativeId);
-            if(alternatives.size === 0) {
+            if (alternatives.size === 0) {
                 pendingEntity.parameters.delete(definitionId);
-                if(pendingEntity.parameters.size === 0 && pendingEntity.action === undefined) {
+                if (pendingEntity.parameters.size === 0 && pendingEntity.action === undefined) {
                     this.#pendingEntities.delete(entityEmblem);
                 }
             }
         }
         else {
-            alternatives.set(alternativeId, {action: del, id: id});
+            alternatives.set(alternativeId, { action: del, id: id });
         }
     }
 
@@ -384,11 +384,11 @@ class EntityDiff {
     pendingValue(entityEmblem, definitionId, alternativeId) {
         const entityName = emblemToName(this.#className, entityEmblem);
         const pendingEntity = this.#pendingEntities.get(entityName);
-        if(pendingEntity === undefined) {
+        if (pendingEntity === undefined) {
             return undefined;
         }
         const alternatives = pendingEntity.parameters.get(definitionId);
-        if(alternatives === undefined) {
+        if (alternatives === undefined) {
             return undefined;
         }
         const valueAction = alternatives.get(alternativeId)
@@ -405,11 +405,11 @@ class EntityDiff {
     isPendingDeletion(entityEmblem, definitionId, alternativeId) {
         const entityName = emblemToName(this.#className, entityEmblem);
         const pendingEntity = this.#pendingEntities.get(entityName);
-        if(pendingEntity === undefined) {
+        if (pendingEntity === undefined) {
             return false;
         }
         const alternatives = pendingEntity.parameters.get(definitionId);
-        if(alternatives === undefined) {
+        if (alternatives === undefined) {
             return false;
         }
         const valueAction = alternatives.get(alternativeId)
@@ -417,4 +417,4 @@ class EntityDiff {
     }
 }
 
-export {EntityDiff};
+export { EntityDiff };

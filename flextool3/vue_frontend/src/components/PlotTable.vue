@@ -18,22 +18,22 @@
 </template>
 
 <script>
-import {computed} from "vue/dist/vue.esm-bundler.js";
-import {nameFromKey} from "../modules/plotEditors.mjs";
+import { computed } from "vue/dist/vue.esm-bundler.js";
+import { nameFromKey } from "../modules/plotEditors.mjs";
 
 export default {
     props: {
-        dataFrame: {type: Object, required: true},
+        dataFrame: { type: Object, required: true },
     },
     setup(props) {
-        const header = computed(function() {
-            if(props.dataFrame === null) {
+        const header = computed(function () {
+            if (props.dataFrame === null) {
                 return [];
             }
             return props.dataFrame.getColumnNames().map(nameFromKey);
         });
-        const dataTable = computed(function() {
-            if(props.dataFrame === null) {
+        const dataTable = computed(function () {
+            if (props.dataFrame === null) {
                 return [];
             }
             return props.dataFrame.toRows();

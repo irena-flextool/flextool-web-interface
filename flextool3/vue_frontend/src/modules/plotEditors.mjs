@@ -1,4 +1,4 @@
-import {ref} from "vue";
+import { ref } from "vue";
 
 
 /**Compares two select options for greatness.
@@ -27,37 +27,37 @@ function addFetchedEntities(
     updateValueIndexes,
 ) {
     let dimensionCount = 1;
-    for(const entity of entities) {
+    for (const entity of entities) {
         dimensionCount = Math.max(dimensionCount, entity.names.length);
     }
     setEntityIndexes(dimensionCount, dimensionsOptions);
     const entityOptionsMaps = [];
-    for(let dimension = 0; dimension < dimensionCount; ++dimension) {
+    for (let dimension = 0; dimension < dimensionCount; ++dimension) {
         const optionKey = objectKey(dimension);
         const entityOptions = itemOptionsMap(selectionOptions.get(optionKey));
-        for(const entity of entities) {
+        for (const entity of entities) {
             addEntityToOptions(entity, dimension, entityOptions);
         }
         entityOptionsMaps.push(entityOptions);
     }
-    for(let dimension = 0; dimension < dimensionCount; ++dimension) {
+    for (let dimension = 0; dimension < dimensionCount; ++dimension) {
         const entityOptions = entityOptionsMaps[dimension];
         const options = makeOptions(entityOptions);
         const optionKey = objectKey(dimension)
         const label = objectLabel(dimension);
         selectionOptions.set(optionKey, options);
-        if(!(optionKey in plotSpecification.selection)) {
+        if (!(optionKey in plotSpecification.selection)) {
             plotSpecification.selection[optionKey] = [];
         }
         let selectionSelectUpdated = false;
-        for(const selectionSelect of selectionSelects.value) {
-            if(selectionSelect.label === label) {
+        for (const selectionSelect of selectionSelects.value) {
+            if (selectionSelect.label === label) {
                 selectionSelect.options = options;
                 selectionSelectUpdated = true;
                 break;
             }
         }
-        if(!selectionSelectUpdated) {
+        if (!selectionSelectUpdated) {
             selectionSelects.value.push(makeObjectOrParameterSelectionSelect(
                 label,
                 optionKey,
@@ -85,14 +85,14 @@ function addFetchedParameters(
     plotSpecification,
     dimensionsOptions,
     updateValueIndexes) {
-    if(dimensionsOptions.value.every((nameOption) => nameOption.value !== parameterKey)) {
-        dimensionsOptions.value.push({label: parameterLabel, value: parameterKey, protected: true});
+    if (dimensionsOptions.value.every((nameOption) => nameOption.value !== parameterKey)) {
+        dimensionsOptions.value.push({ label: parameterLabel, value: parameterKey, protected: true });
     }
     const parameterOptions = itemOptionsMap(selectionOptions.get(parameterKey));
-    for(const parameter of parameters) {
+    for (const parameter of parameters) {
         let existing = parameterOptions.get(parameter.name);
-        const parent = {entityClass: parameter.class_name};
-        if(existing === undefined) {
+        const parent = { entityClass: parameter.class_name };
+        if (existing === undefined) {
             existing = [parent];
             parameterOptions.set(parameter.name, existing)
         }
@@ -102,18 +102,18 @@ function addFetchedParameters(
     }
     const options = makeOptions(parameterOptions);
     selectionOptions.set(parameterKey, options);
-    if(!(parameterKey in plotSpecification.selection)) {
+    if (!(parameterKey in plotSpecification.selection)) {
         plotSpecification.selection[parameterKey] = [];
     }
     let selectionSelectUpdated = false;
-    for(const selectionSelect of selectionSelects.value) {
-        if(selectionSelect.label === parameterLabel) {
+    for (const selectionSelect of selectionSelects.value) {
+        if (selectionSelect.label === parameterLabel) {
             selectionSelect.options = options;
             selectionSelectUpdated = true;
             break;
         }
     }
-    if(!selectionSelectUpdated) {
+    if (!selectionSelectUpdated) {
         selectionSelects.value.push(makeObjectOrParameterSelectionSelect(
             parameterLabel,
             parameterKey,
@@ -131,10 +131,10 @@ function addFetchedParameters(
  */
 function itemOptionsMap(itemSelectionOptions) {
     const optionMap = new Map();
-    if(itemSelectionOptions !== undefined) {
-        for(const option of itemSelectionOptions.value) {
+    if (itemSelectionOptions !== undefined) {
+        for (const option of itemSelectionOptions.value) {
             let parents = option.parents;
-            if(parents === undefined) {
+            if (parents === undefined) {
                 parents = [];
             }
             optionMap.set(option.label, parents);
@@ -147,9 +147,9 @@ function itemOptionsMap(itemSelectionOptions) {
  * @param {Map} itemOptions Item's options map.
  * @returns {Ref}  Select options.
  */
-function makeOptions(itemOptions){
+function makeOptions(itemOptions) {
     const options = ref([]);
-    for(const [label, parents] of itemOptions) {
+    for (const [label, parents] of itemOptions) {
         options.value.push({
             label: label,
             parents: parents,
@@ -187,10 +187,10 @@ function indexNameFromKey(key) {
  * @returns {string} Label.
  */
 function nameFromKey(key) {
-    if(key === null || key === undefined) {
+    if (key === null || key === undefined) {
         return "";
     }
-    if(key.startsWith(valueIndexKeyPrefix)) {
+    if (key.startsWith(valueIndexKeyPrefix)) {
         return indexNameFromKey(key);
     }
     return key;
@@ -274,8 +274,8 @@ function makeValueIndexSelectionSelect(itemType, options, priority) {
 function addEntityToOptions(entity, dimension, entityOptions) {
     const label = entity.names[dimension]
     let existing = entityOptions.get(label);
-    const parent = {entityClass: entity.class_name};
-    if(existing === undefined) {
+    const parent = { entityClass: entity.class_name };
+    if (existing === undefined) {
         existing = [parent];
         entityOptions.set(label, existing)
     }
@@ -288,21 +288,21 @@ function addEntityToOptions(entity, dimension, entityOptions) {
  * @param {number} dimensionCount Number of entity dimensions.
  * @param {Ref} dimensionsOptions Dimensions select options.
  */
- function setEntityIndexes(dimensionCount, dimensionsOptions) {
+function setEntityIndexes(dimensionCount, dimensionsOptions) {
     const entityLocations = [];
-    for(let i = 0; i < dimensionsOptions.value.length; ++i) {
-        if(dimensionsOptions.value[i].value.startsWith(objectKeyPrefix)) {
+    for (let i = 0; i < dimensionsOptions.value.length; ++i) {
+        if (dimensionsOptions.value[i].value.startsWith(objectKeyPrefix)) {
             entityLocations.push(i);
         }
     }
     const excessEntityCount = dimensionCount - entityLocations.length;
-    if(excessEntityCount === 0) {
+    if (excessEntityCount === 0) {
         return;
     }
-    if(excessEntityCount > 0) {
+    if (excessEntityCount > 0) {
         const newIndexNames = [];
-        for(let i = entityLocations.length; i < dimensionCount; ++i) {
-            newIndexNames.push({label: objectLabel(i), value: objectKey(i), protected: true});
+        for (let i = entityLocations.length; i < dimensionCount; ++i) {
+            newIndexNames.push({ label: objectLabel(i), value: objectKey(i), protected: true });
         }
         const insertion = entityLocations.length > 0 ? entityLocations.at(-1) + 1 : 1;
         dimensionsOptions.value.splice(insertion, 0, ...newIndexNames);
@@ -318,27 +318,27 @@ function addEntityToOptions(entity, dimension, entityOptions) {
  */
 function removeExcessSelections(plotSpecification, selectionOptions) {
     const classes = new Set(plotSpecification.selection.entity_class);
-    for(const [key, options] of selectionOptions.entries()) {
-        if(key === entityClassKey) {
+    for (const [key, options] of selectionOptions.entries()) {
+        if (key === entityClassKey) {
             continue;
         }
         const removableOptionIndexes = [];
-        for(const [optionIndex, option] of options.value.entries()) {
-            for(let i = option.parents.length - 1; i != -1; --i) {
-                if(!classes.has(option.parents[i].entityClass)) {
+        for (const [optionIndex, option] of options.value.entries()) {
+            for (let i = option.parents.length - 1; i != -1; --i) {
+                if (!classes.has(option.parents[i].entityClass)) {
                     option.parents.splice(i, 1);
                 }
             }
-            if(option.parents.length === 0) {
+            if (option.parents.length === 0) {
                 const selectedItemValues = plotSpecification.selection[key];
                 const removableIndex = selectedItemValues.indexOf(option.label);
-                if(removableIndex >= 0) {
+                if (removableIndex >= 0) {
                     selectedItemValues.splice(removableIndex, 1);
                 }
                 removableOptionIndexes.push(optionIndex);
             }
         }
-        for(const index of removableOptionIndexes.reverse()) {
+        for (const index of removableOptionIndexes.reverse()) {
             options.value.splice(index, 1);
         }
     }
@@ -348,12 +348,12 @@ function removeExcessSelections(plotSpecification, selectionOptions) {
  * @param {Ref} selectionSelects Selects.
  */
 function removeExcessSelectionSelects(selectionSelects) {
-    for(let i = selectionSelects.value.length - 1; i != -1; --i) {
+    for (let i = selectionSelects.value.length - 1; i != -1; --i) {
         const select = selectionSelects.value[i];
-        if(select.label === "Entity class") {
+        if (select.label === "Entity class") {
             continue
         }
-        if(select.options.length === 0) {
+        if (select.options.length === 0) {
             selectionSelects.value.splice(i, 1);
         }
     }
@@ -366,8 +366,8 @@ function removeExcessSelectionSelects(selectionSelects) {
 */
 function differingElements(a, b) {
     const diff = [];
-    for(const e of a) {
-        if(!b.has(e)) {
+    for (const e of a) {
+        if (!b.has(e)) {
             diff.push(e);
         }
     }

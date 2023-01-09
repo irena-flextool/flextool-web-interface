@@ -1,4 +1,4 @@
-const timeFormat = Intl.DateTimeFormat([], {dateStyle: "short", timeStyle: "short"});
+const timeFormat = Intl.DateTimeFormat([], { dateStyle: "short", timeStyle: "short" });
 
 export {
     timeFormat,

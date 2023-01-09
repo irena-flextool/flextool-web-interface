@@ -10,11 +10,11 @@
 </template>
 
 <script>
-import {ref} from "vue/dist/vue.esm-bundler.js";
+import { ref } from "vue/dist/vue.esm-bundler.js";
 
 export default {
     props: {
-        example: {type: String, required: true},
+        example: { type: String, required: true },
     },
     emits: ["add"],
     setup(props, context) {
@@ -22,8 +22,8 @@ export default {
         const statusMessage = ref("");
         const messageType = ref("info");
         const setLoading = (isLoading) => loading.value = isLoading;
-        const setStatus = function(status) {
-            switch(status) {
+        const setStatus = function (status) {
+            switch (status) {
                 case "ok":
                     messageType.value = "success";
                     statusMessage.value = "Added to model.";
@@ -46,7 +46,7 @@ export default {
             statusMessage: statusMessage,
             messageType: messageType,
             emitAdd() {
-                context.emit("add", {example: props.example, setLoading: setLoading, setStatus: setStatus});
+                context.emit("add", { example: props.example, setLoading: setLoading, setStatus: setStatus });
             },
         };
     },

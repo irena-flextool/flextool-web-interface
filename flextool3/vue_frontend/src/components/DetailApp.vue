@@ -1,16 +1,8 @@
 <template>
-    <page
-        name="Manage project"
-        :index-url="indexUrl"
-        :project-url="projectUrl"
-        :edit-url="editUrl"
-        :run-url="runUrl"
-        :results-url="resultsUrl"
-        :logout-url="logoutUrl"
-        :logo-url="logoUrl"
-    >
+    <page name="Manage project" :index-url="indexUrl" :project-url="projectUrl" :edit-url="editUrl" :run-url="runUrl"
+        :results-url="resultsUrl" :logout-url="logoutUrl" :logo-url="logoUrl">
         <template #header>
-            <page-path :path="[{name: 'Projects', url: indexUrl}]" :leaf-name="projectName"></page-path>
+            <page-path :path="[{ name: 'Projects', url: indexUrl }]" :leaf-name="projectName"></page-path>
         </template>
         <n-space>
             <n-space vertical>
@@ -22,12 +14,7 @@
                 </n-space>
                 <n-h1>Import or export model</n-h1>
                 <n-p>Download model database <n-a :href="modelExportUrl">here</n-a>.</n-p>
-                 <n-upload
-                    name="model_database"
-                    :action="modelImportUrl"
-                    :headers="uploadHeaders"
-                    accept=".sqlite"
-                >
+                <n-upload name="model_database" :action="modelImportUrl" :headers="uploadHeaders" accept=".sqlite">
                     <n-button>Upload model database</n-button>
                 </n-upload>
                 <n-p>Warning: uploading database will overwrite model data.</n-p>
@@ -40,35 +27,32 @@
                 </n-p>
                 <n-h1>Example systems</n-h1>
                 <n-p>Add example systems to the model from the list below.</n-p>
-                <examples
-                    :project-id="projectId"
-                    :examples-url="examplesUrl"
-                />
+                <examples :project-id="projectId" :examples-url="examplesUrl" />
             </n-space>
         </n-space>
     </page>
 </template>
 
 <script>
-import {csrftoken} from "../modules/communication.mjs";
+import { csrftoken } from "../modules/communication.mjs";
 import Examples from "./Examples.vue";
 import Page from "./Page.vue";
 import PagePath from "./PagePath.vue";
 
 export default {
     props: {
-        projectName: {type: String, required: true},
-        projectId: {type: Number, required: true},
-        projectUrl: {type: String, required: true},
-        indexUrl: {type: String, required: true},
-        editUrl: {type: String, required: true},
-        runUrl: {type: String, required: true},
-        resultsUrl: {type: String, required: true},
-        examplesUrl: {type: String, required: true},
-        logoutUrl: {type: String, required: true},
-        logoUrl: {type: String, required: true},
-        modelExportUrl: {type: String, required: true},
-        modelImportUrl: {type: String, required: true},
+        projectName: { type: String, required: true },
+        projectId: { type: Number, required: true },
+        projectUrl: { type: String, required: true },
+        indexUrl: { type: String, required: true },
+        editUrl: { type: String, required: true },
+        runUrl: { type: String, required: true },
+        resultsUrl: { type: String, required: true },
+        examplesUrl: { type: String, required: true },
+        logoutUrl: { type: String, required: true },
+        logoUrl: { type: String, required: true },
+        modelExportUrl: { type: String, required: true },
+        modelImportUrl: { type: String, required: true },
     },
     components: {
         "examples": Examples,
@@ -78,7 +62,7 @@ export default {
     setup() {
         return {
             uploadHeaders() {
-                return {"X-CSRFToken": csrftoken};
+                return { "X-CSRFToken": csrftoken };
             },
         };
     },

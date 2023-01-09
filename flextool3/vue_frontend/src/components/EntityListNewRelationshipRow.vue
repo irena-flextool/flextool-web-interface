@@ -1,29 +1,16 @@
 <template>
     <n-space align="baseline" size="small">
-        <n-select
-            v-for="index in dimensions"
-            :key="index"
-            :options="options[index]"
-            filterable
-            :placeholder="placeholderText(index)"
-            :show-arrow="false"
-            size="tiny"
-            :consistent-menu-width="false"
-            @update:value="updateSelection"
-            class="entity-list-select"
-        />
-        <n-button
-            @click="emitRelationshipCreate"
-            size="tiny"
-            :disabled="!wellDefined"
-            >
+        <n-select v-for="index in dimensions" :key="index" :options="options[index]" filterable
+            :placeholder="placeholderText(index)" :show-arrow="false" size="tiny" :consistent-menu-width="false"
+            @update:value="updateSelection" class="entity-list-select" />
+        <n-button @click="emitRelationshipCreate" size="tiny" :disabled="!wellDefined">
             Create
         </n-button>
     </n-space>
 </template>
 
 <script>
-import {ref} from "vue/dist/vue.esm-bundler.js";
+import { ref } from "vue/dist/vue.esm-bundler.js";
 
 /**
  * Generates options for the select elements.
@@ -32,14 +19,14 @@ import {ref} from "vue/dist/vue.esm-bundler.js";
  */
 function selectOptions(availableObjects) {
     const options = [];
-    availableObjects.forEach(function(objects, dimension) {
+    availableObjects.forEach(function (objects, dimension) {
         const dimensionOptions = [];
         objects.forEach(function (objectName) {
             dimensionOptions.push({
                 label: objectName,
                 value: objectName,
                 dimension: dimension,
-                style: {"font-size": "12px"},
+                style: { "font-size": "12px" },
             });
         });
         options.push(dimensionOptions);
@@ -49,7 +36,7 @@ function selectOptions(availableObjects) {
 
 export default {
     props: {
-        availableObjects: {type: Array, required: true},
+        availableObjects: { type: Array, required: true },
     },
     emits: ["relationshipCreate"],
     setup(props, context) {
@@ -66,18 +53,18 @@ export default {
             },
             updateSelection(value, option) {
                 selection[option.dimension] = value;
-                selection.forEach(function(objectName, dimension) {
-                    if(objectName === undefined) {
+                selection.forEach(function (objectName, dimension) {
+                    if (objectName === undefined) {
                         return;
                     }
-                    else if(dimension === selection.length - 1) {
+                    else if (dimension === selection.length - 1) {
                         wellDefined.value = true;
                     }
                 });
             },
             placeholderText(index) {
                 let suffix = null;
-                switch(index) {
+                switch (index) {
                     case 0:
                         suffix = "st";
                         break;

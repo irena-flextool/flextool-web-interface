@@ -6,19 +6,13 @@
         <text v-else>
             -
         </text>
-        <n-input
-            :disabled="disabled"
-            :value="content"
-            type="textarea"
-            placeholder="index value"
-            :rows=20
-            @update:value="updateContent"
-        />
+        <n-input :disabled="disabled" :value="content" type="textarea" placeholder="index value" :rows=20
+            @update:value="updateContent" />
     </n-space>
 </template>
 
 <script>
-import {ref, toRefs, watch} from "vue/dist/vue.esm-bundler.js";
+import { ref, toRefs, watch } from "vue/dist/vue.esm-bundler.js";
 
 /**
  * Gets index name from indexed value.
@@ -36,13 +30,13 @@ function getIndexName(value) {
  * @returns {string} Editor content.
  */
 function makeContent(value) {
-    if("content" in value) {
+    if ("content" in value) {
         return value.content;
     }
     let content = "";
-    if(value.type === "map") {
+    if (value.type === "map") {
         if (Array.isArray(value.data)) {
-            value.data.forEach(function(row) {
+            value.data.forEach(function (row) {
                 content = content + `${row[0]}\t${row[1]}` + "\n";
             })
         }
@@ -53,7 +47,7 @@ function makeContent(value) {
         }
     }
     else {
-        value.data.forEach(function(y) {
+        value.data.forEach(function (y) {
             content = content + `${y}\n`;
         });
     }
@@ -75,8 +69,8 @@ function makeSemiValue(content, indexName) {
 
 export default {
     props: {
-        valueData: {type: [Object, null], required: true},
-        diff: {type: Object, required: true},
+        valueData: { type: [Object, null], required: true },
+        diff: { type: Object, required: true },
     },
     emits: ["valueUpdate"],
     setup(props, context) {
@@ -84,8 +78,8 @@ export default {
         const indexName = ref("");
         const parameterName = ref("");
         const content = ref("");
-        watch(toRefs(props).valueData, function(valueData) {
-            if(valueData === null) {
+        watch(toRefs(props).valueData, function (valueData) {
+            if (valueData === null) {
                 disabled.value = true;
                 indexName.value = "";
                 parameterName.value = "";
@@ -99,11 +93,11 @@ export default {
                 valueData.definitionId,
                 valueData.alternativeId
             );
-            if(pending === undefined) {
+            if (pending === undefined) {
                 indexName.value = getIndexName(valueData.value);
                 content.value = makeContent(valueData.value);
             }
-            else if(pending.contest !== undefined) {
+            else if (pending.contest !== undefined) {
                 indexName.value = pending.index_name;
                 content.value = pending.content;
             }

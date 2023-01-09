@@ -1,7 +1,8 @@
 <template>
     <n-list>
         <n-list-item v-for="project in projects" :key="project.id">
-            <project-row @destroyed="deleteProject" :project-id="project.id" :project-name="project.name" :url="project.url" :projects-url="projectsUrl"></project-row>
+            <project-row @destroyed="deleteProject" :project-id="project.id" :project-name="project.name"
+                :url="project.url" :projects-url="projectsUrl"></project-row>
         </n-list-item>
         <template #footer>
             <new-project-row @created="appendProject" :projects-url="projectsUrl"></new-project-row>
@@ -22,8 +23,8 @@ export default {
         const projects = ref([]);
         const newProjectRowBusy = ref(false);
         onMounted(
-            function() {
-                fetchProjectList(String(props.projectsUrl)).then(function(data) {
+            function () {
+                fetchProjectList(String(props.projectsUrl)).then(function (data) {
                     projects.value = data.projects;
                 });
             }
@@ -31,11 +32,11 @@ export default {
         return {
             projects: projects,
             newProjectRowBusy: newProjectRowBusy,
-            appendProject: function(project) {
+            appendProject: function (project) {
                 projects.value.push(project);
             },
-            deleteProject: function(projectId) {
-                const index = projects.value.findIndex(function(project) {
+            deleteProject: function (projectId) {
+                const index = projects.value.findIndex(function (project) {
                     return project.id === projectId;
                 });
                 if (index < 0) {

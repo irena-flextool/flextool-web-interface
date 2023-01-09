@@ -24,13 +24,13 @@ export default {
         const message = useMessage();
         return {
             busy: busy,
-            destroy () {
+            destroy() {
                 busy.value = true;
-                destroyProject(props.projectId, String(props.projectsUrl)).then(function(data) {
+                destroyProject(props.projectId, String(props.projectsUrl)).then(function (data) {
                     context.emit("destroyed", data.id);
-                }).catch(function(error) {
+                }).catch(function (error) {
                     message.error(error.message);
-                }).finally(function() {
+                }).finally(function () {
                     busy.value = false;
                 });
             }

@@ -24,7 +24,7 @@ function makeFetchInit() {
     return {
         method: "POST",
         credentials: "same-origin",
-        headers: {"X-CSRFToken": csrftoken, 'Content-Type': 'application/json'}
+        headers: { "X-CSRFToken": csrftoken, 'Content-Type': 'application/json' }
     };
 }
 
@@ -35,10 +35,10 @@ function makeFetchInit() {
  */
 function fetchProjectList(projectsUrl) {
     const fetchInit = makeFetchInit();
-    fetchInit["body"] = JSON.stringify({"type": "project list?"});
-    return fetch(projectsUrl, fetchInit).then(function(response) {
+    fetchInit["body"] = JSON.stringify({ "type": "project list?" });
+    return fetch(projectsUrl, fetchInit).then(function (response) {
         if (!response.ok) {
-            return response.text().then(function(message) {
+            return response.text().then(function (message) {
                 throw new Error(`Failed to load project list: ${message}`);
             });
         }
@@ -54,10 +54,10 @@ function fetchProjectList(projectsUrl) {
  */
 function createProject(projectName, projectsUrl) {
     const fetchInit = makeFetchInit();
-    fetchInit["body"] = JSON.stringify({type: "create project?", name: projectName});
-    return fetch(projectsUrl, fetchInit).then(function(response) {
+    fetchInit["body"] = JSON.stringify({ type: "create project?", name: projectName });
+    return fetch(projectsUrl, fetchInit).then(function (response) {
         if (!response.ok) {
-            return response.text().then(function(message) {
+            return response.text().then(function (message) {
                 throw new Error(`Failed to create project: ${message}`);
             });
         }
@@ -73,10 +73,10 @@ function createProject(projectName, projectsUrl) {
  */
 function destroyProject(projectId, projectsUrl) {
     const fetchInit = makeFetchInit();
-    fetchInit["body"] = JSON.stringify({type: "destroy project?", id: projectId});
-    return fetch(projectsUrl, fetchInit).then(function(response) {
+    fetchInit["body"] = JSON.stringify({ type: "destroy project?", id: projectId });
+    return fetch(projectsUrl, fetchInit).then(function (response) {
         if (!response.ok) {
-            return response.text().then(function(message) {
+            return response.text().then(function (message) {
                 throw new Error(`Failed to delete project: ${message}`);
             });
         }
@@ -94,10 +94,10 @@ function destroyProject(projectId, projectsUrl) {
  */
 function fetchData(queryType, projectId, url, extraBody = {}) {
     const fetchInit = makeFetchInit();
-    fetchInit["body"] = JSON.stringify({type: queryType, projectId: projectId, ...extraBody});
-    return fetch(url, fetchInit).then(function(response) {
+    fetchInit["body"] = JSON.stringify({ type: queryType, projectId: projectId, ...extraBody });
+    return fetch(url, fetchInit).then(function (response) {
         if (!response.ok) {
-            return response.text().then(function(message) {
+            return response.text().then(function (message) {
                 throw new Error(`Failed to fetch ${queryType}: ${message}`);
             });
         }
@@ -115,11 +115,11 @@ function fetchData(queryType, projectId, url, extraBody = {}) {
  */
 function commit(commitData, message, projectId, modelUlr) {
     const fetchInit = makeFetchInit();
-    fetchInit.body = JSON.stringify({type: "commit", projectId: projectId, message: message, ...commitData});
-    return fetch(modelUlr, fetchInit).then(function(response) {
+    fetchInit.body = JSON.stringify({ type: "commit", projectId: projectId, message: message, ...commitData });
+    return fetch(modelUlr, fetchInit).then(function (response) {
         if (!response.ok) {
-            return response.text().then(function(message) {
-              throw new Error(message);
+            return response.text().then(function (message) {
+                throw new Error(message);
             });
         }
         return response.json();
@@ -134,10 +134,10 @@ function commit(commitData, message, projectId, modelUlr) {
  */
 function fetchCurrentExecution(projectId, executionsUrl) {
     const fetchInit = makeFetchInit();
-    fetchInit.body = JSON.stringify({type: "current execution?", projectId: projectId});
-    return fetch(executionsUrl, fetchInit).then(function(response) {
+    fetchInit.body = JSON.stringify({ type: "current execution?", projectId: projectId });
+    return fetch(executionsUrl, fetchInit).then(function (response) {
         if (!response.ok) {
-            return response.text().then(function(message) {
+            return response.text().then(function (message) {
                 throw new Error(`Failed to fetch current run: ${message}`);
             });
         }
@@ -154,10 +154,10 @@ function fetchCurrentExecution(projectId, executionsUrl) {
  */
 function executeExecution(projectId, executionsUrl, scenarios) {
     const fetchInit = makeFetchInit();
-    fetchInit["body"] = JSON.stringify({type: "execute?", projectId: projectId, scenarios: scenarios});
-    return fetch(executionsUrl, fetchInit).then(function(response) {
+    fetchInit["body"] = JSON.stringify({ type: "execute?", projectId: projectId, scenarios: scenarios });
+    return fetch(executionsUrl, fetchInit).then(function (response) {
         if (!response.ok) {
-            return response.text().then(function(message) {
+            return response.text().then(function (message) {
                 throw new Error(`Failed to execute: ${message}`);
             });
         }
@@ -173,10 +173,10 @@ function executeExecution(projectId, executionsUrl, scenarios) {
  */
 function abortExecution(projectId, executionsUrl) {
     const fetchInit = makeFetchInit();
-    fetchInit["body"] = JSON.stringify({type: "abort?", projectId: projectId});
-    return fetch(executionsUrl, fetchInit).then(function(response) {
+    fetchInit["body"] = JSON.stringify({ type: "abort?", projectId: projectId });
+    return fetch(executionsUrl, fetchInit).then(function (response) {
         if (!response.ok) {
-            return response.text().then(function(message) {
+            return response.text().then(function (message) {
                 throw new Error(`Failed to abort execution: ${message}`);
             });
         }
@@ -192,10 +192,10 @@ function abortExecution(projectId, executionsUrl) {
  */
 function fetchExecutionBriefing(projectId, executionsUrl) {
     const fetchInit = makeFetchInit();
-    fetchInit["body"] = JSON.stringify({type: "briefing?", projectId: projectId});
-    return fetch(executionsUrl, fetchInit).then(function(response) {
+    fetchInit["body"] = JSON.stringify({ type: "briefing?", projectId: projectId });
+    return fetch(executionsUrl, fetchInit).then(function (response) {
         if (!response.ok) {
-            return response.text().then(function(message) {
+            return response.text().then(function (message) {
                 throw new Error(`Failed to fetch execution status: ${message}`);
             });
         }
@@ -217,9 +217,9 @@ function fetchSummary(projectId, summaryUrl, scenarioExecutionId) {
         projectId: projectId,
         scenarioExecutionId: scenarioExecutionId,
     });
-    return fetch(summaryUrl, fetchInit).then(function(response) {
+    return fetch(summaryUrl, fetchInit).then(function (response) {
         if (!response.ok) {
-            return response.text().then(function(message) {
+            return response.text().then(function (message) {
                 throw new Error(`Failed to load summary: ${message}`);
             });
         }
@@ -241,9 +241,9 @@ function fetchOutputDirectory(projectId, summaryUrl, scenarioExecutionId) {
         projectId: projectId,
         scenarioExecutionId: scenarioExecutionId,
     });
-    return fetch(summaryUrl, fetchInit).then(function(response) {
+    return fetch(summaryUrl, fetchInit).then(function (response) {
         if (!response.ok) {
-            return response.text().then(function(message) {
+            return response.text().then(function (message) {
                 throw new Error(`Failed to load output directory path: ${message}`);
             });
         }
@@ -259,10 +259,10 @@ function fetchOutputDirectory(projectId, summaryUrl, scenarioExecutionId) {
  */
 function fetchExecutedScenarioList(projectId, summaryUrl) {
     const fetchInit = makeFetchInit();
-    fetchInit.body = JSON.stringify({type: "scenario list?", projectId: projectId});
-    return fetch(summaryUrl, fetchInit).then(function(response) {
+    fetchInit.body = JSON.stringify({ type: "scenario list?", projectId: projectId });
+    return fetch(summaryUrl, fetchInit).then(function (response) {
         if (!response.ok) {
-            return response.text().then(function(message) {
+            return response.text().then(function (message) {
                 throw new Error(`Failed to load scenarios: ${message}`);
             });
         }
@@ -278,13 +278,14 @@ function fetchExecutedScenarioList(projectId, summaryUrl) {
  */
 function destroyScenarioExecution(projectId, summaryUrl, scenarioExecutionId) {
     const fetchInit = makeFetchInit();
-    fetchInit.body = JSON.stringify({type: "destroy execution?",
+    fetchInit.body = JSON.stringify({
+        type: "destroy execution?",
         projectId: projectId,
         scenarioExecutionId: scenarioExecutionId,
     });
-    return fetch(summaryUrl, fetchInit).then(function(response) {
+    return fetch(summaryUrl, fetchInit).then(function (response) {
         if (!response.ok) {
-            return response.text().then(function(message) {
+            return response.text().then(function (message) {
                 throw new Error(`Failed to destroy scenario execution: ${message}`);
             });
         }
@@ -298,15 +299,15 @@ function destroyScenarioExecution(projectId, summaryUrl, scenarioExecutionId) {
  * @param {string} analysisUrl URL to server's analysis interface.
  * @returns {Promise} A promise that resolves to server's response.
  */
- function fetchResultEntityClasses(projectId, analysisUrl) {
+function fetchResultEntityClasses(projectId, analysisUrl) {
     const fetchInit = makeFetchInit();
     fetchInit.body = JSON.stringify({
         type: "entity classes?",
         projectId: projectId,
     });
-    return fetch(analysisUrl, fetchInit).then(function(response) {
+    return fetch(analysisUrl, fetchInit).then(function (response) {
         if (!response.ok) {
-            return response.text().then(function(message) {
+            return response.text().then(function (message) {
                 throw new Error(`Failed to fetch entity classes: ${message}`);
             });
         }
@@ -321,16 +322,16 @@ function destroyScenarioExecution(projectId, summaryUrl, scenarioExecutionId) {
  * @param {string[]} classes Entity classes.
  * @returns {Promise} A promise that resolves to server's response.
  */
- function fetchResultEntities(projectId, analysisUrl, classes) {
+function fetchResultEntities(projectId, analysisUrl, classes) {
     const fetchInit = makeFetchInit();
     fetchInit.body = JSON.stringify({
         type: "entities?",
         projectId: projectId,
         classes: classes,
     });
-    return fetch(analysisUrl, fetchInit).then(function(response) {
+    return fetch(analysisUrl, fetchInit).then(function (response) {
         if (!response.ok) {
-            return response.text().then(function(message) {
+            return response.text().then(function (message) {
                 throw new Error(`Failed to fetch entities: ${message}`);
             });
         }
@@ -352,9 +353,9 @@ function fetchResultParameters(projectId, analysisUrl, classes) {
         projectId: projectId,
         classes: classes,
     });
-    return fetch(analysisUrl, fetchInit).then(function(response) {
+    return fetch(analysisUrl, fetchInit).then(function (response) {
         if (!response.ok) {
-            return response.text().then(function(message) {
+            return response.text().then(function (message) {
                 throw new Error(`Failed to fetch parameters: ${message}`);
             });
         }
@@ -380,9 +381,9 @@ function fetchResultParameterValueIndexes(projectId, analysisUrl, scenarioExecut
         classes: classes,
         parameters: parameters,
     });
-    return fetch(analysisUrl, fetchInit).then(function(response) {
+    return fetch(analysisUrl, fetchInit).then(function (response) {
         if (!response.ok) {
-            return response.text().then(function(message) {
+            return response.text().then(function (message) {
                 throw new Error(`Failed to fetch parameter value indexes: ${message}`);
             });
         }
@@ -410,9 +411,9 @@ function fetchResultParameterValues(projectId, analysisUrl, scenarioExecutionIds
         objects: objects,
         parameters: parameters,
     });
-    return fetch(analysisUrl, fetchInit).then(function(response) {
+    return fetch(analysisUrl, fetchInit).then(function (response) {
         if (!response.ok) {
-            return response.text().then(function(message) {
+            return response.text().then(function (message) {
                 throw new Error(`Failed to fetch parameter values: ${message}`);
             });
         }
@@ -432,9 +433,9 @@ function fetchPlotSpecification(projectId, analysisUrl) {
         type: "plot specification?",
         projectId: projectId,
     });
-    return fetch(analysisUrl, fetchInit).then(function(response) {
+    return fetch(analysisUrl, fetchInit).then(function (response) {
         if (!response.ok) {
-            return response.text().then(function(message) {
+            return response.text().then(function (message) {
                 throw new Error(`Failed to fetch plot specification: ${message}`);
             });
         }
@@ -456,9 +457,9 @@ function storePlotSpecification(projectId, analysisUrl, specification) {
         projectId: projectId,
         specification: specification,
     });
-    return fetch(analysisUrl, fetchInit).then(function(response) {
+    return fetch(analysisUrl, fetchInit).then(function (response) {
         if (!response.ok) {
-            return response.text().then(function(message) {
+            return response.text().then(function (message) {
                 throw new Error(`Failed to store plot specification: ${message}`);
             });
         }
@@ -474,10 +475,10 @@ function storePlotSpecification(projectId, analysisUrl, specification) {
  */
 function fetchExampleList(projectId, examplesUrl) {
     const fetchInit = makeFetchInit();
-    fetchInit["body"] = JSON.stringify({type: "example list?", projectId: projectId});
-    return fetch(examplesUrl, fetchInit).then(function(response) {
+    fetchInit["body"] = JSON.stringify({ type: "example list?", projectId: projectId });
+    return fetch(examplesUrl, fetchInit).then(function (response) {
         if (!response.ok) {
-            return response.text().then(function(message) {
+            return response.text().then(function (message) {
                 throw new Error(`Failed to load example list: ${message}`);
             });
         }
@@ -494,10 +495,10 @@ function fetchExampleList(projectId, examplesUrl) {
  */
 function addExample(projectId, examplesUrl, exampleName) {
     const fetchInit = makeFetchInit();
-    fetchInit["body"] = JSON.stringify({type: "add to model", name: exampleName, projectId: projectId});
-    return fetch(examplesUrl, fetchInit).then(function(response) {
+    fetchInit["body"] = JSON.stringify({ type: "add to model", name: exampleName, projectId: projectId });
+    return fetch(examplesUrl, fetchInit).then(function (response) {
         if (!response.ok) {
-            return response.text().then(function(message) {
+            return response.text().then(function (message) {
                 throw new Error(`Failed to add example to model: ${message}`);
             });
         }

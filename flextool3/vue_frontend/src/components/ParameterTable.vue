@@ -5,49 +5,33 @@
             <n-text>―</n-text>
             <n-text italic>{{ alternativeName }}</n-text>
         </n-space>
-        <n-data-table
-            v-if="!errorMessage"
-            size="tiny"
-            :columns="columns"
-            :data="data"
-            :loading="loading"
-            :row-key="rowKey"
-        >
+        <n-data-table v-if="!errorMessage" size="tiny" :columns="columns" :data="data" :loading="loading"
+            :row-key="rowKey">
             <template #empty>
-                <n-empty
-                    v-if="entityKey === null"
-                    description="Select an entity on the left to load its parameters here."
-                >
+                <n-empty v-if="entityKey === null"
+                    description="Select an entity on the left to load its parameters here.">
                     <template #icon>
                         <n-icon>
-                            <hand-point-left-regular/>
+                            <hand-point-left-regular />
                         </n-icon>
                     </template>
                 </n-empty>
-                <n-empty
-                    v-else
-                    description="Entity has no parameters."
-                >
+                <n-empty v-else description="Entity has no parameters.">
                     <template #icon>
                         <n-icon>
-                            <hand-paper-regular/>
+                            <hand-paper-regular />
                         </n-icon>
                     </template>
                 </n-empty>
-           </template>
+            </template>
         </n-data-table>
-        <n-result
-            v-else
-            status="error"
-            title="Error"
-            :description="errorMessage"
-        />
+        <n-result v-else status="error" title="Error" :description="errorMessage" />
     </n-space>
 </template>
 
 <script>
-import {computed, h, ref, toRefs, watch} from "vue/dist/vue.esm-bundler.js";
-import {HandPaperRegular, HandPointLeftRegular} from '@vicons/fa';
+import { computed, h, ref, toRefs, watch } from "vue/dist/vue.esm-bundler.js";
+import { HandPaperRegular, HandPointLeftRegular } from '@vicons/fa';
 import * as Communication from "../modules/communication.mjs";
 import ParameterTableNameLabel from "./ParameterTableNameLabel.vue";
 import ParameterTableValueCell from "./ParameterTableValueCell.vue";
@@ -62,12 +46,12 @@ function makeColumns(entityKey, context) {
     const nameColumn = {
         title: "Parameter",
         key: "name",
-        render: function(rowData) {
-            return h(ParameterTableNameLabel, {name: rowData.name, description: rowData.description});
+        render: function (rowData) {
+            return h(ParameterTableNameLabel, { name: rowData.name, description: rowData.description });
         }
     };
-    const completeInfo = function(valueInfo, rowData) {
-        if(valueInfo.id === undefined) {
+    const completeInfo = function (valueInfo, rowData) {
+        if (valueInfo.id === undefined) {
             return {
                 entityEmblem: entityKey.value.entityEmblem,
                 definitionId: rowData.definitionId,
@@ -85,7 +69,7 @@ function makeColumns(entityKey, context) {
     const valueColumn = {
         title: "Value",
         key: "value",
-        render: function(rowData) {
+        render: function (rowData) {
             return h(ParameterTableValueCell, {
                 valueData: {
                     allowedSpecies: rowData.allowedSpecies,
@@ -135,7 +119,7 @@ function allowedSpecies(description) {
     const period = matchPeriod.test(description);
     const time = matchTime.test(description);
     const constant = matchConstant.test(description) || (!period && !time);
-    return {constant: constant, period: period, time: time};
+    return { constant: constant, period: period, time: time };
 }
 
 /**
@@ -145,12 +129,12 @@ function allowedSpecies(description) {
  * @returns {string} Specie.
  */
 function pickSpecie(value, allowedSpecies) {
-    if(typeof value === "object" && value !== null &&
-            (value.type === "map" || value.type === "array" || "content" in value)) {
-        if(value.index_name === "period" && allowedSpecies.period) {
+    if (typeof value === "object" && value !== null &&
+        (value.type === "map" || value.type === "array" || "content" in value)) {
+        if (value.index_name === "period" && allowedSpecies.period) {
             return "period";
         }
-        else if(value.index_name === "time" && allowedSpecies.time) {
+        else if (value.index_name === "time" && allowedSpecies.time) {
             return "time";
         }
         else {
@@ -170,14 +154,14 @@ function pickSpecie(value, allowedSpecies) {
  * @param {EntityDiff} diff Differences store.
  */
 function applyPendingChangesToValues(entityEmblem, alternativeId, tableRows, diff) {
-    tableRows.forEach(function(row) {
-        if(diff.isPendingDeletion(entityEmblem, row.definitionId, alternativeId)) {
+    tableRows.forEach(function (row) {
+        if (diff.isPendingDeletion(entityEmblem, row.definitionId, alternativeId)) {
             row.specie = undefined;
             row.value = undefined;
             return
         }
         const value = diff.pendingValue(entityEmblem, row.definitionId, alternativeId);
-        if(value === undefined) {
+        if (value === undefined) {
             return;
         }
         row.specie = pickSpecie(value, row.allowedSpecies);
@@ -196,17 +180,17 @@ function fetchParameterDefinitions(projectId, modelUrl, classId) {
     return Communication.fetchData(
         "parameter definitions?",
         projectId, modelUrl,
-        {"class_id": classId}
-    ).then(function(data) {
+        { "class_id": classId }
+    ).then(function (data) {
         return data.definitions;
     });
 }
 
 function fetchSkeletonData(projectId, modelUrl, classId) {
-    return fetchParameterDefinitions(projectId, modelUrl, classId).then(async function(definitions) {
+    return fetchParameterDefinitions(projectId, modelUrl, classId).then(async function (definitions) {
         const skeleton = [];
         const valueListIds = new Map();
-        definitions.forEach(function(definition) {
+        definitions.forEach(function (definition) {
             const parameter = {};
             parameter.name = definition.name;
             parameter.description = definition.description;
@@ -218,18 +202,18 @@ function fetchSkeletonData(projectId, modelUrl, classId) {
             }
             skeleton.push(parameter);
         });
-        if(valueListIds.size > 0) {
-             const valueLists = await Communication.fetchData(
+        if (valueListIds.size > 0) {
+            const valueLists = await Communication.fetchData(
                 "parameter value lists?",
                 projectId, modelUrl,
-                {value_list_ids: [...valueListIds.values()]}
-            ).then(function(data) {
+                { value_list_ids: [...valueListIds.values()] }
+            ).then(function (data) {
                 return data.lists;
             });
-            skeleton.forEach(function(tableRow) {
+            skeleton.forEach(function (tableRow) {
                 const valueListId = valueListIds.get(tableRow.definitionId);
                 if (valueListId) {
-                    const valueList = valueLists.find(function(item) {
+                    const valueList = valueLists.find(function (item) {
                         return valueListId === item.id;
                     });
                     tableRow.allowedValues = valueList.value_list.map((x) => JSON.parse(x));
@@ -256,12 +240,12 @@ function fetchData(
     if (skeletonPromise.promise === null) {
         skeletonPromise.promise = fetchSkeletonData(projectId, modelUrl, classId);
     }
-    skeletonPromise.promise.then(function(skeleton) {
+    skeletonPromise.promise.then(function (skeleton) {
         const tableRows = [];
-        skeleton.forEach(function(skeletonRow) {
-            tableRows.push({...skeletonRow});
+        skeleton.forEach(function (skeletonRow) {
+            tableRows.push({ ...skeletonRow });
         });
-        if(entityId === undefined) {
+        if (entityId === undefined) {
             applyPendingChangesToValues(entityEmblem, alternativeId, tableRows, diff);
             tableData.value = tableRows;
         }
@@ -269,14 +253,14 @@ function fetchData(
             Communication.fetchData(
                 "parameter values?",
                 projectId, modelUrl,
-                {"entity_id": entityId, "alternative_id": alternativeId}
-            ).then(async function(data) {
-                data.values.forEach(function(valueRow) {
-                    const tableRow = tableRows.find(function(row) {
+                { "entity_id": entityId, "alternative_id": alternativeId }
+            ).then(async function (data) {
+                data.values.forEach(function (valueRow) {
+                    const tableRow = tableRows.find(function (row) {
                         return valueRow.parameter_definition_id === row.definitionId;
                     });
                     const value = JSON.parse(valueRow.value);
-                    if(value !== null && typeof value === "object") {
+                    if (value !== null && typeof value === "object") {
                         value.type = valueRow.type;
                     }
                     tableRow.value = value;
@@ -287,20 +271,20 @@ function fetchData(
                 tableData.value = tableRows;
             });
         }
-    }).catch(function(error){
+    }).catch(function (error) {
         errorMessage.value = error.message;
-    }).finally(function() {
+    }).finally(function () {
         loading.value = false;
     });
 }
 
 export default {
     props: {
-        projectId: {type: Number, required: true},
-        modelUrl: {type: String, required: true},
-        classId: {type: Number, required: true},
-        entityKey: {type: [Object, null], required: true},
-        diff: {type: Object, required: true},
+        projectId: { type: Number, required: true },
+        modelUrl: { type: String, required: true },
+        classId: { type: Number, required: true },
+        entityKey: { type: [Object, null], required: true },
+        diff: { type: Object, required: true },
     },
     emits: ["openValueEditorRequest", "closeValueEditorRequest", "valueInsert", "valueUpdate", "valueDelete"],
     components: {
@@ -314,23 +298,23 @@ export default {
         const data = ref([]);
         const loading = ref(false);
         const errorMessage = ref("");
-        const skeletonPromise = {promise: null};
-        const entityName = computed(function() {
-            if(props.entityKey === null) {
+        const skeletonPromise = { promise: null };
+        const entityName = computed(function () {
+            if (props.entityKey === null) {
                 return "";
             }
-            else if(typeof props.entityKey.entityEmblem === "string") {
+            else if (typeof props.entityKey.entityEmblem === "string") {
                 return props.entityKey.entityEmblem;
             }
             else {
                 return props.entityKey.entityEmblem.join(" | ");
             }
         });
-        const alternativeName = computed(function() {
+        const alternativeName = computed(function () {
             return props.entityKey !== null ? props.entityKey.alternativeName : "";
         });
-        watch(entityKeyRef, function(key) {
-            if(key === null) {
+        watch(entityKeyRef, function (key) {
+            if (key === null) {
                 data.value.length = 0;
                 return;
             }

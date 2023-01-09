@@ -4,12 +4,12 @@
  * @returns {?string|number} Converted value, e.g. a number, null or the original string.
  */
 function singleValueFromString(value) {
-    if(!value.trim()) {
+    if (!value.trim()) {
         return null;
     }
     const number = parseFloat(value);
-    if(isNaN(number)) {
-        if(value.toUpperCase() === "NAN") {
+    if (isNaN(number)) {
+        if (value.toUpperCase() === "NAN") {
             return number;
         }
         return value;
@@ -17,4 +17,4 @@ function singleValueFromString(value) {
     return number;
 }
 
-export {singleValueFromString};
+export { singleValueFromString };

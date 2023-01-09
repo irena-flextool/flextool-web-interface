@@ -1,24 +1,16 @@
 <template>
     <fetchable :state="state" :error-message="errorMessage">
         <n-space vertical>
-            <n-tree
-                block-line
-                :data="alternativeList"
-                :render-label="renderLabel"
-                :render-suffix="renderSuffix"
-                :selectable="false"
-            />
-            <new-named-item-row
-                item-name="alternative"
-                @create="addAlternative"
-            />
+            <n-tree block-line :data="alternativeList" :render-label="renderLabel" :render-suffix="renderSuffix"
+                :selectable="false" />
+            <new-named-item-row item-name="alternative" @create="addAlternative" />
         </n-space>
     </fetchable>
 </template>
 
 <script>
-import {h, onMounted, ref, toRefs, watch} from "vue/dist/vue.esm-bundler.js";
-import {useDialog} from "naive-ui";
+import { h, onMounted, ref, toRefs, watch } from "vue/dist/vue.esm-bundler.js";
+import { useDialog } from "naive-ui";
 import Fetchable from "./Fetchable.vue";
 import AlternativeListLabel from "./AlternativeListLabel.vue";
 import DeleteItemButton from "./DeleteItemButton.vue"
@@ -28,10 +20,10 @@ import * as Communication from "../modules/communication.mjs";
 function fetchAlternatives(projectId, modelUrl, alternativeList, state, errorMessage, emit) {
     Communication.fetchData(
         "alternatives?", projectId, modelUrl
-    ).then(function(data) {
+    ).then(function (data) {
         const alternatives = data.alternatives;
         const list = [];
-        alternatives.forEach(function(alternative) {
+        alternatives.forEach(function (alternative) {
             list.push({
                 label: alternative.name,
                 key: alternative.name,
@@ -41,7 +33,7 @@ function fetchAlternatives(projectId, modelUrl, alternativeList, state, errorMes
         alternativeList.value = list;
         state.value = Fetchable.state.ready;
         emitAvailableAlternativesChange(alternativeList, emit);
-    }).catch(function(error) {
+    }).catch(function (error) {
         errorMessage.value = error.message;
         state.value = Fetchable.state.error;
     });
@@ -54,9 +46,9 @@ function emitAvailableAlternativesChange(alternativeList, emit) {
 
 export default {
     props: {
-        projectId: {type: Number, required: true},
-        modelUrl: {type: String, required: true},
-        inserted: {type: Object, required: false},
+        projectId: { type: Number, required: true },
+        modelUrl: { type: String, required: true },
+        inserted: { type: Object, required: false },
     },
     emits: ["availableAlternativesChange", "alternativeInsert", "alternativeUpdate", "alternativeDelete"],
     components: {
@@ -68,10 +60,10 @@ export default {
         const errorMessage = ref("");
         const alternativeList = ref([]);
         const dialog = useDialog();
-        const renameAlternative = function(renameData) {
+        const renameAlternative = function (renameData) {
             const existing = alternativeList.value.find((item) => renameData.name === item.label);
-            if(existing) {
-                dialog.error({title: "Cannot rename", content: "An alternative with the same name already exists."});
+            if (existing) {
+                dialog.error({ title: "Cannot rename", content: "An alternative with the same name already exists." });
                 return;
             }
             const alternative = alternativeList.value.find((item) => renameData.previousName === item.label);
@@ -80,23 +72,23 @@ export default {
             context.emit("alternativeUpdate", renameData);
             emitAvailableAlternativesChange(alternativeList, context.emit);
         };
-        const deleteAlternative = function(alternativeName) {
+        const deleteAlternative = function (alternativeName) {
             const index = alternativeList.value.findIndex((info) => info.label === alternativeName);
             const alternativeId = alternativeList.value[index].id;
             alternativeList.value.splice(index, 1);
-            context.emit("alternativeDelete", {id: alternativeId, name: alternativeName});
+            context.emit("alternativeDelete", { id: alternativeId, name: alternativeName });
             emitAvailableAlternativesChange(alternativeList, context.emit);
         };
-        onMounted(function() {
+        onMounted(function () {
             fetchAlternatives(props.projectId, props.modelUrl, alternativeList, state, errorMessage, context.emit);
         });
-        watch(toRefs(props).inserted, function(inserted) {
-            if(!inserted) {
+        watch(toRefs(props).inserted, function (inserted) {
+            if (!inserted) {
                 return;
             }
-            alternativeList.value.forEach(function(alternative) {
+            alternativeList.value.forEach(function (alternative) {
                 const id = inserted[alternative.label];
-                if(id !== undefined) {
+                if (id !== undefined) {
                     alternative.id = id;
                 }
             });
@@ -106,16 +98,16 @@ export default {
             errorMessage: errorMessage,
             alternativeList: alternativeList,
             addAlternative(name) {
-                const existing = alternativeList.value.find(function(item) {
+                const existing = alternativeList.value.find(function (item) {
                     return name === item.label;
                 });
                 if (existing) {
                     dialog.error(
-                        {title: "Cannot create", content: "An alternative with the same name already exists."}
+                        { title: "Cannot create", content: "An alternative with the same name already exists." }
                     );
                     return;
                 }
-                const newAlternative = {label: name, key: name};
+                const newAlternative = { label: name, key: name };
                 const insertIndex = alternativeList.value.findIndex((row) => name < row.label);
                 alternativeList.value.splice(
                     insertIndex >= 0 ? insertIndex : alternativeList.value.length, 0, newAlternative
@@ -131,7 +123,7 @@ export default {
                 });
             },
             renderSuffix(info) {
-                return h(DeleteItemButton, {emblem: info.option.label, onDelete: deleteAlternative});
+                return h(DeleteItemButton, { emblem: info.option.label, onDelete: deleteAlternative });
             },
         };
     },

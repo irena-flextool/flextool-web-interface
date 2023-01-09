@@ -2,7 +2,7 @@ const objectClassType = Symbol("object class type");
 const relationshipClassType = Symbol("object class type");
 
 function interpretClassTypeId(typeId) {
-    switch(typeId) {
+    switch (typeId) {
         case 1:
             return objectClassType;
         case 2:

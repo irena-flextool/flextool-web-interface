@@ -3,11 +3,11 @@
  * @param {Boolean} hasUncommitted True, if there are pending changes, False otherwise.
  */
 function uncommittedChangesWatcher(hasUncommitted) {
-    if(hasUncommitted) {
-        addEventListener("beforeunload", promptUnload, {capture: true});
+    if (hasUncommitted) {
+        addEventListener("beforeunload", promptUnload, { capture: true });
     }
     else {
-        removeEventListener("beforeunload", promptUnload, {capture: true});
+        removeEventListener("beforeunload", promptUnload, { capture: true });
     }
 }
 

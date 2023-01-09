@@ -15,7 +15,7 @@ function relationshipName(className, emblem) {
  * @returns {string} Entity's name.
  */
 function emblemToName(className, emblem) {
-    if(typeof emblem === "string") {
+    if (typeof emblem === "string") {
         return emblem;
     }
     else {
@@ -23,4 +23,4 @@ function emblemToName(className, emblem) {
     }
 }
 
-export {emblemToName, relationshipName};
+export { emblemToName, relationshipName };

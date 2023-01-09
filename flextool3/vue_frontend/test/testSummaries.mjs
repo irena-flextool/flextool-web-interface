@@ -1,12 +1,12 @@
 import assert from "assert/strict";
-import {parseSummary} from "../src/modules/summaries.mjs";
+import { parseSummary } from "../src/modules/summaries.mjs";
 
-describe("parseSummary", function() {
-    it("should handle empty input", function() {
+describe("parseSummary", function () {
+    it("should handle empty input", function () {
         const tables = parseSummary([]);
         assert.deepEqual(tables, []);
     });
-    it("should parse table without header correctly", function() {
+    it("should parse table without header correctly", function () {
         const summary = [
             [],
             ["Emissions"],
@@ -23,7 +23,7 @@ describe("parseSummary", function() {
             ],
         }]);
     });
-    it("should parse table with header correctly", function() {
+    it("should parse table with header correctly", function () {
         const summary = [
             [],
             ["Solve", "y2020"],
@@ -39,7 +39,7 @@ describe("parseSummary", function() {
             ],
             ["Total cost (calculated) realized periods (M CUR)", 21468.7588177],
             ["Operational costs for realized periods (M CUR)", 418.071998891],
-            ["Investment costs for realized periods (M CUR)" ,0],
+            ["Investment costs for realized periods (M CUR)", 0],
             ["Retirement costs (negative salvage value) for realized periods (M CUR)", 0],
             ["Penalty (slack) costs for realized periods (M CUR)", 21050.6868188],
         ];
@@ -60,7 +60,7 @@ describe("parseSummary", function() {
                 ],
                 ["Total cost (calculated) realized periods (M CUR)", 21468.7588177, ""],
                 ["Operational costs for realized periods (M CUR)", 418.071998891, ""],
-                ["Investment costs for realized periods (M CUR)" ,0, ""],
+                ["Investment costs for realized periods (M CUR)", 0, ""],
                 ["Retirement costs (negative salvage value) for realized periods (M CUR)", 0, ""],
                 ["Penalty (slack) costs for realized periods (M CUR)", 21050.6868188, ""],
             ],

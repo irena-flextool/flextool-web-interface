@@ -5,12 +5,12 @@
  */
 function parseScenarioAlternatives(text) {
     const scenarioAlternatives = new Map();
-    text.split("\n").forEach(function(line) {
+    text.split("\n").forEach(function (line) {
         line = line.trim();
-        if(line) {
+        if (line) {
             const items = line.split(/\s+/);
             const scenario = items.shift();
-            if(scenarioAlternatives.has(scenario)) {
+            if (scenarioAlternatives.has(scenario)) {
                 throw new Error(`Duplicate scenario '${scenario}'`);
             }
             scenarioAlternatives.set(scenario, items);
@@ -26,7 +26,7 @@ function parseScenarioAlternatives(text) {
  */
 function makeScenarioAlternativesTable(scenarios) {
     const lines = [];
-    scenarios.forEach(function(scenario) {
+    scenarios.forEach(function (scenario) {
         const line = scenario.scenarioName + " " + scenario.scenarioAlternatives.join(" ");
         lines.push(line);
     });
@@ -41,31 +41,31 @@ function makeScenarioAlternativesTable(scenarios) {
  */
 function scenarioActions(scenarioAlternatives, originalScenarios) {
     const original = new Map();
-    originalScenarios.forEach(function(scenario) {
+    originalScenarios.forEach(function (scenario) {
         original.set(scenario.scenarioName, scenario)
     });
     const inserted = [];
-    scenarioAlternatives.forEach(function(alternatives, scenarioName) {
+    scenarioAlternatives.forEach(function (alternatives, scenarioName) {
         const originalScenario = original.get(scenarioName);
-        if(originalScenario === undefined) {
-            if(alternatives) {
+        if (originalScenario === undefined) {
+            if (alternatives) {
                 inserted.push({
                     scenarioName: scenarioName,
                     scenarioAlternatives: alternatives
                 });
             }
             else {
-                inserted.push({name: scenarioName});
+                inserted.push({ name: scenarioName });
             }
         }
         else {
             let match = false;
-            if(alternatives.length === originalScenario.scenarioAlternatives.length) {
-                match = alternatives.every(function(alternative, index) {
+            if (alternatives.length === originalScenario.scenarioAlternatives.length) {
+                match = alternatives.every(function (alternative, index) {
                     return alternative == originalScenario.scenarioAlternatives[index];
                 });
             }
-            if(!match) {
+            if (!match) {
                 inserted.push({
                     scenarioName: scenarioName,
                     scenarioId: originalScenario.scenarioId,
@@ -75,12 +75,12 @@ function scenarioActions(scenarioAlternatives, originalScenarios) {
         }
     });
     const deleted = [];
-    for(const originalScenario of originalScenarios) {
-        if(!scenarioAlternatives.has(originalScenario.scenarioName)) {
-            deleted.push({scenarioId: originalScenario.scenarioId, scenarioName: originalScenario.scenarioName});
+    for (const originalScenario of originalScenarios) {
+        if (!scenarioAlternatives.has(originalScenario.scenarioName)) {
+            deleted.push({ scenarioId: originalScenario.scenarioId, scenarioName: originalScenario.scenarioName });
         }
     }
-    return {inserted: inserted, deleted: deleted};
+    return { inserted: inserted, deleted: deleted };
 }
 
-export {makeScenarioAlternativesTable, parseScenarioAlternatives, scenarioActions};
+export { makeScenarioAlternativesTable, parseScenarioAlternatives, scenarioActions };

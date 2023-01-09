@@ -1,51 +1,28 @@
 <template>
-    <page
-        name="Edit model"
-        :index-url="indexUrl"
-        :project-url="projectUrl"
-        :edit-url="editUrl"
-        :run-url="runUrl"
-        :results-url="resultsUrl"
-        :logout-url="logoutUrl"
-        :logo-url="logoUrl"
-    >
+    <page name="Edit model" :index-url="indexUrl" :project-url="projectUrl" :edit-url="editUrl" :run-url="runUrl"
+        :results-url="resultsUrl" :logout-url="logoutUrl" :logo-url="logoUrl">
         <template #header>
             <page-path
-                :path="[{name: 'Projects', url: indexUrl}, {name: projectName, url: projectUrl}, {name: 'Model', url: editUrl}]"
-                leaf-name="scenarios"
-            />
-            <commit-button
-                :has-pending-changes="hasPendingChanges"
-                :committing="committing"
-                @commit-request="commit"
-            />
+                :path="[{ name: 'Projects', url: indexUrl }, { name: projectName, url: projectUrl }, { name: 'Model', url: editUrl }]"
+                leaf-name="scenarios" />
+            <commit-button :has-pending-changes="hasPendingChanges" :committing="committing" @commit-request="commit" />
         </template>
         <n-grid cols="1 s:2 m:3 l:4 xl:6" responsive="screen">
             <n-grid-item>
                 <n-space vertical>
                     <n-h1>Alternatives</n-h1>
-                    <alternative-list
-                        :project-id="projectId"
-                        :model-url="modelUrl"
-                        :inserted="insertedAlternatives"
+                    <alternative-list :project-id="projectId" :model-url="modelUrl" :inserted="insertedAlternatives"
                         @available-alternatives-change="updateAvailableAlternatives"
-                        @alternative-insert="storeAlternativeInsertion"
-                        @alternative-update="storeAlternativeUpdate"
-                        @alternative-delete="storeAlternativeDeletion"
-                    />
+                        @alternative-insert="storeAlternativeInsertion" @alternative-update="storeAlternativeUpdate"
+                        @alternative-delete="storeAlternativeDeletion" />
                 </n-space>
             </n-grid-item>
             <n-grid-item span="1 m:2 l:3 xl:5">
                 <n-space vertical>
                     <n-h1>Scenarios</n-h1>
-                    <scenarios-table
-                        ref="scenariosTable"
-                        :project-id="projectId"
-                        :model-url="modelUrl"
-                        @scenario-fetch="setOriginalScenarios"
-                        @scenario-update="updateScenarios"
-                        @duplicate-scenario="setScenarioIssues"
-                    />
+                    <scenarios-table ref="scenariosTable" :project-id="projectId" :model-url="modelUrl"
+                        @scenario-fetch="setOriginalScenarios" @scenario-update="updateScenarios"
+                        @duplicate-scenario="setScenarioIssues" />
                     <text type="error">
                         {{ scenarioIssues }}
                     </text>
@@ -56,12 +33,12 @@
 </template>
 
 <script>
-import {ref, watch} from "vue/dist/vue.esm-bundler.js";
-import {useDialog, useMessage} from "naive-ui";
-import {ScenarioDiff} from "../modules/scenarioDiff.mjs";
-import {scenarioActions} from "../modules/scenarioAlternativeTextTable.mjs";
+import { ref, watch } from "vue/dist/vue.esm-bundler.js";
+import { useDialog, useMessage } from "naive-ui";
+import { ScenarioDiff } from "../modules/scenarioDiff.mjs";
+import { scenarioActions } from "../modules/scenarioAlternativeTextTable.mjs";
 import * as Communication from "../modules/communication.mjs";
-import {uncommittedChangesWatcher} from "../modules/eventListeners.mjs";
+import { uncommittedChangesWatcher } from "../modules/eventListeners.mjs";
 import CommitButton from "./CommitButton.vue";
 import AlternativeList from "./AlternativeList.vue";
 import Page from "./Page.vue";
@@ -69,21 +46,21 @@ import PagePath from "./PagePath.vue";
 import ScenariosTable from "./ScenariosTable.vue";
 
 function validateScenarios(scenarios, availableAlternatives, scenarioIssues) {
-    if(scenarios === null || availableAlternatives === null) {
+    if (scenarios === null || availableAlternatives === null) {
         return;
     }
-    for(const [scenarioName, scenarioAlternatives] of scenarios) {
-        if(!scenarioAlternatives) {
+    for (const [scenarioName, scenarioAlternatives] of scenarios) {
+        if (!scenarioAlternatives) {
             scenarioIssues.value = `Alternatives missing for scenario '${scenarioName}'`;
             return;
         }
         const existingAlternatives = new Set();
-        for(const alternative of scenarioAlternatives) {
-            if(!availableAlternatives.has(alternative)) {
+        for (const alternative of scenarioAlternatives) {
+            if (!availableAlternatives.has(alternative)) {
                 scenarioIssues.value = `Unknown alternative '${alternative}' in scenario '${scenarioName}'`;
                 return;
             }
-            if(existingAlternatives.has(alternative)) {
+            if (existingAlternatives.has(alternative)) {
                 scenarioIssues.value = `Duplicate alternative '${alternative}' in scenario '${scenarioName}'`;
                 return;
             }
@@ -94,22 +71,22 @@ function validateScenarios(scenarios, availableAlternatives, scenarioIssues) {
 }
 
 function hasPendingScenarioUpdates(scenarios, originalScenarios) {
-    if(scenarios === null || originalScenarios === null) {
+    if (scenarios === null || originalScenarios === null) {
         return false;
     }
-    if(scenarios.size != originalScenarios.length) {
+    if (scenarios.size != originalScenarios.length) {
         return true;
     }
-    for(const original of originalScenarios) {
-        if(!scenarios.has(original.scenarioName)) {
+    for (const original of originalScenarios) {
+        if (!scenarios.has(original.scenarioName)) {
             return true;
         }
         const alternatives = scenarios.get(original.scenarioName);
-        if(alternatives.length != original.scenarioAlternatives.length) {
+        if (alternatives.length != original.scenarioAlternatives.length) {
             return true;
         }
-        for(let i = 0; i != alternatives.length; ++i){
-            if(alternatives[i] != original.scenarioAlternatives[i]) {
+        for (let i = 0; i != alternatives.length; ++i) {
+            if (alternatives[i] != original.scenarioAlternatives[i]) {
                 return true
             }
         }
@@ -124,16 +101,16 @@ function isPending(diff, currentScenarios, originalScenarios, scenarioIssues) {
 
 export default {
     props: {
-        indexUrl: {type: String, required: true},
-        projectUrl: {type: String, required: true},
-        projectName: {type: String, required: true},
-        projectId: {type: Number, required: true},
-        editUrl: {type: String, required: true},
-        runUrl: {type: String, required: true},
-        resultsUrl: {type: String, required: true},
-        modelUrl: {type: String, required:  true},
-        logoutUrl: {type: String, required: true},
-        logoUrl: {type: String, required: true},
+        indexUrl: { type: String, required: true },
+        projectUrl: { type: String, required: true },
+        projectName: { type: String, required: true },
+        projectId: { type: Number, required: true },
+        editUrl: { type: String, required: true },
+        runUrl: { type: String, required: true },
+        resultsUrl: { type: String, required: true },
+        modelUrl: { type: String, required: true },
+        logoutUrl: { type: String, required: true },
+        logoUrl: { type: String, required: true },
     },
     components: {
         "commit-button": CommitButton,
@@ -161,9 +138,9 @@ export default {
             insertedAlternatives: insertedAlternatives,
             scenarioIssues: scenarioIssues,
             scenariosTable: scenariosTable,
-            commit () {
+            commit() {
                 committing.value = true;
-                if(scenarioIssues.value) {
+                if (scenarioIssues.value) {
                     dialog.warning({
                         title: "Cannot commit",
                         content: "Scenarios have issues that must be solved first."
@@ -171,12 +148,12 @@ export default {
                     committing.value = false;
                     return;
                 }
-                if(currentScenarios !== null) {
+                if (currentScenarios !== null) {
                     const actions = scenarioActions(currentScenarios, originalScenarios);
-                    actions.deleted.forEach(function(deleted) {
+                    actions.deleted.forEach(function (deleted) {
                         diff.deleteScenario(deleted.scenarioId, deleted.scenarioName);
                     });
-                    actions.inserted.forEach(function(inserted) {
+                    actions.inserted.forEach(function (inserted) {
                         diff.insertScenarioAlternatives(
                             inserted.scenarioId, inserted.scenarioName, inserted.scenarioAlternatives
                         );
@@ -188,16 +165,16 @@ export default {
                     "Modified alternatives and scenarios.",
                     props.projectId,
                     props.modelUrl
-                ).then(function(data) {
-                    if(data.inserted && data.inserted.alternative) {
+                ).then(function (data) {
+                    if (data.inserted && data.inserted.alternative) {
                         insertedAlternatives.value = data.inserted.alternative;
                     }
                     scenariosTable.value.fetchScenarios();
                     message.success("Commit successful.");
                     hasPendingChanges.value = false;
-                }).catch(function(error) {
-                    dialog.error({title: "Commit failure", content: error.message});
-                }).finally(function() {
+                }).catch(function (error) {
+                    dialog.error({ title: "Commit failure", content: error.message });
+                }).finally(function () {
                     diff.clearPending();
                     committing.value = false;
                 });

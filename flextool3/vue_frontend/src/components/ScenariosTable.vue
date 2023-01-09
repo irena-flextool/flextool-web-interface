@@ -2,29 +2,24 @@
     <n-space vertical>
         <n-text>scenario alternative_1 alternative_2…</n-text>
         <fetchable :state="state" :error-message="errorMessage">
-            <n-input
-                type="textarea"
-                :value="text"
-                placeholder="Input scenarios and scenario alternatives"
-                :rows="rowCount"
-                @update:value="parseUpdatedText"
-            />
+            <n-input type="textarea" :value="text" placeholder="Input scenarios and scenario alternatives"
+                :rows="rowCount" @update:value="parseUpdatedText" />
         </fetchable>
     </n-space>
 </template>
 
 <script>
-import {ref, onMounted} from "vue/dist/vue.esm-bundler.js";
-import {makeScenarioAlternativesTable, parseScenarioAlternatives} from "../modules/scenarioAlternativeTextTable.mjs";
+import { ref, onMounted } from "vue/dist/vue.esm-bundler.js";
+import { makeScenarioAlternativesTable, parseScenarioAlternatives } from "../modules/scenarioAlternativeTextTable.mjs";
 import * as Communication from "../modules/communication.mjs";
 import Fetchable from "./Fetchable.vue";
 
 function fetchScenarios(projectId, modelUrl, tableText, rowCount, state, errorMessage, emit) {
-        Communication.fetchData(
+    Communication.fetchData(
         "scenarios?", projectId, modelUrl
-    ).then(function(data) {
+    ).then(function (data) {
         const scenarios = [];
-        data.scenarios.forEach(function(scenario) {
+        data.scenarios.forEach(function (scenario) {
             scenarios.push({
                 scenarioId: scenario.scenario_id,
                 scenarioName: scenario.scenario_name,
@@ -35,7 +30,7 @@ function fetchScenarios(projectId, modelUrl, tableText, rowCount, state, errorMe
         tableText.value = makeScenarioAlternativesTable(scenarios);
         rowCount.value = Math.max(10, (tableText.value.match(/\n/g) || "").length + 3);
         state.value = Fetchable.state.ready;
-    }).catch(function(error) {
+    }).catch(function (error) {
         errorMessage.value = error.message;
         state.value = Fetchable.state.error;
     });
@@ -43,8 +38,8 @@ function fetchScenarios(projectId, modelUrl, tableText, rowCount, state, errorMe
 
 export default {
     props: {
-        projectId: {type: Number, required: true},
-        modelUrl: {type: String, required: true},
+        projectId: { type: Number, required: true },
+        modelUrl: { type: String, required: true },
     },
     emits: ["scenarioFetch", "scenarioUpdate", "duplicateScenario"],
     components: {
@@ -55,7 +50,7 @@ export default {
         const rowCount = ref(10);
         const state = ref(Fetchable.state.loading);
         const errorMessage = ref("");
-        onMounted(function() {
+        onMounted(function () {
             fetchScenarios(props.projectId, props.modelUrl, text, rowCount, state, errorMessage, context.emit);
         });
         return {
@@ -68,7 +63,7 @@ export default {
                 let scenarios = null;
                 try {
                     scenarios = parseScenarioAlternatives(newText);
-                } catch(e) {
+                } catch (e) {
                     context.emit("duplicateScenario", e.message);
                     return;
                 }

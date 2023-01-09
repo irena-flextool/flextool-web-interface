@@ -1,14 +1,7 @@
 <template>
     <n-space justify="space-between">
-        <n-input
-            type="text"
-            placeholder="Enter project name..."
-            clearable
-            maxlength="60"
-            @input="updateProjectName"
-            :value="projectName"
-            :disabled="busy"
-        />
+        <n-input type="text" placeholder="Enter project name..." clearable maxlength="60" @input="updateProjectName"
+            :value="projectName" :disabled="busy" />
         <n-button @click="create" :loading="busy" :disabled="buttonDisabled">Create</n-button>
     </n-space>
 </template>
@@ -25,7 +18,7 @@ export default {
     setup(props, { emit }) {
         const projectName = ref("");
         const busy = ref(false);
-        const message = useMessage() ;
+        const message = useMessage();
         const buttonDisabled = computed(function () {
             if (projectName.value.length === 0 || busy.value) {
                 return true;
@@ -42,12 +35,12 @@ export default {
             },
             create() {
                 busy.value = true;
-                createProject(projectName.value, String(props.projectsUrl)).then(function(data) {
+                createProject(projectName.value, String(props.projectsUrl)).then(function (data) {
                     emit("created", data.project);
                     projectName.value = "";
-                }).catch(function(error) {
+                }).catch(function (error) {
                     message.error(error.message);
-                }).finally(function() {
+                }).finally(function () {
                     busy.value = false;
                 });
             }

@@ -1,4 +1,4 @@
-import {reactive} from "vue";
+import { reactive } from "vue";
 import dataForge from "data-forge";
 import {
     entityClassKey,
@@ -9,7 +9,7 @@ import {
     scenarioTimeStampKey
 } from "./plotEditors.mjs";
 
-const defaultConfig = {responsive: true, displaylogo: false}
+const defaultConfig = { responsive: true, displaylogo: false }
 
 let nextSpecificationId = 0;
 
@@ -33,12 +33,12 @@ const plotSpecifications = reactive({
     },
     asArray() {
         const identifiers = [];
-        for(const identifier of this.specifications.keys()) {
+        for (const identifier of this.specifications.keys()) {
             identifiers.push(identifier);
         }
         identifiers.sort();
         const specifications = [];
-        for(const identifier of identifiers) {
+        for (const identifier of identifiers) {
             specifications.push(this.specifications.get(identifier));
         }
         return specifications;
@@ -51,7 +51,7 @@ const plotSpecifications = reactive({
 function makeSpecification() {
     return {
         plot_type: "line",
-        selection: {entity_class: [], parameter: []},
+        selection: { entity_class: [], parameter: [] },
         dimensions: {
             separate_window: null,
             x1: null,
@@ -68,7 +68,7 @@ const protectedNames = new Set([entityClassKey, parameterKey, scenarioKey, scena
  * @returns {boolean} True if name is parameter index name, false otherwise.
  */
 function isParameterIndexName(name) {
-    return !protectedNames.has(name)  && !name.startsWith(objectKeyPrefix);
+    return !protectedNames.has(name) && !name.startsWith(objectKeyPrefix);
 }
 
 /**Creates a plot object for basic chart types.
@@ -78,19 +78,19 @@ function isParameterIndexName(name) {
  * @param {object} staticLayout Additional static layout data.
  * @returns {object} Plot object.
  */
-function makeBasicChart(dataFrame, plotDimensions, staticData={}, staticLayout={}) {
+function makeBasicChart(dataFrame, plotDimensions, staticData = {}, staticLayout = {}) {
     const specialColumns = declareSpecialColumns(dataFrame, plotDimensions);
     const categoryColumns = makeCategoryColumns(specialColumns);
-    let {lineWindows, plotTitle} = prepareForPlotting(dataFrame, categoryColumns, plotDimensions.separate_window);
+    let { lineWindows, plotTitle } = prepareForPlotting(dataFrame, categoryColumns, plotDimensions.separate_window);
     let subplot = null;
-    if(plotDimensions.separate_window !== null) {
+    if (plotDimensions.separate_window !== null) {
         subplot = makeSubplotData(lineWindows, plotDimensions.separate_window, specialColumns);
         lineWindows = subplot.lineWindows;
     }
     const data = [];
-    for(const window of lineWindows) {
+    for (const window of lineWindows) {
         let subplotData = {};
-        if(subplot !== null) {
+        if (subplot !== null) {
             const subplotCategory = subplot.windowSubplotCategories.splice(0, 1)[0];
             subplotData = subplot.windowSubplotData.get(subplotCategory);
         }
@@ -105,14 +105,14 @@ function makeBasicChart(dataFrame, plotDimensions, staticData={}, staticLayout={
         });
     }
     const layout = {
-        xaxis: {title: nameFromKey(specialColumns.x1)},
+        xaxis: { title: nameFromKey(specialColumns.x1) },
         ...(subplot !== null ? subplot.subplotLayout : {}),
         ...staticLayout,
     };
-    if(plotTitle !== undefined) {
+    if (plotTitle !== undefined) {
         layout.title = plotTitle;
     }
-    const config = {...defaultConfig};
+    const config = { ...defaultConfig };
     return {
         data: data,
         layout: layout,
@@ -126,32 +126,32 @@ function makeBasicChart(dataFrame, plotDimensions, staticData={}, staticLayout={
  * @returns {object} Plot object.
  */
 function makeHeatmapChart(dataFrame, plotDimensions) {
-    if(plotDimensions.separate_window !== null) {
+    if (plotDimensions.separate_window !== null) {
         dataFrame = dataFrame.orderBy(row => row[plotDimensions.separate_window]);
     }
     const specialColumns = declareSpecialColumns(dataFrame, plotDimensions);
     const categoryColumns = makeCategoryColumns(specialColumns);
     dataFrame = padCategoriesByNulls(dataFrame, specialColumns);
-    let {lineWindows, plotTitle} = prepareForPlotting(dataFrame, categoryColumns, plotDimensions.separate_window);
+    let { lineWindows, plotTitle } = prepareForPlotting(dataFrame, categoryColumns, plotDimensions.separate_window);
     let subplot = null;
-    if(plotDimensions.separate_window !== null) {
+    if (plotDimensions.separate_window !== null) {
         const windowSets = new Map();
-        for(const window of lineWindows) {
+        for (const window of lineWindows) {
             const subplotName = window.first()[plotDimensions.separate_window];
-            if(!windowSets.has(subplotName)) {
+            if (!windowSets.has(subplotName)) {
                 windowSets.set(subplotName, windowSets.size);
             }
         }
-        subplot = makeSubplotData(lineWindows, plotDimensions.separate_window, specialColumns, {automargin: true});
+        subplot = makeSubplotData(lineWindows, plotDimensions.separate_window, specialColumns, { automargin: true });
         lineWindows = subplot.lineWindows;
     }
     const data = [];
     let currentCategory = null;
     let currentData = null;
     const subplotCategories = subplot !== null ? subplot.windowSubplotCategories : new Array(lineWindows.length);
-    for(const window of lineWindows) {
+    for (const window of lineWindows) {
         const subplotCategory = subplotCategories.splice(0, 1)[0];
-        if(currentCategory !== subplotCategory) {
+        if (currentCategory !== subplotCategory) {
             currentCategory = subplotCategory;
             currentData = {
                 x: buildX(window, specialColumns),
@@ -159,7 +159,7 @@ function makeHeatmapChart(dataFrame, plotDimensions) {
                 z: [],
                 type: "heatmap",
             };
-            if(subplot !== null) {
+            if (subplot !== null) {
                 currentData = {
                     ...currentData,
                     ...subplot.windowSubplotData.get(subplotCategory),
@@ -173,7 +173,7 @@ function makeHeatmapChart(dataFrame, plotDimensions) {
         window.forEach(row => heat.push(row.y));
         currentData.z.push(heat);
     }
-    if(data.length === 0) {
+    if (data.length === 0) {
         data.push({
             x: [],
             y: [],
@@ -182,16 +182,16 @@ function makeHeatmapChart(dataFrame, plotDimensions) {
         });
     }
     let layout = {
-        xaxis: {title: nameFromKey(specialColumns.x1)},
-        yaxis: {automargin: true},
+        xaxis: { title: nameFromKey(specialColumns.x1) },
+        yaxis: { automargin: true },
     };
-    if(subplot !== null) {
-        layout = {...layout, ...subplot.subplotLayout, coloraxis: {}};
+    if (subplot !== null) {
+        layout = { ...layout, ...subplot.subplotLayout, coloraxis: {} };
     }
-    if(plotTitle !== undefined) {
+    if (plotTitle !== undefined) {
         layout.title = plotTitle;
     }
-    const config = {...defaultConfig};
+    const config = { ...defaultConfig };
     return {
         data: data,
         layout: layout,
@@ -212,12 +212,12 @@ function makeSubplotData(lineWindows, separateWindow, specialColumns, staticLayo
     const windowSubplotData = new Map();
     const windowSubplotCategories = [];
     const subplotAnnotations = [];
-    for(const window of lineWindows) {
+    for (const window of lineWindows) {
         const subplotCategory = window.first()[separateWindow];
         windowSubplotCategories.push(subplotCategory);
-        if(!windowSubplotData.has(subplotCategory)) {
+        if (!windowSubplotData.has(subplotCategory)) {
             const axisNumber = windowSubplotData.size + 1;
-            windowSubplotData.set(subplotCategory, {xaxis: `x${axisNumber}`, yaxis: `y${axisNumber}`});
+            windowSubplotData.set(subplotCategory, { xaxis: `x${axisNumber}`, yaxis: `y${axisNumber}` });
             subplotAnnotations.push({
                 text: subplotCategory,
                 showarrow: false,
@@ -229,10 +229,10 @@ function makeSubplotData(lineWindows, separateWindow, specialColumns, staticLayo
         }
         separatedWindows.push(window.dropSeries(separateWindow));
     }
-    for(let i = 2; i != windowSubplotData.size + 1; ++i) {
-        subplotLayout[`xaxis${i}`] = {title: nameFromKey(specialColumns.x1)};
-        if(staticLayoutYAxis !== undefined) {
-            subplotLayout[`yaxis${i}`] = {...staticLayoutYAxis};
+    for (let i = 2; i != windowSubplotData.size + 1; ++i) {
+        subplotLayout[`xaxis${i}`] = { title: nameFromKey(specialColumns.x1) };
+        if (staticLayoutYAxis !== undefined) {
+            subplotLayout[`yaxis${i}`] = { ...staticLayoutYAxis };
         }
     }
     const columnCount = 2;
@@ -257,9 +257,9 @@ function makeSubplotData(lineWindows, separateWindow, specialColumns, staticLayo
  * @returns {Array} Plot x data.
  */
 function buildX(dataFrame, specialColumns) {
-    if(specialColumns.x2 !== undefined) {
+    if (specialColumns.x2 !== undefined) {
         const x = [];
-        if(specialColumns.x3 !== undefined) {
+        if (specialColumns.x3 !== undefined) {
             const x2x3 = dataFrame.deflate((row) => `${row[specialColumns.x3]} / ${row[specialColumns.x2]}`).toArray();
             x.push(x2x3);
         }
@@ -279,21 +279,21 @@ function buildX(dataFrame, specialColumns) {
  */
 function padCategoriesByNulls(dataFrame, specialColumns) {
     const categoryDimensions = [specialColumns.x1, specialColumns.x2, specialColumns.x3].filter((d) => d !== undefined);
-    if(categoryDimensions.length === 0) {
+    if (categoryDimensions.length === 0) {
         return dataFrame;
     }
     const categoriesMatch = (category1, category2) => category1.every((c, i) => c === category2[i]);
-    const categoryWindows = dataFrame.variableWindow(function(a, b) {
+    const categoryWindows = dataFrame.variableWindow(function (a, b) {
         return categoryDimensions.every((d) => a[d] === b[d]);
     });
     const batchCategories = [];
-    for(const window of categoryWindows) {
+    for (const window of categoryWindows) {
         const categories = [];
         const firstRow = window.first();
-        for(const dimension of categoryDimensions) {
+        for (const dimension of categoryDimensions) {
             categories.push(firstRow[dimension]);
         }
-        if(batchCategories.length === 0 || batchCategories.every((c) => !categoriesMatch(c, categories))) {
+        if (batchCategories.length === 0 || batchCategories.every((c) => !categoriesMatch(c, categories))) {
             batchCategories.push(categories);
         }
     }
@@ -303,28 +303,28 @@ function padCategoriesByNulls(dataFrame, specialColumns) {
     };
     const batchDefiningColumns = new Set(Object.values(specialColumns).filter((c) => c !== undefined));
     const windowCommonColumns = dataFrame.getColumnNames().slice(0, -1).filter((a) => !batchDefiningColumns.has(a));
-    const windows = dataFrame.variableWindow(function(a, b) {
-        for(const column of windowCommonColumns) {
-            if(a[column] !== b[column]) {
+    const windows = dataFrame.variableWindow(function (a, b) {
+        for (const column of windowCommonColumns) {
+            if (a[column] !== b[column]) {
                 return false;
             }
         }
         return true;
     });
-    const rowCategories = function(row) {
+    const rowCategories = function (row) {
         const categories = [];
-        for(const dimension of categoryDimensions) {
+        for (const dimension of categoryDimensions) {
             categories.push(row[dimension]);
         }
         return categories;
     }
-    for(const window of windows) {
+    for (const window of windows) {
         const categoriesBefore = rowCategories(window.first());
         const windowStartLoc = batchCategories.findIndex((c) => categoriesMatch(c, categoriesBefore));
         const preceding = batchCategories.slice(0, windowStartLoc);
         const headFrame = window.head(1);
-        for(const precedingCategory of preceding) {
-            for(const [i, dimension] of categoryDimensions.entries()) {
+        for (const precedingCategory of preceding) {
+            for (const [i, dimension] of categoryDimensions.entries()) {
                 seriesGenerator[dimension] = () => precedingCategory[i];
             }
             const batch = headFrame.generateSeries(seriesGenerator);
@@ -335,8 +335,8 @@ function padCategoriesByNulls(dataFrame, specialColumns) {
         const windowEndLoc = batchCategories.findIndex((c) => categoriesMatch(c, categoriesAfter));
         const subsequent = batchCategories.slice(windowEndLoc + 1, batchCategories.length);
         const tailFrame = window.tail(1);
-        for(const subsequentCategory of subsequent) {
-            for(const [i, dimension] of categoryDimensions.entries()) {
+        for (const subsequentCategory of subsequent) {
+            for (const [i, dimension] of categoryDimensions.entries()) {
                 seriesGenerator[dimension] = () => subsequentCategory[i];
             }
             const batch = tailFrame.generateSeries(seriesGenerator);
@@ -354,8 +354,8 @@ function padCategoriesByNulls(dataFrame, specialColumns) {
 function makeLineLabel(lineWindow, categoryColumns) {
     const firstRow = lineWindow.first();
     const nameParts = [];
-    for(const column of lineWindow.getColumnNames().slice(0, -1)) {
-        if(!categoryColumns.has(column)) {
+    for (const column of lineWindow.getColumnNames().slice(0, -1)) {
+        if (!categoryColumns.has(column)) {
             nameParts.push(firstRow[column]);
         }
     }
@@ -365,23 +365,23 @@ function makeLineLabel(lineWindow, categoryColumns) {
 function distinctColumns(dataFrame) {
     let columns = dataFrame.getColumnNames();
     const distinct = new Map();
-    for(const row of dataFrame) {
+    for (const row of dataFrame) {
         const surviving = [];
-        for(const column of columns) {
-            if(column === "y") {
+        for (const column of columns) {
+            if (column === "y") {
                 continue;
             }
             const existing = distinct.get(column);
-            if(existing === undefined) {
+            if (existing === undefined) {
                 distinct.set(column, row[column]);
                 surviving.push(column);
             }
-            else if(row[column] === existing) {
+            else if (row[column] === existing) {
                 surviving.push(column);
             }
         }
         columns = surviving;
-        if(surviving.length === 0) {
+        if (surviving.length === 0) {
             break;
         }
     }
@@ -398,7 +398,7 @@ function declareSpecialColumns(dataFrame, plotDimensions) {
     const x1Column = plotDimensions.x1 !== null ? plotDimensions.x1 : defaultX1;
     const x2Column = plotDimensions.x2 !== null && plotDimensions.x2 !== x1Column ? plotDimensions.x2 : undefined;
     const x3Column = (x2Column !== undefined && plotDimensions.x3 !== null && plotDimensions.x3 !== x1Column) ? plotDimensions.x3 : undefined;
-    return {x1: x1Column, x2: x2Column, x3: x3Column};
+    return { x1: x1Column, x2: x2Column, x3: x3Column };
 }
 
 /**Creates category columns set.
@@ -412,19 +412,19 @@ function makeCategoryColumns(specialColumns) {
 
 function filterDeselectedIndexNames(dataFrame, plotSelection) {
     const filterPassingIndexes = new Map();
-    for(const indexName in plotSelection) {
-        if(!isParameterIndexName(indexName)) {
+    for (const indexName in plotSelection) {
+        if (!isParameterIndexName(indexName)) {
             continue;
         }
         const selected = plotSelection[indexName];
-        if(selected.length > 0) {
+        if (selected.length > 0) {
             filterPassingIndexes.set(indexName, new Set(selected));
         }
     }
-    if(filterPassingIndexes.size > 0) {
-        dataFrame = dataFrame.where(function(row) {
-            for(const [indexName, selected] of filterPassingIndexes.entries()) {
-                if(!selected.has(row[indexName])) {
+    if (filterPassingIndexes.size > 0) {
+        dataFrame = dataFrame.where(function (row) {
+            for (const [indexName, selected] of filterPassingIndexes.entries()) {
+                if (!selected.has(row[indexName])) {
                     return false;
                 }
             }
@@ -442,34 +442,34 @@ function filterDeselectedIndexNames(dataFrame, plotSelection) {
 function prepareForPlotting(dataFrame, categoryColumns, subplotTitleColumn) {
     const distinct = distinctColumns(dataFrame);
     let plotTitle = undefined;
-    if(distinct.length > 0) {
+    if (distinct.length > 0) {
         const actuallyNonDistinctColumns = new Set(categoryColumns);
-        if(subplotTitleColumn !== undefined) {
+        if (subplotTitleColumn !== undefined) {
             actuallyNonDistinctColumns.add(subplotTitleColumn);
         }
-        for(const droppableColumn of actuallyNonDistinctColumns){
+        for (const droppableColumn of actuallyNonDistinctColumns) {
             const droppedIndex = distinct.indexOf(droppableColumn);
-            if(droppedIndex >= 0) {
+            if (droppedIndex >= 0) {
                 distinct.splice(droppedIndex, 1);
             }
         }
         const names = [];
-        for(const column of distinct) {
+        for (const column of distinct) {
             names.push(dataFrame.first()[column]);
         }
         dataFrame = dataFrame.dropSeries(distinct);
         plotTitle = names.join(" | ")
     }
     const columns = dataFrame.getColumnNames().slice(0, -1).filter((name) => !categoryColumns.has(name));
-    const lineWindows = dataFrame.variableWindow(function(a, b) {
-        for(const column of columns) {
-            if(a[column] !== b[column]) {
+    const lineWindows = dataFrame.variableWindow(function (a, b) {
+        for (const column of columns) {
+            if (a[column] !== b[column]) {
                 return false;
             }
         }
         return true;
     });
-    return {lineWindows: lineWindows, plotTitle: plotTitle};
+    return { lineWindows: lineWindows, plotTitle: plotTitle };
 }
 
 

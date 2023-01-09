@@ -1,33 +1,23 @@
 <template>
-    <n-select
-        v-model:value="currentObject"
-        ref="instance"
-        filterable
-        :options="options"
-        size="tiny"
-        :show-arrow="false"
-        class="entity-list-select"
-        :consistent-menu-width="false"
-        @blur="accept"
-        @keydown="handleKey"
-    />
+    <n-select v-model:value="currentObject" ref="instance" filterable :options="options" size="tiny" :show-arrow="false"
+        class="entity-list-select" :consistent-menu-width="false" @blur="accept" @keydown="handleKey" />
 </template>
 
 <script>
-import {onMounted, ref} from "vue/dist/vue.esm-bundler.js";
+import { onMounted, ref } from "vue/dist/vue.esm-bundler.js";
 export default {
     props: {
-        objectName: {type: String, required: true},
-        availableObjects: {type: Array, required: true},
+        objectName: { type: String, required: true },
+        availableObjects: { type: Array, required: true },
     },
     emits: ["accept", "cancel"],
     setup(props, context) {
         const options = [];
-        props.availableObjects.forEach(function(object) {
+        props.availableObjects.forEach(function (object) {
             options.push({
                 label: object,
                 value: object,
-                style: {"font-size": "12px"},
+                style: { "font-size": "12px" },
             });
         });
         const currentObject = ref(props.objectName);
@@ -35,14 +25,14 @@ export default {
         onMounted(function () {
             instance.value?.focus();
         });
-        const accept = function() {
-            if(currentObject.value === props.objectName) {
+        const accept = function () {
+            if (currentObject.value === props.objectName) {
                 context.emit("cancel");
                 return;
             }
             context.emit("accept", currentObject.value);
         };
-        const cancel = function() {
+        const cancel = function () {
             context.emit("cancel");
         };
         return {
@@ -52,7 +42,7 @@ export default {
             accept: accept,
             cancel: cancel,
             handleKey(keyInfo) {
-                switch(keyInfo.key) {
+                switch (keyInfo.key) {
                     case "Enter":
                         accept();
                         break;

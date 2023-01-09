@@ -3,7 +3,7 @@ const del = Symbol("delete action");
 const update = Symbol("update action");
 
 class PendingAlternative {
-    constructor(action, originalName=undefined, id=undefined) {
+    constructor(action, originalName = undefined, id = undefined) {
         this.action = action;
         this.originalName = originalName;
         this.id = id;
@@ -11,7 +11,7 @@ class PendingAlternative {
 }
 
 class PendingScenario {
-    constructor(action, id=undefined) {
+    constructor(action, id = undefined) {
         this.action = action;
         this.id = id;
         this.scenarioAlternatives = undefined;
@@ -38,29 +38,29 @@ class ScenarioDiff {
         const alternativeInsertions = [];
         const alternativeUpdates = [];
         const alternativeDeletions = [];
-        this.#pendingAlternatives.forEach(function(pending, name) {
+        this.#pendingAlternatives.forEach(function (pending, name) {
             const action = pending.action;
-            if(action === insert) {
-                alternativeInsertions.push({name: name});
+            if (action === insert) {
+                alternativeInsertions.push({ name: name });
             }
-            else if(action === update) {
-                alternativeUpdates.push({id: pending.id, name: name});
+            else if (action === update) {
+                alternativeUpdates.push({ id: pending.id, name: name });
             }
-            else if(action === del) {
+            else if (action === del) {
                 alternativeDeletions.push(pending.id);
             }
         });
         const scenarioInsertions = [];
         const scenarioDeletions = [];
         const scenarioAlternativeInsertions = [];
-        this.#pendingScenarios.forEach(function(pending, name) {
-            if(pending.action === insert) {
-                scenarioInsertions.push({name: name});
-                if(pending.scenarioAlternatives) {
-                    if(pending.id !== undefined) {
+        this.#pendingScenarios.forEach(function (pending, name) {
+            if (pending.action === insert) {
+                scenarioInsertions.push({ name: name });
+                if (pending.scenarioAlternatives) {
+                    if (pending.id !== undefined) {
                         scenarioDeletions.push(pending.id);
                     }
-                    pending.scenarioAlternatives.forEach(function(alternativeName, rank) {
+                    pending.scenarioAlternatives.forEach(function (alternativeName, rank) {
                         scenarioAlternativeInsertions.push({
                             scenario_name: name,
                             alternative_name: alternativeName,
@@ -69,7 +69,7 @@ class ScenarioDiff {
                     });
                 }
             }
-            else if(pending.action === del) {
+            else if (pending.action === del) {
                 scenarioDeletions.push(pending.id)
             }
         });
@@ -109,24 +109,24 @@ class ScenarioDiff {
 
     updateAlternative(previousName, id, name) {
         let pendingAlternative = this.#pendingAlternatives.get(previousName);
-        if(pendingAlternative === undefined) {
+        if (pendingAlternative === undefined) {
             pendingAlternative = new PendingAlternative(update, previousName, id);
         }
         else {
             this.#pendingAlternatives.delete(previousName);
         }
-        if(name !== pendingAlternative.originalName) {
+        if (name !== pendingAlternative.originalName) {
             this.#pendingAlternatives.set(name, pendingAlternative);
         }
     }
 
     deleteAlternative(id, name) {
         const pendingAlternative = this.#pendingAlternatives.get(name);
-        if(pendingAlternative === undefined) {
+        if (pendingAlternative === undefined) {
             this.#pendingAlternatives.set(name, new PendingAlternative(del, name, id));
         }
         else {
-            if(pendingAlternative.action === insert) {
+            if (pendingAlternative.action === insert) {
                 this.#pendingAlternatives.delete(name);
             }
             else {
@@ -139,8 +139,8 @@ class ScenarioDiff {
 
     deleteScenario(id, name) {
         const pendingScenario = this.#pendingScenarios.get(name);
-        if(pendingScenario !== undefined) {
-            if(pendingScenario.id === undefined) {
+        if (pendingScenario !== undefined) {
+            if (pendingScenario.id === undefined) {
                 this.#pendingScenarios.delete(name);
             }
             else {
@@ -156,7 +156,7 @@ class ScenarioDiff {
 
     insertScenarioAlternatives(scenarioId, scenarioName, alternativeNames) {
         let pendingScenario = this.#pendingScenarios.get(scenarioName);
-        if(pendingScenario === undefined) {
+        if (pendingScenario === undefined) {
             pendingScenario = new PendingScenario(insert, scenarioId);
             this.#pendingScenarios.set(scenarioName, pendingScenario);
         }
@@ -167,4 +167,4 @@ class ScenarioDiff {
     }
 }
 
-export {ScenarioDiff};
+export { ScenarioDiff };

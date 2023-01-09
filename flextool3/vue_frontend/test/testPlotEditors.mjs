@@ -1,5 +1,5 @@
 import assert from "assert/strict";
-import {ref} from "vue";
+import { ref } from "vue";
 import {
     addFetchedEntities,
     addFetchedParameters,
@@ -10,11 +10,11 @@ import {
     removeExcessSelectionSelects,
 } from "../src/modules/plotEditors.mjs";
 
-function dummy() {}
+function dummy() { }
 
 function assertObjectSelectionSelects(selectionSelects, expectedOptions) {
     assert.equal(selectionSelects.value.length, expectedOptions.length);
-    for(let dimension = 0; dimension < expectedOptions.length; ++dimension) {
+    for (let dimension = 0; dimension < expectedOptions.length; ++dimension) {
         assert.deepEqual(selectionSelects.value[dimension].label, `Object ${dimension + 1}`);
         assert.equal(selectionSelects.value[dimension].updateCallback, dummy);
         assert.equal(selectionSelects.value[dimension].placeholder, "Use all objects");
@@ -23,8 +23,8 @@ function assertObjectSelectionSelects(selectionSelects, expectedOptions) {
     }
 }
 
-describe("addFetchedEntities", function() {
-    it("should correctly add new entity to otherwise empty structures", function() {
+describe("addFetchedEntities", function () {
+    it("should correctly add new entity to otherwise empty structures", function () {
         const entities = [
             {
                 names: ["object a"],
@@ -33,19 +33,19 @@ describe("addFetchedEntities", function() {
         ];
         const selectionOptions = new Map();
         const selectionSelects = ref([]);
-        const plotSpecification = {selection: {}};
+        const plotSpecification = { selection: {} };
         const dimensionsOptions = ref([]);
         addFetchedEntities(entities, selectionOptions, selectionSelects, plotSpecification, dimensionsOptions, dummy);
         const expectedOptions = new Map();
-        expectedOptions.set(objectKey(0), ref([{label: "object a", parents: [{entityClass: "my_class"}]}]));
+        expectedOptions.set(objectKey(0), ref([{ label: "object a", parents: [{ entityClass: "my_class" }] }]));
         assert.deepEqual(selectionOptions, expectedOptions);
         assertObjectSelectionSelects(selectionSelects, [selectionOptions.get(objectKey(0))]);
-        const expectedSpecification = {selection: {object_0: []}};
+        const expectedSpecification = { selection: { object_0: [] } };
         assert.deepEqual(plotSpecification, expectedSpecification);
-        const expectedDimensionsOptions = ref([{label: "Object 1", value: objectKey(0), protected: true}]);
+        const expectedDimensionsOptions = ref([{ label: "Object 1", value: objectKey(0), protected: true }]);
         assert.deepEqual(dimensionsOptions.value, expectedDimensionsOptions.value);
     });
-    it("should deal with two dimensional relationships", function() {
+    it("should deal with two dimensional relationships", function () {
         const entities = [
             {
                 names: ["object a", "object b"],
@@ -54,23 +54,23 @@ describe("addFetchedEntities", function() {
         ];
         const selectionOptions = new Map();
         const selectionSelects = ref([]);
-        const plotSpecification = {selection: {}};
+        const plotSpecification = { selection: {} };
         const dimensionsOptions = ref([]);
         addFetchedEntities(entities, selectionOptions, selectionSelects, plotSpecification, dimensionsOptions, dummy);
         const expectedOptions = new Map();
-        expectedOptions.set(objectKey(0), ref([{label: "object a", parents: [{entityClass: "my_relation_class"}]}]));
-        expectedOptions.set(objectKey(1), ref([{label: "object b", parents: [{entityClass: "my_relation_class"}]}]));
+        expectedOptions.set(objectKey(0), ref([{ label: "object a", parents: [{ entityClass: "my_relation_class" }] }]));
+        expectedOptions.set(objectKey(1), ref([{ label: "object b", parents: [{ entityClass: "my_relation_class" }] }]));
         assert.deepEqual(selectionOptions, expectedOptions);
         assertObjectSelectionSelects(selectionSelects, [selectionOptions.get(objectKey(0)), selectionOptions.get(objectKey(1))]);
-        const expectedSpecification = {selection: {object_0: [], object_1: []}};
+        const expectedSpecification = { selection: { object_0: [], object_1: [] } };
         assert.deepEqual(plotSpecification, expectedSpecification);
         const expectedDimensionsOptions = ref([
-            {label: "Object 1", value: objectKey(0), protected: true},
-            {label: "Object 2", value: objectKey(1), protected: true},
+            { label: "Object 1", value: objectKey(0), protected: true },
+            { label: "Object 2", value: objectKey(1), protected: true },
         ]);
         assert.deepEqual(dimensionsOptions.value, expectedDimensionsOptions.value);
     });
-    it("should correctly add new entity after previous one", function() {
+    it("should correctly add new entity after previous one", function () {
         const entities_1 = [
             {
                 names: ["object a"],
@@ -79,7 +79,7 @@ describe("addFetchedEntities", function() {
         ];
         const selectionOptions = new Map();
         const selectionSelects = ref([]);
-        const plotSpecification = {selection: {}};
+        const plotSpecification = { selection: {} };
         const dimensionsOptions = ref([]);
         addFetchedEntities(entities_1, selectionOptions, selectionSelects, plotSpecification, dimensionsOptions, dummy);
         const entities_2 = [
@@ -98,12 +98,12 @@ describe("addFetchedEntities", function() {
         assert.equal(selectionOptions.get(objectKey(0)).value[1].parents.length, 1);
         assert.equal(selectionOptions.get(objectKey(0)).value[1].parents[0].entityClass, "another_class");
         assertObjectSelectionSelects(selectionSelects, [selectionOptions.get(objectKey(0))]);
-        const expectedSpecification = {selection: {object_0: []}};
+        const expectedSpecification = { selection: { object_0: [] } };
         assert.deepEqual(plotSpecification, expectedSpecification);
-        const expectedDimensionsOptions = ref([{label: "Object 1", value: objectKey(0), protected: true}]);
+        const expectedDimensionsOptions = ref([{ label: "Object 1", value: objectKey(0), protected: true }]);
         assert.deepEqual(dimensionsOptions.value, expectedDimensionsOptions.value);
     });
-    it("should add new one after previous one has been removed", function() {
+    it("should add new one after previous one has been removed", function () {
         const entities_1 = [
             {
                 names: ["object a"],
@@ -112,7 +112,7 @@ describe("addFetchedEntities", function() {
         ];
         const selectionOptions = new Map();
         const selectionSelects = ref([]);
-        const plotSpecification = {selection: {}};
+        const plotSpecification = { selection: {} };
         const dimensionsOptions = ref([]);
         addFetchedEntities(entities_1, selectionOptions, selectionSelects, plotSpecification, dimensionsOptions, dummy);
         selectionOptions.set(objectKey(0), ref([]));
@@ -131,9 +131,9 @@ describe("addFetchedEntities", function() {
         assert.equal(selectionOptions.get(objectKey(0)).value[0].parents.length, 1);
         assert.equal(selectionOptions.get(objectKey(0)).value[0].parents[0].entityClass, "another_class");
         assertObjectSelectionSelects(selectionSelects, [selectionOptions.get(objectKey(0))]);
-        const expectedSpecification = {selection: {object_0: []}};
+        const expectedSpecification = { selection: { object_0: [] } };
         assert.deepEqual(plotSpecification, expectedSpecification);
-        const expectedDimensionsOptions = ref([{label: "Object 1", value: objectKey(0), protected: true}]);
+        const expectedDimensionsOptions = ref([{ label: "Object 1", value: objectKey(0), protected: true }]);
         assert.deepEqual(dimensionsOptions.value, expectedDimensionsOptions.value);
     });
 });
@@ -147,8 +147,8 @@ function assertParameterSelectionSelects(selectionSelects, expectedOptions) {
     assert.equal(selectionSelects.value[0].priority, 9000);
 }
 
-describe("addFetchedParameters", function() {
-    it("should correctly add new parameter to otherwise empty structures", function() {
+describe("addFetchedParameters", function () {
+    it("should correctly add new parameter to otherwise empty structures", function () {
         const parameterData = [
             {
                 name: "my_parameter",
@@ -157,19 +157,19 @@ describe("addFetchedParameters", function() {
         ];
         const selectionOptions = new Map();
         const selectionSelects = ref([]);
-        const plotSpecification = {selection: {}};
+        const plotSpecification = { selection: {} };
         const dimensionsOptions = ref([]);
         addFetchedParameters(parameterData, selectionOptions, selectionSelects, plotSpecification, dimensionsOptions, dummy);
         const expectedOptions = new Map();
-        expectedOptions.set(parameterKey, ref([{label: "my_parameter", parents: [{entityClass: "my_class"}]}]));
+        expectedOptions.set(parameterKey, ref([{ label: "my_parameter", parents: [{ entityClass: "my_class" }] }]));
         assert.deepEqual(selectionOptions, expectedOptions);
         assertParameterSelectionSelects(selectionSelects, selectionOptions.get(parameterKey));
-        const expectedSpecification = {selection: {parameter: []}};
+        const expectedSpecification = { selection: { parameter: [] } };
         assert.deepEqual(plotSpecification, expectedSpecification);
-        const expectedDimensionsOptions = ref([{label: "Parameter", value: parameterKey, protected: true}]);
+        const expectedDimensionsOptions = ref([{ label: "Parameter", value: parameterKey, protected: true }]);
         assert.deepEqual(dimensionsOptions.value, expectedDimensionsOptions.value);
     });
-    it("should correctly add new parameter after previous one", function() {
+    it("should correctly add new parameter after previous one", function () {
         const parameters_1 = [
             {
                 name: "my_parameter",
@@ -178,7 +178,7 @@ describe("addFetchedParameters", function() {
         ];
         const selectionOptions = new Map();
         const selectionSelects = ref([]);
-        const plotSpecification = {selection: {}};
+        const plotSpecification = { selection: {} };
         const dimensionsOptions = ref([]);
         addFetchedParameters(parameters_1, selectionOptions, selectionSelects, plotSpecification, dimensionsOptions, dummy);
         const parameters_2 = [
@@ -197,12 +197,12 @@ describe("addFetchedParameters", function() {
         assert.equal(selectionOptions.get(parameterKey).value[1].parents.length, 1);
         assert.equal(selectionOptions.get(parameterKey).value[1].parents[0].entityClass, "my_class");
         assertParameterSelectionSelects(selectionSelects, selectionOptions.get(parameterKey));
-        const expectedSpecification = {selection: {parameter: []}};
+        const expectedSpecification = { selection: { parameter: [] } };
         assert.deepEqual(plotSpecification, expectedSpecification);
-        const expectedDimensionsOptions = ref([{label: "Parameter", value: parameterKey, protected: true}]);
+        const expectedDimensionsOptions = ref([{ label: "Parameter", value: parameterKey, protected: true }]);
         assert.deepEqual(dimensionsOptions.value, expectedDimensionsOptions.value);
     });
-    it("should add new one after previous one has been removed", function() {
+    it("should add new one after previous one has been removed", function () {
         const parameters_1 = [
             {
                 name: "my_parameter",
@@ -211,7 +211,7 @@ describe("addFetchedParameters", function() {
         ];
         const selectionOptions = new Map();
         const selectionSelects = ref([]);
-        const plotSpecification = {selection: {}};
+        const plotSpecification = { selection: {} };
         const dimensionsOptions = ref([]);
         addFetchedParameters(parameters_1, selectionOptions, selectionSelects, plotSpecification, dimensionsOptions, dummy);
         selectionOptions.set(parameterKey, ref([]));
@@ -230,15 +230,15 @@ describe("addFetchedParameters", function() {
         assert.equal(selectionOptions.get(parameterKey).value[0].parents.length, 1);
         assert.equal(selectionOptions.get(parameterKey).value[0].parents[0].entityClass, "another_class");
         assertParameterSelectionSelects(selectionSelects, selectionOptions.get(parameterKey));
-        const expectedSpecification = {selection: {parameter: []}};
+        const expectedSpecification = { selection: { parameter: [] } };
         assert.deepEqual(plotSpecification, expectedSpecification);
-        const expectedDimensionsOptions = ref([{label: "Parameter", value: parameterKey, protected: true}]);
+        const expectedDimensionsOptions = ref([{ label: "Parameter", value: parameterKey, protected: true }]);
         assert.deepEqual(dimensionsOptions.value, expectedDimensionsOptions.value);
     });
 });
 
-describe("differingElements", function() {
-    it("should filter elements properly", function() {
+describe("differingElements", function () {
+    it("should filter elements properly", function () {
         const a = new Set([1, 2]);
         const b = new Set([2, 3]);
         const diff = differingElements(a, b);
@@ -246,28 +246,28 @@ describe("differingElements", function() {
     });
 });
 
-describe("removeExcessSelections", function() {
-    it("should remove object when entity class id matches", function(){
-        const plotSpecification = {selection: {entity_class: [], [objectKey(0)]: ["my_object"]}};
+describe("removeExcessSelections", function () {
+    it("should remove object when entity class id matches", function () {
+        const plotSpecification = { selection: { entity_class: [], [objectKey(0)]: ["my_object"] } };
         const selectionOptions = new Map();
-        selectionOptions.set(objectKey(0), {value: [{label: "my_object", parents: [{entityClass: "my_class"}]}]});
-        removeExcessSelections(plotSpecification,  selectionOptions);
-        assert.deepEqual(plotSpecification, {selection: {entity_class: [], [objectKey(0)]: []}});
-        assert.deepEqual(selectionOptions, new Map([[objectKey(0), {value: []}]]));
+        selectionOptions.set(objectKey(0), { value: [{ label: "my_object", parents: [{ entityClass: "my_class" }] }] });
+        removeExcessSelections(plotSpecification, selectionOptions);
+        assert.deepEqual(plotSpecification, { selection: { entity_class: [], [objectKey(0)]: [] } });
+        assert.deepEqual(selectionOptions, new Map([[objectKey(0), { value: [] }]]));
     });
 });
 
-describe("revmoveExcessSelectionSelects", function() {
-    it("should remove selects that don't have options", function() {
-        const selectionSelects = {value: [{label: "Object 1", options: []}, {label: "Object 2", options: [{}]}]};
+describe("revmoveExcessSelectionSelects", function () {
+    it("should remove selects that don't have options", function () {
+        const selectionSelects = { value: [{ label: "Object 1", options: [] }, { label: "Object 2", options: [{}] }] };
         removeExcessSelectionSelects(selectionSelects);
-        const expected = {value: [{label: "Object 2", options: [{}]}]};
+        const expected = { value: [{ label: "Object 2", options: [{}] }] };
         assert.deepEqual(selectionSelects, expected);
     });
-    it("shouldn't remove entity class selects", function() {
-        const selectionSelects = {value: [{label: "Entity class", options: []}, {label: "Object 1", options: []}, {label: "Parameter", options: []}]};
+    it("shouldn't remove entity class selects", function () {
+        const selectionSelects = { value: [{ label: "Entity class", options: [] }, { label: "Object 1", options: [] }, { label: "Parameter", options: [] }] };
         removeExcessSelectionSelects(selectionSelects);
-        const expected = {value: [{label: "Entity class", options: []}]};
+        const expected = { value: [{ label: "Entity class", options: [] }] };
         assert.deepEqual(selectionSelects, expected);
     });
 });

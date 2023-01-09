@@ -1,5 +1,5 @@
 import DataFrame from "data-forge";
-import {nameFromKey} from "./plotEditors.mjs";
+import { nameFromKey } from "./plotEditors.mjs";
 
 /** Compiles a CSV file from figure data and initiates download.
  * @param {DataFrame} dataFrame Data to write to the CSV.
@@ -21,9 +21,9 @@ function renameColumns(dataFrame) {
     const names = dataFrame.getColumnNames();
     const renamed = names.map(nameFromKey);
     const renameInstructions = {};
-    for(const [i, name] of names.entries()) {
+    for (const [i, name] of names.entries()) {
         const newName = renamed[i];
-        if(name !== newName) {
+        if (name !== newName) {
             renameInstructions[name] = newName;
         }
     }

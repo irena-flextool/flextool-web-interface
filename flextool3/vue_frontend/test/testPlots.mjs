@@ -1,10 +1,10 @@
 import assert from "assert/strict";
-import {DataFrame} from "data-forge";
-import {filterDeselectedIndexNames, makeBasicChart, makeHeatmapChart} from "../src/modules/plots.mjs";
-import {valueIndexKeyPrefix} from "../src/modules/plotEditors.mjs";
+import { DataFrame } from "data-forge";
+import { filterDeselectedIndexNames, makeBasicChart, makeHeatmapChart } from "../src/modules/plots.mjs";
+import { valueIndexKeyPrefix } from "../src/modules/plotEditors.mjs";
 
-describe("filterDeselectedIndexNames", function() {
-    it("should filter unselected columns", function() {
+describe("filterDeselectedIndexNames", function () {
+    it("should filter unselected columns", function () {
         const data = new DataFrame([
             {
                 [valueIndexKeyPrefix + "scenario_time_stamp"]: new Date("2022-12-15T12:53:00+00:00"),
@@ -36,26 +36,26 @@ describe("filterDeselectedIndexNames", function() {
 
 function make_empty_heat_map_plot_data() {
     return {
-        data: [{z: [], x: [], y:[], type: "heatmap"}],
-        config: {displaylogo: false, responsive: true},
-        layout: {xaxis: {title: ""}, yaxis: {automargin: true}},
+        data: [{ z: [], x: [], y: [], type: "heatmap" }],
+        config: { displaylogo: false, responsive: true },
+        layout: { xaxis: { title: "" }, yaxis: { automargin: true } },
     };
 }
 
 function make_empty_basic_chart_plot_data(names) {
     const charts = [];
-    for(const name of names) {
-        charts.push({x: [], y: [], name: name});
+    for (const name of names) {
+        charts.push({ x: [], y: [], name: name });
     }
     return {
         data: charts,
-        config: {displaylogo: false, responsive: true},
-        layout: {title: "", xaxis: {title: ""}},
+        config: { displaylogo: false, responsive: true },
+        layout: { title: "", xaxis: { title: "" } },
     };
 }
 
-describe("makeBasicChart", function() {
-    it("should work with single data point", function() {
+describe("makeBasicChart", function () {
+    it("should work with single data point", function () {
         const data = new DataFrame([
             {
                 [valueIndexKeyPrefix + "i"]: "my_data",
@@ -77,7 +77,7 @@ describe("makeBasicChart", function() {
         expected.layout.xaxis.title = "x";
         assert.deepEqual(plotData, expected);
     });
-    it("should ignore x2 if it is the same as defaulted x1", function() {
+    it("should ignore x2 if it is the same as defaulted x1", function () {
         const data = new DataFrame([
             {
                 [valueIndexKeyPrefix + "i"]: "my_data",
@@ -99,7 +99,7 @@ describe("makeBasicChart", function() {
         expected.layout.xaxis.title = "x";
         assert.deepEqual(plotData, expected);
     });
-    it("should ignore x3 if it is the same as defaulted x1", function() {
+    it("should ignore x3 if it is the same as defaulted x1", function () {
         const data = new DataFrame([
             {
                 [valueIndexKeyPrefix + "i"]: "my_data",
@@ -122,7 +122,7 @@ describe("makeBasicChart", function() {
         expected.layout.xaxis.title = "x";
         assert.deepEqual(plotData, expected);
     });
-    it("should create subplots correctly", function() {
+    it("should create subplots correctly", function () {
         const data = new DataFrame([
             {
                 [valueIndexKeyPrefix + "i"]: "my_data",
@@ -153,7 +153,7 @@ describe("makeBasicChart", function() {
         expected.data[1].yaxis = "y2";
         expected.layout.title = "";
         expected.layout.xaxis.title = "x";
-        expected.layout.xaxis2 = {title: "x"};
+        expected.layout.xaxis2 = { title: "x" };
         expected.layout.grid = {
             rows: 1,
             columns: 2,
@@ -179,7 +179,7 @@ describe("makeBasicChart", function() {
         ];
         assert.deepEqual(plotData, expected);
     });
-    it("should get subplot title right even with a single dataset", function() {
+    it("should get subplot title right even with a single dataset", function () {
         const data = new DataFrame([
             {
                 [valueIndexKeyPrefix + "i"]: "my_data",
@@ -220,8 +220,8 @@ describe("makeBasicChart", function() {
     });
 });
 
-describe("makeHeatmapChart", function() {
-    it("should return empty plot data for empty input", function() {
+describe("makeHeatmapChart", function () {
+    it("should return empty plot data for empty input", function () {
         const data = new DataFrame();
         const plotDimensions = {
             x1: null,
@@ -233,7 +233,7 @@ describe("makeHeatmapChart", function() {
         const expected = make_empty_heat_map_plot_data();
         assert.deepEqual(plotData, expected);
     });
-    it("should work with single data point", function() {
+    it("should work with single data point", function () {
         const data = new DataFrame([{
             [valueIndexKeyPrefix + "time_stamp"]: "11-12-13",
             [valueIndexKeyPrefix + "i"]: "my_data",
@@ -246,7 +246,7 @@ describe("makeHeatmapChart", function() {
             x3: null,
             separate_window: null,
         };
-       const plotData = makeHeatmapChart(data, plotDimensions);
+        const plotData = makeHeatmapChart(data, plotDimensions);
         const expected = make_empty_heat_map_plot_data();
         expected.data[0].x = ["T1"];
         expected.data[0].y = [""];
@@ -255,7 +255,7 @@ describe("makeHeatmapChart", function() {
         expected.layout.xaxis.title = "x";
         assert.deepEqual(plotData, expected);
     });
-    it("should organize data correctly for regular plot", function() {
+    it("should organize data correctly for regular plot", function () {
         const data = new DataFrame([
             {
                 [valueIndexKeyPrefix + "time_stamp"]: "11-12-13",
@@ -301,7 +301,7 @@ describe("makeHeatmapChart", function() {
         expected.layout.xaxis.title = "x";
         assert.deepEqual(plotData, expected);
     });
-    it("should fill holes in data by nulls", function() {
+    it("should fill holes in data by nulls", function () {
         const data = new DataFrame([
             {
                 [valueIndexKeyPrefix + "time_stamp"]: "11-12-13",
@@ -331,7 +331,7 @@ describe("makeHeatmapChart", function() {
         expected.layout.xaxis.title = "x";
         assert.deepEqual(plotData, expected);
     });
-    it("should fill missing values in last dataset by nulls", function() {
+    it("should fill missing values in last dataset by nulls", function () {
         const data = new DataFrame([
             {
                 [valueIndexKeyPrefix + "time_stamp"]: "11-12-13",
@@ -367,7 +367,7 @@ describe("makeHeatmapChart", function() {
         expected.layout.xaxis.title = "x";
         assert.deepEqual(plotData, expected);
     });
-    it("should divide data into subplots correctly", function() {
+    it("should divide data into subplots correctly", function () {
         const data = new DataFrame([
             {
                 [valueIndexKeyPrefix + "time_stamp"]: "11-12-13",
@@ -388,7 +388,7 @@ describe("makeHeatmapChart", function() {
             x3: null,
             separate_window: valueIndexKeyPrefix + "i",
         };
-       const plotData = makeHeatmapChart(data, plotDimensions);
+        const plotData = makeHeatmapChart(data, plotDimensions);
         const expected = make_empty_heat_map_plot_data();
         expected.data[0].x = ["T1"];
         expected.data[0].y = [""];
@@ -407,10 +407,10 @@ describe("makeHeatmapChart", function() {
         });
         expected.layout.title = "11-12-13";
         expected.layout.xaxis.title = "x";
-        expected.layout.xaxis2 = {title: "x"};
-        expected.layout.yaxis2 = {automargin: true}
-        expected.layout.grid = {rows: 1, columns: 2, pattern: "independent"},
-        expected.layout.coloraxis = {};
+        expected.layout.xaxis2 = { title: "x" };
+        expected.layout.yaxis2 = { automargin: true }
+        expected.layout.grid = { rows: 1, columns: 2, pattern: "independent" },
+            expected.layout.coloraxis = {};
         expected.layout.annotations = [
             {
                 showarrow: false,
@@ -431,7 +431,7 @@ describe("makeHeatmapChart", function() {
         ];
         assert.deepEqual(plotData, expected);
     });
-    it("should get subplot title right even with a single dataset", function() {
+    it("should get subplot title right even with a single dataset", function () {
         const data = new DataFrame([
             {
                 [valueIndexKeyPrefix + "time_stamp"]: "11-12-13",
@@ -446,7 +446,7 @@ describe("makeHeatmapChart", function() {
             x3: null,
             separate_window: valueIndexKeyPrefix + "i",
         };
-       const plotData = makeHeatmapChart(data, plotDimensions);
+        const plotData = makeHeatmapChart(data, plotDimensions);
         const expected = make_empty_heat_map_plot_data();
         expected.data[0].x = ["T1"];
         expected.data[0].y = [""];
@@ -456,8 +456,8 @@ describe("makeHeatmapChart", function() {
         expected.data[0].coloraxis = "coloraxis";
         expected.layout.title = "11-12-13";
         expected.layout.xaxis.title = "x";
-        expected.layout.grid = {rows: 1, columns: 2, pattern: "independent"},
-        expected.layout.coloraxis = {};
+        expected.layout.grid = { rows: 1, columns: 2, pattern: "independent" },
+            expected.layout.coloraxis = {};
         expected.layout.annotations = [
             {
                 showarrow: false,
@@ -470,7 +470,7 @@ describe("makeHeatmapChart", function() {
         ];
         assert.deepEqual(plotData, expected);
     });
-    it("should collect data to the same subplot", function() {
+    it("should collect data to the same subplot", function () {
         const data = new DataFrame([
             {
                 [valueIndexKeyPrefix + "time_stamp"]: "11-12-13",
@@ -500,7 +500,7 @@ describe("makeHeatmapChart", function() {
             x3: null,
             separate_window: valueIndexKeyPrefix + "i",
         };
-       const plotData = makeHeatmapChart(data, plotDimensions);
+        const plotData = makeHeatmapChart(data, plotDimensions);
         const expected = make_empty_heat_map_plot_data();
         expected.data[0].x = [["A"], ["T1"]];
         expected.data[0].y = ["11-12-13", "14-15-16"];
@@ -519,10 +519,10 @@ describe("makeHeatmapChart", function() {
         });
         expected.layout.title = "";
         expected.layout.xaxis.title = "x";
-        expected.layout.xaxis2 = {title: "x"};
-        expected.layout.yaxis2 = {automargin: true}
-        expected.layout.grid = {rows: 1, columns: 2, pattern: "independent"},
-        expected.layout.coloraxis = {};
+        expected.layout.xaxis2 = { title: "x" };
+        expected.layout.yaxis2 = { automargin: true }
+        expected.layout.grid = { rows: 1, columns: 2, pattern: "independent" },
+            expected.layout.coloraxis = {};
         expected.layout.annotations = [
             {
                 showarrow: false,
@@ -543,7 +543,7 @@ describe("makeHeatmapChart", function() {
         ];
         assert.deepEqual(plotData, expected);
     })
-    it("should get x2 category right", function() {
+    it("should get x2 category right", function () {
         const data = new DataFrame([
             {
                 [valueIndexKeyPrefix + "time_stamp"]: "11-12-13",
@@ -564,7 +564,7 @@ describe("makeHeatmapChart", function() {
             x3: null,
             separate_window: null,
         };
-       const plotData = makeHeatmapChart(data, plotDimensions);
+        const plotData = makeHeatmapChart(data, plotDimensions);
         const expected = make_empty_heat_map_plot_data();
         expected.data[0].x = [["my_data", "your_data"], ["T1", "T1"]];
         expected.data[0].y = [""];
@@ -573,7 +573,7 @@ describe("makeHeatmapChart", function() {
         expected.layout.xaxis.title = "x";
         assert.deepEqual(plotData, expected);
     });
-    it("should pad data with x2 categories by null", function() {
+    it("should pad data with x2 categories by null", function () {
         const data = new DataFrame([
             {
                 [valueIndexKeyPrefix + "time_stamp"]: "11-12-13",
@@ -606,7 +606,7 @@ describe("makeHeatmapChart", function() {
             x3: null,
             separate_window: null,
         };
-       const plotData = makeHeatmapChart(data, plotDimensions);
+        const plotData = makeHeatmapChart(data, plotDimensions);
         const expected = make_empty_heat_map_plot_data();
         expected.data[0].x = [["my_data", "my_data", "your_data", "your_data"], ["T1", "T2", "T1", "T2"]];
         expected.data[0].y = ["11-12-13", "14-15-16"];
@@ -614,7 +614,7 @@ describe("makeHeatmapChart", function() {
         expected.layout.xaxis.title = "x";
         assert.deepEqual(plotData, expected);
     });
-    it("should pad data with uneven x2 categories with nulls", function() {
+    it("should pad data with uneven x2 categories with nulls", function () {
         const data = new DataFrame([
             {
                 [valueIndexKeyPrefix + "time_stamp"]: "11-12-13",
@@ -659,7 +659,7 @@ describe("makeHeatmapChart", function() {
             x3: null,
             separate_window: null,
         };
-       const plotData = makeHeatmapChart(data, plotDimensions);
+        const plotData = makeHeatmapChart(data, plotDimensions);
         const expected = make_empty_heat_map_plot_data();
         expected.data[0].x = [["my_data", "my_data", "your_data", "your_data"], ["T1", "T2", "T1", "T2"]];
         expected.data[0].y = ["11-12-13", "14-15-16"];
@@ -667,7 +667,7 @@ describe("makeHeatmapChart", function() {
         expected.layout.xaxis.title = "x";
         assert.deepEqual(plotData, expected);
     });
-    it("should not pad x-axis when there are only unique x1-x2 points", function() {
+    it("should not pad x-axis when there are only unique x1-x2 points", function () {
         const data = new DataFrame([
             {
                 [valueIndexKeyPrefix + "time_stamp"]: "11-12-13",
@@ -694,7 +694,7 @@ describe("makeHeatmapChart", function() {
             x3: null,
             separate_window: null,
         };
-       const plotData = makeHeatmapChart(data, plotDimensions);
+        const plotData = makeHeatmapChart(data, plotDimensions);
         const expected = make_empty_heat_map_plot_data();
         expected.data[0].x = [["my_data", "your_data", "their_data"], ["T1", "T1", "T2"]];
         expected.data[0].y = ["11-12-13", "14-15-16"];

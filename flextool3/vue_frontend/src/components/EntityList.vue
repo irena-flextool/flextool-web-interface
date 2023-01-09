@@ -1,36 +1,21 @@
 <template>
     <fetchable :state="state" :error-message="errorMessage">
         <n-space vertical>
-            <n-tree
-                selectable
-                block-node
-                :data="entityList"
-                :render-label="renderLabel"
-                :render-suffix="renderSuffix"
-                :selected-keys="selectedKeys"
-                size="tiny"
-                @update:selected-keys="emitEntitySelect"
-            />
-            <new-named-item-row
-                v-if="classType === 1"
-                item-name="object"
-                @create="addObject"
-            />
-            <entity-list-new-relationship-row
-                v-else
-                :available-objects="availableObjects"
-                @relationship-create="addRelationship"
-            />
+            <n-tree selectable block-node :data="entityList" :render-label="renderLabel" :render-suffix="renderSuffix"
+                :selected-keys="selectedKeys" size="tiny" @update:selected-keys="emitEntitySelect" />
+            <new-named-item-row v-if="classType === 1" item-name="object" @create="addObject" />
+            <entity-list-new-relationship-row v-else :available-objects="availableObjects"
+                @relationship-create="addRelationship" />
         </n-space>
     </fetchable>
 </template>
 
 <script>
-import {h, onMounted, ref, toRefs, watch} from "vue/dist/vue.esm-bundler.js";
-import {useDialog} from "naive-ui";
+import { h, onMounted, ref, toRefs, watch } from "vue/dist/vue.esm-bundler.js";
+import { useDialog } from "naive-ui";
 import * as Communication from "../modules/communication.mjs";
-import {emblemToName} from "../modules/entityEmblem.mjs";
-import {emblemsEqual, relationshipEmblemsEqual} from "../modules/emblemComparison.mjs";
+import { emblemToName } from "../modules/entityEmblem.mjs";
+import { emblemsEqual, relationshipEmblemsEqual } from "../modules/emblemComparison.mjs";
 import Fetchable from "./Fetchable.vue";
 import EntityListObjectLabel from "./EntityListObjectLabel.vue";
 import EntityListRelationshipLabel from "./EntityListRelationshipLabel.vue";
@@ -39,13 +24,13 @@ import NewNamedItemRow from "./NewNamedItemRow.vue";
 import EntityListNewRelationshipRow from "./EntityListNewRelationshipRow.vue";
 
 function fetchObjects(projectId, modelUrl, classId, entityList, state, errorMessage) {
-    const extraBody = {object_class_id: classId};
+    const extraBody = { object_class_id: classId };
     Communication.fetchData(
         "objects?", projectId, modelUrl, extraBody
-    ).then(async function(data) {
+    ).then(async function (data) {
         const objects = data.objects;
         const list = [];
-        objects.forEach(function(object) {
+        objects.forEach(function (object) {
             list.push({
                 entityEmblem: object.name,
                 entityId: object.id,
@@ -54,7 +39,7 @@ function fetchObjects(projectId, modelUrl, classId, entityList, state, errorMess
         });
         entityList.value = list;
         state.value = Fetchable.state.ready;
-    }).catch(function(error) {
+    }).catch(function (error) {
         errorMessage.value = error.message;
         state.value = Fetchable.state.error;
     });
@@ -68,25 +53,25 @@ function fetchObjects(projectId, modelUrl, classId, entityList, state, errorMess
  * @returns {Promise} Promise object that resolves to a list of available object lists.
  */
 function fetchAvailableObjects(projectId, modelUrl, classId) {
-    const extraBody = {relationship_class_id: classId};
+    const extraBody = { relationship_class_id: classId };
     return Communication.fetchData(
         "available relationship objects?", projectId, modelUrl, extraBody
-    ).then(function(data) {
+    ).then(function (data) {
         return data.available_objects;
     });
 }
 
 function fetchRelationships(
-        projectId, modelUrl, classId , entityList, availableObjects, emit, state, errorMessage) {
-    const extraBody = {relationship_class_id: classId};
+    projectId, modelUrl, classId, entityList, availableObjects, emit, state, errorMessage) {
+    const extraBody = { relationship_class_id: classId };
     Communication.fetchData(
         "relationships?", projectId, modelUrl, extraBody
-    ).then(async function(data) {
+    ).then(async function (data) {
         const relationships = data.relationships;
         const objectLists = new Map();
-        relationships.forEach(function(relationship) {
+        relationships.forEach(function (relationship) {
             let list = objectLists.get(relationship.id);
-            if(list === undefined) {
+            if (list === undefined) {
                 list = [];
                 objectLists.set(relationship.id, list);
             }
@@ -95,7 +80,7 @@ function fetchRelationships(
         availableObjects.value = await fetchAvailableObjects(projectId, modelUrl, classId);
         emit("entityDimensionsReveal", availableObjects.value.length);
         const list = [];
-        objectLists.forEach(function(objects, relationship_id) {
+        objectLists.forEach(function (objects, relationship_id) {
             list.push({
                 entityEmblem: objects,
                 originalEmblem: [...objects],
@@ -105,11 +90,11 @@ function fetchRelationships(
                 key: objects.join(","),
             });
         });
-        list.sort(function(item1, item2) {
-            for(let i = 0; i < item1.entityEmblem.length; ++i) {
+        list.sort(function (item1, item2) {
+            for (let i = 0; i < item1.entityEmblem.length; ++i) {
                 const emblem1 = item1.entityEmblem[i].toUpperCase();
                 const emblem2 = item2.entityEmblem[i].toUpperCase();
-                if(emblem1 === emblem2) {
+                if (emblem1 === emblem2) {
                     continue;
                 }
                 return emblem1 < emblem2 ? -1 : 1;
@@ -118,24 +103,24 @@ function fetchRelationships(
         });
         entityList.value = list;
         state.value = Fetchable.state.ready;
-    }).catch(function(error) {
+    }).catch(function (error) {
         errorMessage.value = error.message;
         state.value = Fetchable.state.error;
     });
 }
 
 function makeSelectedEntityInfo(selectedEntity) {
-    return {entityEmblem: selectedEntity.entityEmblem, entityId: selectedEntity.entityId};
+    return { entityEmblem: selectedEntity.entityEmblem, entityId: selectedEntity.entityId };
 }
 
 export default {
     props: {
-        projectId: {type: Number, required: true},
-        modelUrl: {type: String, required: true},
-        classId: {type: Number, required: true},
-        className: {type: String, required: true},
-        classType: {type: Number, required: true},
-        inserted: {type: Object, required: false},
+        projectId: { type: Number, required: true },
+        modelUrl: { type: String, required: true },
+        classId: { type: Number, required: true },
+        className: { type: String, required: true },
+        classType: { type: Number, required: true },
+        inserted: { type: Object, required: false },
     },
     emits: [
         "entitySelect",
@@ -157,8 +142,8 @@ export default {
         const selectedKeys = ref([]);
         const availableObjects = ref([]);
         const dialog = useDialog();
-        onMounted(function() {
-            if(props.classType === 1) {
+        onMounted(function () {
+            if (props.classType === 1) {
                 fetchObjects(
                     props.projectId,
                     props.modelUrl,
@@ -181,60 +166,60 @@ export default {
                 );
             }
         });
-        const deleteEntity = function(entityEmblem) {
+        const deleteEntity = function (entityEmblem) {
             let entityId = undefined;
             for (let i = entityList.value.length - 1; i != -1; --i) {
                 const entity = entityList.value[i]
-                if(emblemsEqual(entity.entityEmblem, entityEmblem)) {
+                if (emblemsEqual(entity.entityEmblem, entityEmblem)) {
                     entityId = entity.entityId;
                     entityList.value.splice(i, 1);
                 }
             }
-            context.emit("entityDelete", {id: entityId, entityEmblem: entityEmblem});
+            context.emit("entityDelete", { id: entityId, entityEmblem: entityEmblem });
         };
-        const renameObject = function(renameData) {
-            const existing = entityList.value.find(function(item) {
+        const renameObject = function (renameData) {
+            const existing = entityList.value.find(function (item) {
                 return renameData.entityEmblem === item.entityEmblem;
             });
-            if(existing) {
-                dialog.error({title: "Cannot rename", content: "An object with the same name already exists."});
+            if (existing) {
+                dialog.error({ title: "Cannot rename", content: "An object with the same name already exists." });
                 return;
             }
-            entityList.value.forEach(function(item) {
-                if(item.entityEmblem == renameData.previousEmblem) {
+            entityList.value.forEach(function (item) {
+                if (item.entityEmblem == renameData.previousEmblem) {
                     item.entityEmblem = renameData.entityEmblem;
                 }
             });
             context.emit("entityUpdate", renameData);
         };
-        const updateRelationshipObjects = function(updateData) {
-            const existing = entityList.value.find(function(item) {
+        const updateRelationshipObjects = function (updateData) {
+            const existing = entityList.value.find(function (item) {
                 return relationshipEmblemsEqual(updateData.entityEmblem, item.entityEmblem);
             });
             const clash = existing !== undefined;
-            for(const entity of entityList.value) {
-                if(relationshipEmblemsEqual(updateData.previousEmblem, entity.originalEmblem)) {
+            for (const entity of entityList.value) {
+                if (relationshipEmblemsEqual(updateData.previousEmblem, entity.originalEmblem)) {
                     entity.objectNamesClash = clash;
                     entity.entityEmblem = updateData.entityEmblem;
-                    if(!clash) {
+                    if (!clash) {
                         entity.originalEmblem = [...updateData.entityEmblem];
                     }
                     break;
                 }
             }
             context.emit("relationshipsClash", existing);
-            if(!existing) {
+            if (!existing) {
                 context.emit("entityUpdate", updateData);
             }
         };
-        watch(toRefs(props).inserted, function(inserted) {
-            if(!inserted) {
+        watch(toRefs(props).inserted, function (inserted) {
+            if (!inserted) {
                 return;
             }
-            entityList.value.forEach(function(entity) {
+            entityList.value.forEach(function (entity) {
                 const entityName = emblemToName(props.className, entity.entityEmblem);
                 const id = inserted[entityName];
-                if(id !== undefined) {
+                if (id !== undefined) {
                     entity.entityId = id;
                 }
             });
@@ -248,7 +233,7 @@ export default {
             selectedKeys: selectedKeys,
             availableObjects: availableObjects,
             renderLabel(info) {
-                if(props.classType === 1) {
+                if (props.classType === 1) {
                     return h(
                         EntityListObjectLabel,
                         {
@@ -273,10 +258,10 @@ export default {
                 }
             },
             renderSuffix(info) {
-                return h(DeleteItemButton, {emblem: info.option.entityEmblem, onDelete: deleteEntity});
+                return h(DeleteItemButton, { emblem: info.option.entityEmblem, onDelete: deleteEntity });
             },
             emitEntitySelect(keys, selectedEntities) {
-                if(keys.length === 0) {
+                if (keys.length === 0) {
                     selectedKeys.value.length = 0;
                     return;
                 }
@@ -288,11 +273,11 @@ export default {
                 );
             },
             addObject(name) {
-                const existing = entityList.value.find(function(item) {
+                const existing = entityList.value.find(function (item) {
                     return name === item.entityEmblem;
                 });
                 if (existing) {
-                    dialog.error({title: "Cannot create", content: "An entity with the same name already exists."});
+                    dialog.error({ title: "Cannot create", content: "An entity with the same name already exists." });
                     return;
                 }
                 const newEntity = {
@@ -307,10 +292,10 @@ export default {
                 context.emit("entitySelect", makeSelectedEntityInfo(newEntity));
             },
             addRelationship(objects) {
-                const existing = entityList.value.find(function(item) {
+                const existing = entityList.value.find(function (item) {
                     return relationshipEmblemsEqual(objects, item.entityEmblem);
                 });
-                if(existing) {
+                if (existing) {
                     dialog.error({
                         title: "Cannot create relationship",
                         content: "A relationship with the same objects already exists."
