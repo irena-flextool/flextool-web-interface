@@ -33,7 +33,7 @@ function addFetchedEntities(
     setEntityIndexes(dimensionCount, dimensionsOptions);
     const entityOptionsMaps = [];
     for (let dimension = 0; dimension < dimensionCount; ++dimension) {
-        const optionKey = objectKey(dimension);
+        const optionKey = entityKey(dimension);
         const entityOptions = itemOptionsMap(selectionOptions.get(optionKey));
         for (const entity of entities) {
             addEntityToOptions(entity, dimension, entityOptions);
@@ -43,7 +43,7 @@ function addFetchedEntities(
     for (let dimension = 0; dimension < dimensionCount; ++dimension) {
         const entityOptions = entityOptionsMaps[dimension];
         const options = makeOptions(entityOptions);
-        const optionKey = objectKey(dimension)
+        const optionKey = entityKey(dimension)
         const label = objectLabel(dimension);
         selectionOptions.set(optionKey, options);
         if (!(optionKey in plotSpecification.selection)) {
@@ -164,14 +164,24 @@ const scenarioKey = "scenario";
 const scenarioTimeStampKey = "scenario_time_stamp";
 const entityClassKey = "entity_class";
 const parameterKey = "parameter";
-const objectKeyPrefix = "object_";
+const entityKeyPrefix = "entity_";
+const entityKeyFingerprint = /^entity_[0-9]+$/;
 
-/**Creates object key for select options.
- * @param {number} dimension Object dimension.
+
+/**Creates entity key for select options.
+ * @param {number} dimension Entity dimension.
  * @returns {string} Key.
  */
-function objectKey(dimension) {
-    return objectKeyPrefix + dimension;
+function entityKey(dimension) {
+    return entityKeyPrefix + dimension;
+}
+
+/**Tests whether key is entity key.
+ * @param {string} key Key.
+ * @returns {boolean} True if key is entity key, False otherwise.
+ */
+function isEntityKey(key) {
+    return entityKeyFingerprint.test(key);
 }
 
 /**Removes prefix from index name key.
@@ -291,7 +301,7 @@ function addEntityToOptions(entity, dimension, entityOptions) {
 function setEntityIndexes(dimensionCount, dimensionsOptions) {
     const entityLocations = [];
     for (let i = 0; i < dimensionsOptions.value.length; ++i) {
-        if (dimensionsOptions.value[i].value.startsWith(objectKeyPrefix)) {
+        if (isEntityKey(dimensionsOptions.value[i].value)) {
             entityLocations.push(i);
         }
     }
@@ -302,7 +312,7 @@ function setEntityIndexes(dimensionCount, dimensionsOptions) {
     if (excessEntityCount > 0) {
         const newIndexNames = [];
         for (let i = entityLocations.length; i < dimensionCount; ++i) {
-            newIndexNames.push({ label: objectLabel(i), value: objectKey(i), protected: true });
+            newIndexNames.push({ label: objectLabel(i), value: entityKey(i), protected: true });
         }
         const insertion = entityLocations.length > 0 ? entityLocations.at(-1) + 1 : 1;
         dimensionsOptions.value.splice(insertion, 0, ...newIndexNames);
@@ -385,8 +395,8 @@ export {
     makeEntityClassSelectionSelect,
     makeValueIndexSelectionSelect,
     nameFromKey,
-    objectKey,
-    objectKeyPrefix,
+    entityKey,
+    isEntityKey,
     parameterKey,
     removeExcessSelections,
     removeExcessSelectionSelects,

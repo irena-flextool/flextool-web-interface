@@ -27,8 +27,8 @@ import {
 import { timeFormat } from "../modules/scenarios.mjs";
 import {
     entityClassKey,
-    objectKey,
-    objectKeyPrefix,
+    entityKey,
+    isEntityKey,
     parameterKey,
     scenarioKey,
     scenarioTimeStampKey,
@@ -144,7 +144,7 @@ function fetchDataFrame(projectId, analysisUrl, plotSpecification, scenarioExecu
     }
     const objectDimensions = new Map();
     for (const key in plotSpecification.selection) {
-        if (!key.startsWith(objectKeyPrefix)) {
+        if (!isEntityKey(key)) {
             continue;
         }
         const dimension = new Number(key.split("_")[1]);
@@ -177,7 +177,7 @@ function fetchDataFrame(projectId, analysisUrl, plotSpecification, scenarioExecu
             }
             const objectPart = {}
             for (let dimension = 0; dimension !== value.objects.length; ++dimension) {
-                objectPart[objectKey(dimension)] = value.objects[dimension];
+                objectPart[entityKey(dimension)] = value.objects[dimension];
             }
             for (const valuePart of valueParts) {
                 valueObjects.push({
@@ -194,7 +194,7 @@ function fetchDataFrame(projectId, analysisUrl, plotSpecification, scenarioExecu
         indexColumnNames.sort((a, b) => indexNameLocations.get(a) - indexNameLocations.get(b));
         const objectColumnNames = [];
         for (let dimension = 0; dimension != maxDimensions; ++dimension) {
-            objectColumnNames.push(objectKey(dimension));
+            objectColumnNames.push(entityKey(dimension));
         }
         const columnNames = baseColumnNames.concat(objectColumnNames).concat(indexColumnNames)
         columnNames.push("y");

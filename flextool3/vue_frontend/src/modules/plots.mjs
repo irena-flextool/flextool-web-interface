@@ -3,7 +3,7 @@ import dataForge from "data-forge";
 import {
     entityClassKey,
     nameFromKey,
-    objectKeyPrefix,
+    isEntityKey,
     parameterKey,
     scenarioKey,
     scenarioTimeStampKey
@@ -68,7 +68,7 @@ const protectedNames = new Set([entityClassKey, parameterKey, scenarioKey, scena
  * @returns {boolean} True if name is parameter index name, false otherwise.
  */
 function isParameterIndexName(name) {
-    return !protectedNames.has(name) && !name.startsWith(objectKeyPrefix);
+    return !protectedNames.has(name) && !isEntityKey(name);
 }
 
 /**Creates a plot object for basic chart types.

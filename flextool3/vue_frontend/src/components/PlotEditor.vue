@@ -80,7 +80,7 @@ import {
     indexNamePriority,
     makeEntityClassSelectionSelect,
     makeValueIndexSelectionSelect,
-    objectKeyPrefix,
+    isEntityKey,
     removeExcessSelections,
     removeExcessSelectionSelects,
     scenarioKey,
@@ -299,7 +299,7 @@ async function fetchData(
     const classes = new Set(plotSpecification.selection.entity_class);
     const currentlyRequiredClasses = new Set();
     for (const [itemType, options] of selectionOptions.entries()) {
-        if (itemType.startsWith(objectKeyPrefix) || itemType === parameterKey) {
+        if (isEntityKey(itemType) || itemType === parameterKey) {
             for (const option of options.value) {
                 for (const parent of option.parents) {
                     currentlyRequiredClasses.add(parent.entityClass);
