@@ -4,7 +4,7 @@ import datetime
 import os
 from pathlib import Path
 import re
-from shutil import copytree, rmtree, ignore_patterns
+from shutil import copytree, move, rmtree, ignore_patterns
 import stat
 from django.contrib.auth.models import User
 from django.db import models
@@ -47,6 +47,9 @@ class Project(models.Model):
             "docs", "tests", "execution_tests", ".git*", "*.zip", "*.txt", "*.md"
         )
         copytree(template_dir, project_dir, ignore=ignored)
+        result_database_template = project_dir / "Results_template.sqlite"
+        result_database = project_dir / "Results.sqlite"
+        move(result_database_template, result_database)
         return Project(user=user, name=project_name, path=str(project_dir))
 
     def remove_project_dir(self):
