@@ -1,8 +1,9 @@
-flextool3/migrations/
-flextool3/user_projects/
-flextool3/site.py
+/flextool3/migrations/
+/flextool3/user_projects/
+/flextool3/site.py
+/static/
 __pycache__/
-src/**
+/src/**
 *.sqlite3
 .idea
 geckodriver.log

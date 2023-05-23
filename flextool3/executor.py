@@ -123,7 +123,7 @@ def read_lines(execution_id):
 
 @_message_sender
 def execution_status(execution_id):
-    """Queries process' execution status."
+    """Queries process' execution status.
 
     Args:
         execution_id (int): execution id
@@ -142,7 +142,7 @@ def execution_status(execution_id):
 
 @_message_sender
 def execution_return_code(execution_id):
-    """Queries process' return code."
+    """Queries process' return code.
 
     Args:
         execution_id (int): execution id

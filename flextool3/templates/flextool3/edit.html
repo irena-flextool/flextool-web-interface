@@ -1,8 +1,9 @@
 {% extends "flextool3/edit_base.html" %}
 {% load static %}
+{% load django_vite %}
 
 {% block head %}
-    <link rel="stylesheet" href="{% static 'flextool3/apps/css/edit.css' %}">
+    {% vite_hmr_client %}
 {% endblock %}
 
 {% block content %}
@@ -23,6 +24,5 @@
             ></editor-app>
         </n-message-provider>
     </div>
-    <script src="{% static 'flextool3/apps/js/chunk-vendors.js' %}"></script>
-    <script src="{% static 'flextool3/apps/js/edit.js' %}"></script>
+    {% vite_asset "src/edit.js" %}
 {% endblock %}

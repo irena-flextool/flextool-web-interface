@@ -102,6 +102,14 @@ class Project(models.Model):
             Database.INITIALIZATION: self.initialization_database_path,
         }[database]()
 
+    def excel_input_file_path(self):
+        """Returns path to Excel input file.
+
+        Returns:
+            Path: path to Excel file
+        """
+        return Path(self.path) / "Input_data.xlsx"
+
     def project_list_data(self):
         """Creates data dict for project index page's project list.
 

@@ -61,53 +61,12 @@ import {
     abortExecution,
     fetchCurrentExecution,
     fetchData,
-    fetchExecutionBriefing,
 } from "../modules/communication.mjs";
-
-let fetchingBriefing = false;
-
-function createLastLogEntry(status) {
-    switch (status) {
-        case "OK":
-            return "Run successful.";
-        case "AB":
-            return "Run aborted.";
-        case "ER":
-            return "Run failed.";
-        default:
-            return "Unknown run status.";
-    }
-}
-
-function followExecution(
-    projectId, executionsUrl, logLines, status, busyExecuting, busyAborting, message) {
-    const timer = window.setInterval(function () {
-        if (fetchingBriefing) {
-            return;
-        }
-        fetchingBriefing = true;
-        fetchExecutionBriefing(projectId, executionsUrl).then(function (data) {
-            const briefing = data.briefing;
-            status.value = briefing.status;
-            logLines.value = briefing.log;
-            if (briefing.status !== "RU") {
-                logLines.value = logLines.value.concat(createLastLogEntry(briefing.status));
-                busyExecuting.value = false;
-                busyAborting.value = false;
-                window.clearInterval(timer);
-            }
-        }).catch(function (error) {
-            window.clearInterval(timer);
-            status.value = "AB";
-            busyExecuting.value = false;
-            busyAborting.value = false;
-            message.error(error.message);
-        }).finally(function () {
-            fetchingBriefing = false;
-        });
-    }, 500);
-}
-
+import {
+    executionStatus,
+    executionType,
+    followExecution
+} from "../modules/executions.mjs";
 
 export default {
     props: {
@@ -137,7 +96,7 @@ export default {
         const logLines = ref([]);
         const state = ref(Fetchable.state.loading);
         const errorMessage = ref("");
-        const executionStatus = ref("YS");
+        const runStatus = ref(executionStatus.yetToStart);
         const isExecuting = ref(false);
         const isAborting = ref(false);
         const logInstance = ref(null);
@@ -149,15 +108,15 @@ export default {
                 statusMessageType.value = "error";
                 return "No scenarios available. Please create some in the Scenario editor.";
             }
-            else if (executionStatus.value === "OK") {
+            else if (runStatus.value === executionStatus.finished) {
                 statusMessageType.value = "success";
                 return "Run finished successfully.";
             }
-            else if (executionStatus.value === "AB") {
+            else if (runStatus.value === executionStatus.aborted) {
                 statusMessageType.value = "default";
                 return "Run aborted.";
             }
-            else if (executionStatus.value === "ER") {
+            else if (runStatus.value === executionStatus.error) {
                 statusMessageType.value = "error";
                 return "Error. Check run log."
             }
@@ -167,6 +126,10 @@ export default {
             }
         });
         const message = useMessage();
+        const finishExecution = function () {
+            isExecuting.value = false;
+            isAborting.value = false;
+        }
         onMounted(function () {
             const scenarioPromise = fetchData(
                 "scenarios?", props.projectId, props.modelUrl
@@ -176,25 +139,35 @@ export default {
             fetchCurrentExecution(
                 props.projectId, props.executionsUrl
             ).then(async function (data) {
-                if (data.status === "RU") {
+                if (data.type !== executionType.solve && data.status === executionStatus.running) {
+                    switch (data.type) {
+                        case executionType.importExcel:
+                            message.warning("Server is busy importing an Excel file.");
+                            break;
+                        default:
+                            message.error("Server is busy.");
+                    }
+                }
+                else if (data.type === executionType.solve && data.status === executionStatus.running) {
                     isExecuting.value = true;
                     followExecution(
                         props.projectId,
                         props.executionsUrl,
                         logLines,
-                        executionStatus,
-                        isExecuting,
-                        isAborting,
-                        message
+                        runStatus,
+                        message,
+                        finishExecution,
                     );
                 }
                 const scenarioData = await scenarioPromise;
                 scenarioData.forEach((scenario) => availableScenarios.value.push(scenario.scenario_name));
-                data.scenarios.forEach(function (scenario) {
-                    if (availableScenarios.value.find((s) => s === scenario) !== undefined) {
-                        selectedScenarios.value.push(scenario);
-                    }
-                });
+                if (data.scenarios !== undefined) {
+                    data.scenarios.forEach(function (scenario) {
+                        if (availableScenarios.value.find((s) => s === scenario) !== undefined) {
+                            selectedScenarios.value.push(scenario);
+                        }
+                    });
+                }
                 state.value = Fetchable.state.ready;
             }).catch(function (error) {
                 errorMessage.value = error.message;
@@ -231,7 +204,7 @@ export default {
                         props.projectId,
                         props.executionsUrl,
                         logLines,
-                        executionStatus,
+                        runStatus,
                         isExecuting,
                         isAborting,
                         message

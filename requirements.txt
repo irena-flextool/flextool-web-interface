@@ -1,2 +1,3 @@
 django[argon2]
-spinetoolbox==0.6.17
+spinetoolbox==0.6.18
+django-vite

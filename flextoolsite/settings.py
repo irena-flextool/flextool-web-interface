@@ -30,6 +30,7 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
+    "django_vite",
     "flextool3.apps.FlexTool3Config",
     "django.contrib.admin",
     "django.contrib.auth",
@@ -81,18 +82,11 @@ DATABASES = {
     }
 }
 
+DJANGO_VITE_ASSETS_PATH = BASE_DIR / "flextool3" / "static" / "flextool3"
+DJANGO_VITE_DEV_MODE = False
+DJANGO_VITE_STATIC_URL_PREFIX = "flextool3/"
+DJANGO_VITE_DEV_SERVER_PORT = 5173  # Vite default port
 VUE_FRONTEND_DIR = BASE_DIR / "flextool3" / "vue_frontend"
-
-WEBPACK_LOADER = {
-    "DEFAULT": {
-        "CACHE": not DEBUG,
-        "BUNDLE_DIR_NAME": "flextool3/",
-        "STATS_FILE": str(VUE_FRONTEND_DIR / "webpack-stats.json"),
-        "POLL_INTERVAL": 0.1,
-        "TIMEOUT": None,
-        "IGNORE": [r".+\.hot-update.js", r".+\.map"],
-    }
-}
 
 PASSWORD_HASHERS = [
     "django.contrib.auth.hashers.Argon2PasswordHasher",
@@ -134,6 +128,8 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/3.2/howto/static-files/
 
 STATIC_URL = "/static/"
+STATIC_ROOT = BASE_DIR / "static"
+STATICFILES_DIRS = []
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/3.2/ref/settings/#default-auto-field

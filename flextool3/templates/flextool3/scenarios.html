@@ -1,8 +1,9 @@
 {% extends "flextool3/edit_base.html" %}
 {% load static %}
+{% load django_vite %}
 
 {% block head %}
-    <link rel="stylesheet" href="{% static 'flextool3/apps/css/scenarios.css' %}">
+    {% vite_hmr_client %}
 {% endblock %}
 
 {% block content %}
@@ -24,6 +25,5 @@
             </n-message-provider>
         </n-dialog-provider>
     </div>
-    <script src="{% static 'flextool3/apps/js/chunk-vendors.js' %}"></script>
-    <script src="{% static 'flextool3/apps/js/scenarios.js' %}"></script>
+    {% vite_asset "src/scenarios.js" %}
 {% endblock %}

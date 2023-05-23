@@ -36,7 +36,8 @@ from .view_utils import resolve_project
 from .utils import Database, get_and_validate
 from .executions_view import (
     abort_execution,
-    execute,
+    import_excel_input,
+    solve_model,
     execution_briefing,
     current_execution,
 )
@@ -50,7 +51,7 @@ from .summary_view import (
     destroy_execution,
 )
 from .examples_view import get_example_list, add_example_to_model
-from .import_model_database_view import save_model_database_file
+from .import_file_view import save_imported_file
 
 PHYSICAL_OBJECT_CLASS_NAMES = {
     "commodity",
@@ -306,8 +307,10 @@ def executions(request):
         return HttpResponseBadRequest(str(error))
     if question == "current execution?":
         return current_execution(request, body)
-    if question == "execute?":
-        return execute(request, body)
+    if question == "solve model?":
+        return solve_model(request, body)
+    if question == "import excel input?":
+        return import_excel_input(request, body)
     if question == "abort?":
         return abort_execution(request, body)
     if question == "briefing?":
@@ -426,7 +429,7 @@ def export_model_database(request, project_id):
 
 
 @login_required
-def import_model_database(request, project_id):
+def import_file(request, project_id):
     """Saves uploaded model database file to project.
 
     Args:
@@ -437,8 +440,7 @@ def import_model_database(request, project_id):
         HttpResponse: server response
     """
     project = get_object_or_404(Project, pk=project_id, user=request.user.id)
-    save_model_database_file(request.FILES["model_database"], project)
-    return JsonResponse({})
+    return save_imported_file(request, project)
 
 
 def _ensure_database_up_to_date(func, database, request, project_id):

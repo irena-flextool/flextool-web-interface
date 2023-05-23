@@ -2364,9 +2364,14 @@ class ExecutorTests(unittest.TestCase):
 class ExecutionsViewTests(unittest.TestCase):
     def test_arguments(self):
         project_path = Path("path", "to", "project")
-        arguments = executions_view.arguments(project_path)
+        mod_script_path = Path("path", "to", "mod script")
+        arguments = executions_view.solve_model_interpreter_arguments(
+            project_path, mod_script_path
+        )
         expected = [
             "-mspinetoolbox",
+            "--mod-script",
+            str(mod_script_path),
             "--execute-only",
             str(project_path),
             "--select",
@@ -3148,7 +3153,7 @@ class AnalysisInterfaceTests(TestCase):
                 self.assertEqual(content, expected)
 
     def test_get_parameter_value_indexes_gathers_all_nested_indexes_from_diffent_alternatives(
-        self
+        self,
     ):
         with new_project(self.baron) as project:
             scenario_1 = Scenario(project=project, name="Base+Coal")
@@ -3260,7 +3265,7 @@ class AnalysisInterfaceTests(TestCase):
                 self.assertEqual(content, expected)
 
     def test_get_parameter_value_indexes_returns_single_record_for_multiple_objects(
-        self
+        self,
     ):
         with new_project(self.baron) as project:
             scenario = Scenario(project=project, name="Base")
@@ -3362,7 +3367,7 @@ class AnalysisInterfaceTests(TestCase):
                 self.assertEqual(content, expected)
 
     def test_get_parameter_value_indexes_returns_single_record_for_multiple_alternatives(
-        self
+        self,
     ):
         with new_project(self.baron) as project:
             scenario = Scenario(project=project, name="Base")
@@ -3466,7 +3471,7 @@ class AnalysisInterfaceTests(TestCase):
                 self.assertEqual(content, expected)
 
     def test_get_parameter_value_indexes_returns_single_record_for_multiple_object_classes(
-        self
+        self,
     ):
         with new_project(self.baron) as project:
             scenario = Scenario(project=project, name="Base")
@@ -3572,7 +3577,7 @@ class AnalysisInterfaceTests(TestCase):
                 self.assertEqual(content, expected)
 
     def test_get_parameter_value_indexes_returns_single_record_for_multiple_parameters(
-        self
+        self,
     ):
         with new_project(self.baron) as project:
             scenario = Scenario(project=project, name="Base")

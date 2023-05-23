@@ -154,7 +154,26 @@ function fetchCurrentExecution(projectId, executionsUrl) {
  */
 function executeExecution(projectId, executionsUrl, scenarios) {
     const fetchInit = makeFetchInit();
-    fetchInit["body"] = JSON.stringify({ type: "execute?", projectId: projectId, scenarios: scenarios });
+    fetchInit["body"] = JSON.stringify({ type: "solve model?", projectId: projectId, scenarios: scenarios });
+    return fetch(executionsUrl, fetchInit).then(function (response) {
+        if (!response.ok) {
+            return response.text().then(function (message) {
+                throw new Error(`Failed to execute: ${message}`);
+            });
+        }
+        return response.json();
+    });
+}
+
+/**
+ * Starts import Excel input file.
+ * @param {number} projectId Project id.
+ * @param {string} executionsUrl URL to server's interface.
+ * @returns {Promise} A promise that resolves to server's response.
+ */
+function executeExcelInputImport(projectId, executionsUrl) {
+    const fetchInit = makeFetchInit();
+    fetchInit["body"] = JSON.stringify({ type: "import excel input?", projectId: projectId });
     return fetch(executionsUrl, fetchInit).then(function (response) {
         if (!response.ok) {
             return response.text().then(function (message) {
@@ -516,6 +535,7 @@ export {
     destroyProject,
     fetchCurrentExecution,
     executeExecution,
+    executeExcelInputImport,
     abortExecution,
     fetchExecutionBriefing,
     fetchExecutedScenarioList,

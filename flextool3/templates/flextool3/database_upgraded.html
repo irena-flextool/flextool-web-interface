@@ -1,12 +1,16 @@
 {% extends "flextool3/base.html" %}
 {% load static %}
+{% load django_vite %}
 
 {% block title %} Database updated - FlexTool 3{% endblock %}
+
+{% block head %}
+    {% vite_hmr_client %}
+{% endblock %}
 
 {% block content %}
     <div id="upgrade-notification-app">
         <upgrade-notification-app database="{{ database }}"></upgrade-notification-app>
     </div>
-    <script src="{% static 'flextool3/apps/js/chunk-vendors.js' %}"></script>
-    <script src="{% static 'flextool3/apps/js/upgrade-notification.js' %}"></script>
+    {% vite_asset "src/upgradeNotification.js" %}
 {% endblock %}

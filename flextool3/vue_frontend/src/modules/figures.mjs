@@ -1,4 +1,4 @@
-import DataFrame from "data-forge";
+import { DataFrame } from "data-forge";
 import { nameFromKey } from "./plotEditors.mjs";
 
 /** Compiles a CSV file from figure data and initiates download.

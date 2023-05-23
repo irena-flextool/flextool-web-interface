@@ -25,8 +25,8 @@ urlpatterns = [
         name="model_export",
     ),
     path(
-        "<int:project_id>/upload_results_database",
-        views.import_model_database,
-        name="model_import",
+        "<int:project_id>/upload/",
+        views.import_file,
+        name="upload",
     ),
 ]

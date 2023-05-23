@@ -1,10 +1,11 @@
 {% extends "flextool3/base.html" %}
 {% load static %}
+{% load django_vite %}
 
 {% block title %} Run model - Flextool 3{% endblock %}
 
 {% block head %}
-    <link rel="stylesheet" href="{% static 'flextool3/apps/css/run.css' %}">
+    {% vite_hmr_client %}
 {% endblock %}
 
 {% block content %}
@@ -27,6 +28,5 @@
             </run-app>
         </n-message-provider>
     </div>
-    <script src="{% static 'flextool3/apps/js/chunk-vendors.js' %}"></script>
-    <script src="{% static 'flextool3/apps/js/run.js' %}"></script>
+    {% vite_asset "src/run.js" %}
 {% endblock %}

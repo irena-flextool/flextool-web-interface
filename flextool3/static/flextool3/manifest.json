@@ -1,0 +1,145 @@
+{
+  "_Fetchable-860fd563.js": {
+    "file": "assets/Fetchable-860fd563.js",
+    "imports": [
+      "__plugin-vue_export-helper-4a5a23ee.js"
+    ]
+  },
+  "_NewNamedItemRow-83c872c9.js": {
+    "file": "assets/NewNamedItemRow-83c872c9.js",
+    "imports": [
+      "__plugin-vue_export-helper-4a5a23ee.js"
+    ]
+  },
+  "__plugin-vue_export-helper-4a5a23ee.js": {
+    "file": "assets/_plugin-vue_export-helper-4a5a23ee.js"
+  },
+  "_communication-61ce654c.js": {
+    "css": [
+      "assets/communication-1b59de5f.css"
+    ],
+    "file": "assets/communication-61ce654c.js",
+    "imports": [
+      "__plugin-vue_export-helper-4a5a23ee.js"
+    ]
+  },
+  "_executions-556d698b.js": {
+    "file": "assets/executions-556d698b.js",
+    "imports": [
+      "_communication-61ce654c.js"
+    ]
+  },
+  "communication.css": {
+    "file": "assets/communication-1b59de5f.css",
+    "src": "communication.css"
+  },
+  "src/detail.css": {
+    "file": "assets/detail-73fc16c6.css",
+    "src": "src/detail.css"
+  },
+  "src/detail.js": {
+    "css": [
+      "assets/detail-73fc16c6.css"
+    ],
+    "file": "detail.js",
+    "imports": [
+      "__plugin-vue_export-helper-4a5a23ee.js",
+      "_communication-61ce654c.js",
+      "_executions-556d698b.js",
+      "_Fetchable-860fd563.js"
+    ],
+    "isEntry": true,
+    "src": "src/detail.js"
+  },
+  "src/edit.js": {
+    "file": "edit.js",
+    "imports": [
+      "__plugin-vue_export-helper-4a5a23ee.js",
+      "_communication-61ce654c.js",
+      "_Fetchable-860fd563.js"
+    ],
+    "isEntry": true,
+    "src": "src/edit.js"
+  },
+  "src/entities.css": {
+    "file": "assets/entities-7a3cd628.css",
+    "src": "src/entities.css"
+  },
+  "src/entities.js": {
+    "css": [
+      "assets/entities-7a3cd628.css"
+    ],
+    "file": "entities.js",
+    "imports": [
+      "__plugin-vue_export-helper-4a5a23ee.js",
+      "_communication-61ce654c.js",
+      "_NewNamedItemRow-83c872c9.js",
+      "_Fetchable-860fd563.js"
+    ],
+    "isEntry": true,
+    "src": "src/entities.js"
+  },
+  "src/index.css": {
+    "file": "assets/index-e452ed57.css",
+    "src": "src/index.css"
+  },
+  "src/index.js": {
+    "css": [
+      "assets/index-e452ed57.css"
+    ],
+    "file": "index.js",
+    "imports": [
+      "__plugin-vue_export-helper-4a5a23ee.js",
+      "_communication-61ce654c.js"
+    ],
+    "isEntry": true,
+    "src": "src/index.js"
+  },
+  "src/results.css": {
+    "file": "assets/results-2034e404.css",
+    "src": "src/results.css"
+  },
+  "src/results.js": {
+    "css": [
+      "assets/results-2034e404.css"
+    ],
+    "file": "results.js",
+    "imports": [
+      "__plugin-vue_export-helper-4a5a23ee.js",
+      "_communication-61ce654c.js",
+      "_Fetchable-860fd563.js"
+    ],
+    "isEntry": true,
+    "src": "src/results.js"
+  },
+  "src/run.js": {
+    "file": "run.js",
+    "imports": [
+      "__plugin-vue_export-helper-4a5a23ee.js",
+      "_communication-61ce654c.js",
+      "_Fetchable-860fd563.js",
+      "_executions-556d698b.js"
+    ],
+    "isEntry": true,
+    "src": "src/run.js"
+  },
+  "src/scenarios.js": {
+    "file": "scenarios.js",
+    "imports": [
+      "__plugin-vue_export-helper-4a5a23ee.js",
+      "_communication-61ce654c.js",
+      "_NewNamedItemRow-83c872c9.js",
+      "_Fetchable-860fd563.js"
+    ],
+    "isEntry": true,
+    "src": "src/scenarios.js"
+  },
+  "src/upgradeNotification.js": {
+    "file": "upgrade-notification.js",
+    "imports": [
+      "__plugin-vue_export-helper-4a5a23ee.js"
+    ],
+    "isEntry": true,
+    "src": "src/upgradeNotification.js"
+  }
+}

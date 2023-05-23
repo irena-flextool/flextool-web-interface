@@ -1,5 +1,5 @@
 import { reactive } from "vue";
-import dataForge from "data-forge";
+import { DataFrame } from "data-forge";
 import {
     entityClassKey,
     nameFromKey,
@@ -343,7 +343,7 @@ function padCategoriesByNulls(dataFrame, specialColumns) {
             batches.push(batch);
         }
     }
-    return dataForge.DataFrame.concat(batches);
+    return DataFrame.concat(batches);
 }
 
 /**Puts line label together.

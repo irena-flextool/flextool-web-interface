@@ -1,29 +1,32 @@
 {% extends "flextool3/base.html" %}
 {% load static %}
+{% load django_vite %}
 
 {% block title %} Manage project {% endblock %}
 
 {% block head %}
-    <link rel="stylesheet" href="{% static 'flextool3/apps/css/detail.css' %}">
+    {% vite_hmr_client %}
 {% endblock %}
 
 {% block content %}
     <div id="detail-app">
-        <detail-app
-            index-url="{% url 'flextool3:index' %}"
-            project-url="{% url 'flextool3:detail' project.id %}"
-            edit-url="{% url 'flextool3:edit' project.id %}"
-            run-url="{% url 'flextool3:run' project.id %}"
-            results-url="{% url 'flextool3:view' project.id %}"
-            examples-url="{% url 'flextool3:examples' %}"
-            project-name="{{ project.name }}"
-            :project-id="{{ project.id }}"
-            logout-url="{% url 'flextool3:logout' %}"
-            logo-url="{% static 'flextool3/menu-logo.png' %}"
-            model-export-url="{% url 'flextool3:model_export' project.id %}"
-            model-import-url="{% url 'flextool3:model_import' project.id %}"
-        ></detail-app>
+        <n-message-provider>
+            <detail-app
+                index-url="{% url 'flextool3:index' %}"
+                project-url="{% url 'flextool3:detail' project.id %}"
+                edit-url="{% url 'flextool3:edit' project.id %}"
+                run-url="{% url 'flextool3:run' project.id %}"
+                results-url="{% url 'flextool3:view' project.id %}"
+                examples-url="{% url 'flextool3:examples' %}"
+                project-name="{{ project.name }}"
+                :project-id="{{ project.id }}"
+                logout-url="{% url 'flextool3:logout' %}"
+                logo-url="{% static 'flextool3/menu-logo.png' %}"
+                model-export-url="{% url 'flextool3:model_export' project.id %}"
+                file-upload-url="{% url 'flextool3:upload' project.id %}"
+                executions-url="{% url 'flextool3:executions' %}"
+            ></detail-app>
+        </n-message-provider>
     </div>
-    <script src="{% static 'flextool3/apps/js/chunk-vendors.js' %}"></script>
-    <script src="{% static 'flextool3/apps/js/detail.js' %}"></script>
+    {% vite_asset "src/detail.js" %}
 {% endblock %}
