@@ -205,9 +205,8 @@ export default {
                         props.executionsUrl,
                         logLines,
                         runStatus,
-                        isExecuting,
-                        isAborting,
-                        message
+                        message,
+                        finishExecution
                     );
                 }).catch(function (error) {
                     message.error(error.message);
