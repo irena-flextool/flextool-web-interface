@@ -67,6 +67,9 @@ Install [Miniconda](https://docs.conda.io/en/latest/miniconda.html) if you don't
    conda activate flextool3-web-interface
    ```
 3. `cd` to the `flextool-web-interface` directory that was set up during installation.
+   ```commandline
+   cd flextool-web-interface
+   ```
 4. Start local web server:
    ```commandline
    python manage.py runserver
@@ -89,6 +92,9 @@ Install [Miniconda](https://docs.conda.io/en/latest/miniconda.html) if you don't
    conda activate flextool3-web-interface
    ```
 3. `cd` to the `flextool-web-interface` directory that was set up during installation.
+   ```commandline
+   cd flextool-web-interface
+   ```
 4. Pull the latest changes:
    ```commandline
    git pull
