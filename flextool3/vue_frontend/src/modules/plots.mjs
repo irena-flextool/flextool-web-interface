@@ -113,6 +113,7 @@ function makeBasicChart(dataFrame, plotDimensions, staticData = {}, staticLayout
         layout.title = plotTitle;
     }
     const config = { ...defaultConfig };
+
     return {
         data: data,
         layout: layout,
@@ -229,10 +230,12 @@ function makeSubplotData(lineWindows, separateWindow, specialColumns, staticLayo
         }
         separatedWindows.push(window.dropSeries(separateWindow));
     }
-    for (let i = 2; i != windowSubplotData.size + 1; ++i) {
-        subplotLayout[`xaxis${i}`] = { title: nameFromKey(specialColumns.x1) };
-        if (staticLayoutYAxis !== undefined) {
-            subplotLayout[`yaxis${i}`] = { ...staticLayoutYAxis };
+    if (windowSubplotData.size > 1) {
+        for (let i = 2; i != windowSubplotData.size + 1; ++i) {
+            subplotLayout[`xaxis${i}`] = { title: nameFromKey(specialColumns.x1) };
+            if (staticLayoutYAxis !== undefined) {
+                subplotLayout[`yaxis${i}`] = { ...staticLayoutYAxis };
+            }
         }
     }
     const columnCount = 2;
