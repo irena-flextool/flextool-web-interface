@@ -1203,8 +1203,8 @@ class ModelInterfaceTests(TestCase):
                         "lists": [
                             {
                                 "id": list_id,
-                                "value_list": ['"glpsol"', '"highs"'],
-                                "type_list": [None, None],
+                                "value_list": ['"glpsol"', '"highs"', '"cplex"'],
+                                "type_list": [None, None, None],
                             }
                         ]
                     },
