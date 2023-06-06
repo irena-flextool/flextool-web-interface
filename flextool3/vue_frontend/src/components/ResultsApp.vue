@@ -20,10 +20,6 @@
                         <results-figures :project-id="projectId" :analysis-url="analysisUrl" @ready="setFiguresScenario"
                             ref="figures" />
                     </n-tab-pane>
-                    <n-tab-pane name="CSV files" display-directive="show:lazy">
-                        <results-output-directory :project-id="projectId" :summary-url="summaryUrl"
-                            @ready="loadOutputDirectory" ref="outputDirectory" />
-                    </n-tab-pane>
                 </n-tabs>
             </n-layout-content>
         </n-layout>
@@ -37,7 +33,6 @@ import PagePath from "./PagePath.vue";
 import ResultsFigures from "./ResultsFigures.vue";
 import ResultsScenarioList from "./ResultsScenarioList.vue";
 import ResultsSummary from "./ResultsSummary.vue";
-import ResultsOutputDirectory from "./ResultsOutputDirectory.vue";
 
 export default {
     props: {
@@ -59,7 +54,6 @@ export default {
         "results-figures": ResultsFigures,
         "results-scenario-list": ResultsScenarioList,
         "results-summary": ResultsSummary,
-        "results-output-directory": ResultsOutputDirectory,
     },
     setup() {
         const scenarioList = ref(null);

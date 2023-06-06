@@ -7,7 +7,6 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import (
     Http404,
     HttpResponseBadRequest,
-    JsonResponse,
     HttpResponseServerError,
     FileResponse,
 )
@@ -47,7 +46,6 @@ from .summary_view import (
     get_scenario_list,
     get_summary,
     get_result_alternative,
-    get_output_directory,
     destroy_execution,
 )
 from .examples_view import get_example_list, add_example_to_model
@@ -342,8 +340,6 @@ def summary(request):
         return get_summary(project, body)
     if type_ == "result alternative?":
         return get_result_alternative(project, body)
-    if type_ == "output directory?":
-        return get_output_directory(project, body)
     if type_ == "destroy execution?":
         return destroy_execution(project, body)
     return HttpResponseBadRequest("Unknown 'type'.")
