@@ -164,7 +164,6 @@ function makeOptions(itemOptions) {
 
 const valueIndexKeyPrefix = 'X_'
 const scenarioKey = 'scenario'
-const scenarioTimeStampKey = 'scenario_time_stamp'
 const entityClassKey = 'entity_class'
 const parameterKey = 'parameter'
 const entityKeyPrefix = 'entity_'
@@ -408,6 +407,5 @@ export {
   removeExcessSelections,
   removeExcessSelectionSelects,
   scenarioKey,
-  scenarioTimeStampKey,
   valueIndexKeyPrefix
 }

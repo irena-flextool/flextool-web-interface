@@ -130,7 +130,6 @@ import {
   removeExcessSelections,
   removeExcessSelectionSelects,
   scenarioKey,
-  scenarioTimeStampKey,
   valueIndexKeyPrefix,
   parameterKey
 } from '../modules/plotEditors.mjs'
@@ -138,8 +137,7 @@ import PlotFigure from './PlotFigure.vue'
 
 const indexNameLabels = new Map([
   [entityClassKey, 'Entity class'],
-  [scenarioKey, 'Scenario'],
-  [scenarioTimeStampKey, 'Run time']
+  [scenarioKey, 'Scenario']
 ])
 
 /**Compares two selection selects for priority.

@@ -5,8 +5,7 @@ import {
   nameFromKey,
   isEntityKey,
   parameterKey,
-  scenarioKey,
-  scenarioTimeStampKey
+  scenarioKey
 } from './plotEditors.mjs'
 
 const colors = [
@@ -97,7 +96,7 @@ function makeSpecification() {
   }
 }
 
-const protectedNames = new Set([entityClassKey, parameterKey, scenarioKey, scenarioTimeStampKey])
+const protectedNames = new Set([entityClassKey, parameterKey, scenarioKey])
 
 /** Tests if name is parameter index name.
  * @param {string} name Name to test.

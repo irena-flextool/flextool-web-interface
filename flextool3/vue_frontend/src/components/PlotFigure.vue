@@ -5,7 +5,8 @@
         <n-button @click="download" size="small"> Download CSV </n-button>
       </n-space>
       <div v-if="showGraph" :id="plotId" :style="plotDivStyle" />
-      <plot-table v-else :data-frame="currentDataFrame" />
+      <plot-table v-else-if="showTable" :data-frame="currentDataFrame" />
+      <n-empty v-else description="Nothing to plot."></n-empty>
     </n-space>
   </fetchable>
 </template>
@@ -25,7 +26,6 @@ import {
   isEntityKey,
   parameterKey,
   scenarioKey,
-  scenarioTimeStampKey,
   valueIndexKeyPrefix
 } from '../modules/plotEditors.mjs'
 import Fetchable from './Fetchable.vue'
@@ -106,6 +106,7 @@ function replot(dataFrame, plotSpecification, plotId, plotDivStyle) {
  * @param {Ref} currentDataFrame Current data frame.
  * @param {string} plotId Plot div element id.
  * @param {Ref} plotCount Subplot count.
+ * @param {Ref} hasData Flag indicating if the there is data to plot.
  * @param {Ref} state Fetching state.
  * @param {Ref} errorMessage Fetch error message.
  */
@@ -117,6 +118,7 @@ function fetchDataFrame(
   currentDataFrame,
   plotId,
   plotCount,
+  hasData,
   state,
   errorMessage
 ) {
@@ -155,8 +157,14 @@ function fetchDataFrame(
   )
     .then(function (data) {
       const parameterValues = data.values
+      if (parameterValues.length === 0) {
+        state.value = Fetchable.state.ready
+        hasData.value = false
+        return
+      }
+      hasData.value = true
       const valueObjects = []
-      const baseColumnNames = [entityClassKey, parameterKey, scenarioKey, scenarioTimeStampKey]
+      const baseColumnNames = [entityClassKey, parameterKey, scenarioKey]
       let maxDimensions = 0
       const indexNameLocations = new Map()
       for (const value of parameterValues) {
@@ -176,12 +184,12 @@ function fetchDataFrame(
         for (let dimension = 0; dimension !== value.objects.length; ++dimension) {
           objectPart[entityKey(dimension)] = value.objects[dimension]
         }
+        const fullScenario = `${value.scenario} ${timeFormat.format(new Date(value.time_stamp))}`
         for (const valuePart of valueParts) {
           valueObjects.push({
             [entityClassKey]: value.class,
             [parameterKey]: value.parameter,
-            [scenarioKey]: value.scenario,
-            [scenarioTimeStampKey]: new Date(value.time_stamp),
+            [scenarioKey]: fullScenario,
             ...objectPart,
             ...valuePart
           })
@@ -197,9 +205,6 @@ function fetchDataFrame(
       columnNames.push('y')
       let dataFrame = new DataFrame({ columnNames: columnNames, values: valueObjects })
       dataFrame = filterDeselectedIndexNames(dataFrame, plotSpecification.selection)
-      dataFrame = dataFrame.generateSeries({
-        [scenarioTimeStampKey]: (row) => timeFormat.format(row[scenarioTimeStampKey])
-      })
       currentDataFrame.value = dataFrame
       state.value = Fetchable.state.ready
       nextTick(() => replot(dataFrame, plotSpecification, plotId, plotCount))
@@ -218,6 +223,7 @@ function fetchDataFrame(
  * @param {Ref} currentDataFrame Current data frame.
  * @param {string} plotId Plot div element id.
  * @param {Ref} plotCount Subplot count.
+ * @param {Ref} hasData Flag indicating if the there is data to plot.
  * @param {Ref} state Fetching state.
  * @param {Ref} errorMessage Fetch error message.
  */
@@ -229,6 +235,7 @@ function plotIfPossible(
   currentDataFrame,
   plotId,
   plotCount,
+  hasData,
   state,
   errorMessage
 ) {
@@ -246,6 +253,7 @@ function plotIfPossible(
     currentDataFrame,
     plotId,
     plotCount,
+    hasData,
     state,
     errorMessage
   )
@@ -266,8 +274,10 @@ export default {
   setup(props) {
     const state = ref(Fetchable.state.waiting)
     const errorMessage = ref('')
+    const hasData = ref(true)
     const plotId = `plot-${props.identifier}`
-    const showGraph = computed(() => props.plotSpecification.plot_type !== 'table')
+    const showGraph = computed(() => hasData.value && props.plotSpecification.plot_type !== 'table')
+    const showTable = computed(() => hasData.value && props.plotSpecification.plot_type === 'table')
     const currentDataFrame = ref(null)
     const plotDivStyle = ref({ minHeight: emptyPlotMinHeight + 'px' })
     watch(toRef(props, 'scenarioExecutionIds'), function () {
@@ -279,6 +289,7 @@ export default {
         currentDataFrame,
         plotId,
         plotDivStyle,
+        hasData,
         state,
         errorMessage
       )
@@ -294,6 +305,7 @@ export default {
           currentDataFrame,
           plotId,
           plotDivStyle,
+          hasData,
           state,
           errorMessage
         )
@@ -309,6 +321,7 @@ export default {
         currentDataFrame,
         plotId,
         plotDivStyle,
+        hasData,
         state,
         errorMessage
       )
@@ -318,6 +331,7 @@ export default {
       errorMessage: errorMessage,
       plotId: plotId,
       showGraph: showGraph,
+      showTable: showTable,
       currentDataFrame: currentDataFrame,
       plotDivStyle: plotDivStyle,
       download() {
