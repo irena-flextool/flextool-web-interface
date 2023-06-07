@@ -43,14 +43,15 @@ function make_empty_heat_map_plot_data() {
 }
 
 function make_empty_basic_chart_plot_data(names) {
+    const defaultColor = "#1f77b4";
     const charts = [];
     for (const name of names) {
-        charts.push({ x: [], y: [], name: name });
+        charts.push({ x: [], y: [], name: name, fillcolor: defaultColor, line: {color: defaultColor}, marker: {color: defaultColor}, showlegend: true });
     }
     return {
         data: charts,
         config: { displaylogo: false, responsive: true },
-        layout: { title: "", xaxis: { title: "" } },
+        layout: { title: "", xaxis: { title: "" }, showlegend: false },
     };
 }
 
@@ -151,12 +152,13 @@ describe("makeBasicChart", function () {
         expected.data[1].y = [5.5];
         expected.data[1].xaxis = "x2";
         expected.data[1].yaxis = "y2";
+        expected.data[1].showlegend = false;
         expected.layout.title = "";
         expected.layout.xaxis.title = "x";
         expected.layout.xaxis2 = { title: "x" };
         expected.layout.grid = {
-            rows: 1,
-            columns: 2,
+            rows: 2,
+            columns: 1,
             pattern: "independent",
         };
         expected.layout.annotations = [
@@ -179,43 +181,38 @@ describe("makeBasicChart", function () {
         ];
         assert.deepEqual(plotData, expected);
     });
-    it("should get subplot title right even with a single dataset", function () {
+    it("should give colors with different names different colors and show them on legend", function () {
         const data = new DataFrame([
             {
-                [valueIndexKeyPrefix + "i"]: "my_data",
+                [valueIndexKeyPrefix + "i"]: "data 1",
                 [valueIndexKeyPrefix + "x"]: "T1",
                 y: 2.3
+            },
+            {
+                [valueIndexKeyPrefix + "i"]: "data 2",
+                [valueIndexKeyPrefix + "x"]: "T1",
+                y: -2.3
             },
         ]);
         const plotDimensions = {
             x1: null,
             x2: null,
             x3: null,
-            separate_window: valueIndexKeyPrefix + "i",
+            separate_window: null,
         };
         const plotData = makeBasicChart(data, plotDimensions);
-        const expected = make_empty_basic_chart_plot_data([""]);
+        const expected = make_empty_basic_chart_plot_data(["data 1", "data 2"]);
         expected.data[0].x = ["T1"];
         expected.data[0].y = [2.3];
-        expected.data[0].xaxis = "x1";
-        expected.data[0].yaxis = "y1";
+        expected.data[1].x = ["T1"];
+        expected.data[1].y = [-2.3];
+        const defaultSecondColor = "#ff7f0e";
+        expected.data[1].fillcolor = defaultSecondColor;
+        expected.data[1].line.color = defaultSecondColor;
+        expected.data[1].marker.color = defaultSecondColor;
         expected.layout.title = "";
         expected.layout.xaxis.title = "x";
-        expected.layout.grid = {
-            rows: 1,
-            columns: 2,
-            pattern: "independent",
-        };
-        expected.layout.annotations = [
-            {
-                showarrow: false,
-                text: "my_data",
-                x: 0,
-                xref: "x1 domain",
-                y: 1.1,
-                yref: "y1 domain",
-            },
-        ];
+        delete expected.layout.showlegend;
         assert.deepEqual(plotData, expected);
     });
 });
@@ -409,7 +406,7 @@ describe("makeHeatmapChart", function () {
         expected.layout.xaxis.title = "x";
         expected.layout.xaxis2 = { title: "x" };
         expected.layout.yaxis2 = { automargin: true }
-        expected.layout.grid = { rows: 1, columns: 2, pattern: "independent" },
+        expected.layout.grid = { rows: 2, columns: 1, pattern: "independent" },
             expected.layout.coloraxis = {};
         expected.layout.annotations = [
             {
@@ -456,7 +453,7 @@ describe("makeHeatmapChart", function () {
         expected.data[0].coloraxis = "coloraxis";
         expected.layout.title = "11-12-13";
         expected.layout.xaxis.title = "x";
-        expected.layout.grid = { rows: 1, columns: 2, pattern: "independent" },
+        expected.layout.grid = { rows: 1, columns: 1, pattern: "independent" },
             expected.layout.coloraxis = {};
         expected.layout.annotations = [
             {
@@ -521,7 +518,7 @@ describe("makeHeatmapChart", function () {
         expected.layout.xaxis.title = "x";
         expected.layout.xaxis2 = { title: "x" };
         expected.layout.yaxis2 = { automargin: true }
-        expected.layout.grid = { rows: 1, columns: 2, pattern: "independent" },
+        expected.layout.grid = { rows: 2, columns: 1, pattern: "independent" },
             expected.layout.coloraxis = {};
         expected.layout.annotations = [
             {

@@ -5,7 +5,7 @@
  * @returns {string} Relationship name.
  */
 function relationshipName(className, emblem) {
-    return className + "_" + emblem.join("__");
+  return className + '_' + emblem.join('__')
 }
 
 /**
@@ -15,12 +15,11 @@ function relationshipName(className, emblem) {
  * @returns {string} Entity's name.
  */
 function emblemToName(className, emblem) {
-    if (typeof emblem === "string") {
-        return emblem;
-    }
-    else {
-        return relationshipName(className, emblem);
-    }
+  if (typeof emblem === 'string') {
+    return emblem
+  } else {
+    return relationshipName(className, emblem)
+  }
 }
 
-export { emblemToName, relationshipName };
+export { emblemToName, relationshipName }

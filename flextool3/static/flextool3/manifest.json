@@ -1,32 +1,32 @@
 {
-  "_Fetchable-860fd563.js": {
-    "file": "assets/Fetchable-860fd563.js",
+  "_Fetchable-3244e941.js": {
+    "file": "assets/Fetchable-3244e941.js",
     "imports": [
-      "__plugin-vue_export-helper-4a5a23ee.js"
+      "__plugin-vue_export-helper-7747d506.js"
     ]
   },
-  "_NewNamedItemRow-83c872c9.js": {
-    "file": "assets/NewNamedItemRow-83c872c9.js",
+  "_NewNamedItemRow-36e21787.js": {
+    "file": "assets/NewNamedItemRow-36e21787.js",
     "imports": [
-      "__plugin-vue_export-helper-4a5a23ee.js"
+      "__plugin-vue_export-helper-7747d506.js"
     ]
   },
-  "__plugin-vue_export-helper-4a5a23ee.js": {
-    "file": "assets/_plugin-vue_export-helper-4a5a23ee.js"
+  "__plugin-vue_export-helper-7747d506.js": {
+    "file": "assets/_plugin-vue_export-helper-7747d506.js"
   },
-  "_communication-6d265523.js": {
+  "_communication-322045da.js": {
     "css": [
       "assets/communication-1b59de5f.css"
     ],
-    "file": "assets/communication-6d265523.js",
+    "file": "assets/communication-322045da.js",
     "imports": [
-      "__plugin-vue_export-helper-4a5a23ee.js"
+      "__plugin-vue_export-helper-7747d506.js"
     ]
   },
-  "_executions-bd4e0130.js": {
-    "file": "assets/executions-bd4e0130.js",
+  "_executions-db291609.js": {
+    "file": "assets/executions-db291609.js",
     "imports": [
-      "_communication-6d265523.js"
+      "_communication-322045da.js"
     ]
   },
   "communication.css": {
@@ -43,10 +43,10 @@
     ],
     "file": "detail.js",
     "imports": [
-      "__plugin-vue_export-helper-4a5a23ee.js",
-      "_communication-6d265523.js",
-      "_executions-bd4e0130.js",
-      "_Fetchable-860fd563.js"
+      "__plugin-vue_export-helper-7747d506.js",
+      "_communication-322045da.js",
+      "_executions-db291609.js",
+      "_Fetchable-3244e941.js"
     ],
     "isEntry": true,
     "src": "src/detail.js"
@@ -54,9 +54,9 @@
   "src/edit.js": {
     "file": "edit.js",
     "imports": [
-      "__plugin-vue_export-helper-4a5a23ee.js",
-      "_communication-6d265523.js",
-      "_Fetchable-860fd563.js"
+      "__plugin-vue_export-helper-7747d506.js",
+      "_communication-322045da.js",
+      "_Fetchable-3244e941.js"
     ],
     "isEntry": true,
     "src": "src/edit.js"
@@ -71,10 +71,10 @@
     ],
     "file": "entities.js",
     "imports": [
-      "__plugin-vue_export-helper-4a5a23ee.js",
-      "_communication-6d265523.js",
-      "_NewNamedItemRow-83c872c9.js",
-      "_Fetchable-860fd563.js"
+      "__plugin-vue_export-helper-7747d506.js",
+      "_communication-322045da.js",
+      "_NewNamedItemRow-36e21787.js",
+      "_Fetchable-3244e941.js"
     ],
     "isEntry": true,
     "src": "src/entities.js"
@@ -89,8 +89,8 @@
     ],
     "file": "index.js",
     "imports": [
-      "__plugin-vue_export-helper-4a5a23ee.js",
-      "_communication-6d265523.js"
+      "__plugin-vue_export-helper-7747d506.js",
+      "_communication-322045da.js"
     ],
     "isEntry": true,
     "src": "src/index.js"
@@ -105,9 +105,9 @@
     ],
     "file": "results.js",
     "imports": [
-      "__plugin-vue_export-helper-4a5a23ee.js",
-      "_communication-6d265523.js",
-      "_Fetchable-860fd563.js"
+      "__plugin-vue_export-helper-7747d506.js",
+      "_communication-322045da.js",
+      "_Fetchable-3244e941.js"
     ],
     "isEntry": true,
     "src": "src/results.js"
@@ -115,10 +115,10 @@
   "src/run.js": {
     "file": "run.js",
     "imports": [
-      "__plugin-vue_export-helper-4a5a23ee.js",
-      "_communication-6d265523.js",
-      "_Fetchable-860fd563.js",
-      "_executions-bd4e0130.js"
+      "__plugin-vue_export-helper-7747d506.js",
+      "_communication-322045da.js",
+      "_Fetchable-3244e941.js",
+      "_executions-db291609.js"
     ],
     "isEntry": true,
     "src": "src/run.js"
@@ -126,10 +126,10 @@
   "src/scenarios.js": {
     "file": "scenarios.js",
     "imports": [
-      "__plugin-vue_export-helper-4a5a23ee.js",
-      "_communication-6d265523.js",
-      "_NewNamedItemRow-83c872c9.js",
-      "_Fetchable-860fd563.js"
+      "__plugin-vue_export-helper-7747d506.js",
+      "_communication-322045da.js",
+      "_NewNamedItemRow-36e21787.js",
+      "_Fetchable-3244e941.js"
     ],
     "isEntry": true,
     "src": "src/scenarios.js"
@@ -137,7 +137,7 @@
   "src/upgradeNotification.js": {
     "file": "upgrade-notification.js",
     "imports": [
-      "__plugin-vue_export-helper-4a5a23ee.js"
+      "__plugin-vue_export-helper-7747d506.js"
     ],
     "isEntry": true,
     "src": "src/upgradeNotification.js"

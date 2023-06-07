@@ -3,12 +3,11 @@
  * @param {Boolean} hasUncommitted True, if there are pending changes, False otherwise.
  */
 function uncommittedChangesWatcher(hasUncommitted) {
-    if (hasUncommitted) {
-        addEventListener("beforeunload", promptUnload, { capture: true });
-    }
-    else {
-        removeEventListener("beforeunload", promptUnload, { capture: true });
-    }
+  if (hasUncommitted) {
+    addEventListener('beforeunload', promptUnload, { capture: true })
+  } else {
+    removeEventListener('beforeunload', promptUnload, { capture: true })
+  }
 }
 
 /**
@@ -16,10 +15,8 @@ function uncommittedChangesWatcher(hasUncommitted) {
  * @return {string} Prompt text (usually ignored by browser).
  */
 function promptUnload(event) {
-    event.preventDefault();
-    return event.returnValue = "There are uncommitted changes."
+  event.preventDefault()
+  return (event.returnValue = 'There are uncommitted changes.')
 }
 
-export {
-    uncommittedChangesWatcher,
-};
+export { uncommittedChangesWatcher }

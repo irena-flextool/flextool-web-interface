@@ -5,12 +5,11 @@
  * @returns {boolean} True if emblems are equal, false otherwise.
  */
 function emblemsEqual(emblem1, emblem2) {
-    if (typeof emblem1 === "string") {
-        return emblem1 === emblem2;
-    }
-    else {
-        return relationshipEmblemsEqual(emblem1, emblem2);
-    }
+  if (typeof emblem1 === 'string') {
+    return emblem1 === emblem2
+  } else {
+    return relationshipEmblemsEqual(emblem1, emblem2)
+  }
 }
 
 /**
@@ -20,12 +19,12 @@ function emblemsEqual(emblem1, emblem2) {
  * @returns {boolean} True if emblems are equal, false otherwise.
  */
 function relationshipEmblemsEqual(emblem1, emblem2) {
-    for (let i = 0; i !== emblem1.length; ++i) {
-        if (emblem1[i] !== emblem2[i]) {
-            return false;
-        }
+  for (let i = 0; i !== emblem1.length; ++i) {
+    if (emblem1[i] !== emblem2[i]) {
+      return false
     }
-    return true;
+  }
+  return true
 }
 
-export { emblemsEqual, relationshipEmblemsEqual };
+export { emblemsEqual, relationshipEmblemsEqual }

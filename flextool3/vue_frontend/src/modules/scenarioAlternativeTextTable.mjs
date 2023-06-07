@@ -4,19 +4,19 @@
  * @returns {Map} Arrays of alternative names keyed by scenario name.
  */
 function parseScenarioAlternatives(text) {
-    const scenarioAlternatives = new Map();
-    text.split("\n").forEach(function (line) {
-        line = line.trim();
-        if (line) {
-            const items = line.split(/\s+/);
-            const scenario = items.shift();
-            if (scenarioAlternatives.has(scenario)) {
-                throw new Error(`Duplicate scenario '${scenario}'`);
-            }
-            scenarioAlternatives.set(scenario, items);
-        }
-    });
-    return scenarioAlternatives;
+  const scenarioAlternatives = new Map()
+  text.split('\n').forEach(function (line) {
+    line = line.trim()
+    if (line) {
+      const items = line.split(/\s+/)
+      const scenario = items.shift()
+      if (scenarioAlternatives.has(scenario)) {
+        throw new Error(`Duplicate scenario '${scenario}'`)
+      }
+      scenarioAlternatives.set(scenario, items)
+    }
+  })
+  return scenarioAlternatives
 }
 
 /**
@@ -25,12 +25,12 @@ function parseScenarioAlternatives(text) {
  * @returns {string} Scenario alternatives text table.
  */
 function makeScenarioAlternativesTable(scenarios) {
-    const lines = [];
-    scenarios.forEach(function (scenario) {
-        const line = scenario.scenarioName + " " + scenario.scenarioAlternatives.join(" ");
-        lines.push(line);
-    });
-    return lines.join("\n");
+  const lines = []
+  scenarios.forEach(function (scenario) {
+    const line = scenario.scenarioName + ' ' + scenario.scenarioAlternatives.join(' ')
+    lines.push(line)
+  })
+  return lines.join('\n')
 }
 
 /**
@@ -40,47 +40,48 @@ function makeScenarioAlternativesTable(scenarios) {
  * @returns {object}: Scenario insertions and deletions.
  */
 function scenarioActions(scenarioAlternatives, originalScenarios) {
-    const original = new Map();
-    originalScenarios.forEach(function (scenario) {
-        original.set(scenario.scenarioName, scenario)
-    });
-    const inserted = [];
-    scenarioAlternatives.forEach(function (alternatives, scenarioName) {
-        const originalScenario = original.get(scenarioName);
-        if (originalScenario === undefined) {
-            if (alternatives) {
-                inserted.push({
-                    scenarioName: scenarioName,
-                    scenarioAlternatives: alternatives
-                });
-            }
-            else {
-                inserted.push({ name: scenarioName });
-            }
-        }
-        else {
-            let match = false;
-            if (alternatives.length === originalScenario.scenarioAlternatives.length) {
-                match = alternatives.every(function (alternative, index) {
-                    return alternative == originalScenario.scenarioAlternatives[index];
-                });
-            }
-            if (!match) {
-                inserted.push({
-                    scenarioName: scenarioName,
-                    scenarioId: originalScenario.scenarioId,
-                    scenarioAlternatives: alternatives,
-                });
-            }
-        }
-    });
-    const deleted = [];
-    for (const originalScenario of originalScenarios) {
-        if (!scenarioAlternatives.has(originalScenario.scenarioName)) {
-            deleted.push({ scenarioId: originalScenario.scenarioId, scenarioName: originalScenario.scenarioName });
-        }
+  const original = new Map()
+  originalScenarios.forEach(function (scenario) {
+    original.set(scenario.scenarioName, scenario)
+  })
+  const inserted = []
+  scenarioAlternatives.forEach(function (alternatives, scenarioName) {
+    const originalScenario = original.get(scenarioName)
+    if (originalScenario === undefined) {
+      if (alternatives) {
+        inserted.push({
+          scenarioName: scenarioName,
+          scenarioAlternatives: alternatives
+        })
+      } else {
+        inserted.push({ name: scenarioName })
+      }
+    } else {
+      let match = false
+      if (alternatives.length === originalScenario.scenarioAlternatives.length) {
+        match = alternatives.every(function (alternative, index) {
+          return alternative == originalScenario.scenarioAlternatives[index]
+        })
+      }
+      if (!match) {
+        inserted.push({
+          scenarioName: scenarioName,
+          scenarioId: originalScenario.scenarioId,
+          scenarioAlternatives: alternatives
+        })
+      }
     }
-    return { inserted: inserted, deleted: deleted };
+  })
+  const deleted = []
+  for (const originalScenario of originalScenarios) {
+    if (!scenarioAlternatives.has(originalScenario.scenarioName)) {
+      deleted.push({
+        scenarioId: originalScenario.scenarioId,
+        scenarioName: originalScenario.scenarioName
+      })
+    }
+  }
+  return { inserted: inserted, deleted: deleted }
 }
 
-export { makeScenarioAlternativesTable, parseScenarioAlternatives, scenarioActions };
+export { makeScenarioAlternativesTable, parseScenarioAlternatives, scenarioActions }
