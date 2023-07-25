@@ -1,17 +1,20 @@
+/**
+ * Returns the value of a cookie.
+ * @param {string} name Name of the cookie
+ * @returns {string} Value of the cookie
+ */
 function getCookie(name) {
-  let cookieValue = null
   if (document.cookie && document.cookie !== '') {
     const cookies = document.cookie.split(';')
-    for (let i = 0; i < cookies.length; i++) {
-      const cookie = cookies[i].trim()
-      // Does this cookie string begin with the name we want?
-      if (cookie.substring(0, name.length + 1) === name + '=') {
-        cookieValue = decodeURIComponent(cookie.substring(name.length + 1))
-        break
+    const fingerprint = name + '='
+    for (let cookie of cookies) {
+      cookie = cookie.trim()
+      if (cookie.startsWith(fingerprint)) {
+        return decodeURIComponent(cookie.substring(name.length + 1))
       }
     }
   }
-  return cookieValue
+  throw new Error(`'${name}' cookie not found`)
 }
 
 const csrftoken = getCookie('csrftoken')
@@ -29,21 +32,35 @@ function makeFetchInit() {
 }
 
 /**
+ * Fetches data from server.
+ * @param {string} requestType Request type string.
+ * @param {object} additionalData Additional fields to add to the request.
+ * @param {string} url URL to server's interface.
+ * @param {string} errorMessagePrefix Error message's first part if response is not OK.
+ * @returns {Promise} A promise that resolves to server's response.
+ */
+async function simpleFetch(requestType, additionalData, url, errorMessagePrefix) {
+  const fetchInit = makeFetchInit()
+  fetchInit.body = JSON.stringify({
+    type: requestType,
+    ...additionalData
+  })
+  const response = await fetch(url, fetchInit)
+  if (!response.ok) {
+    return response.text().then(function (message) {
+      throw new Error(`${errorMessagePrefix}: ${message}`)
+    })
+  }
+  return await response.json()
+}
+
+/**
  * Fetches a list of available projects.
  * @param {string} projectsUrl URL to server's interface.
  * @returns {Promise} A promise that resolves to server's response.
  */
 function fetchProjectList(projectsUrl) {
-  const fetchInit = makeFetchInit()
-  fetchInit['body'] = JSON.stringify({ type: 'project list?' })
-  return fetch(projectsUrl, fetchInit).then(function (response) {
-    if (!response.ok) {
-      return response.text().then(function (message) {
-        throw new Error(`Failed to load project list: ${message}`)
-      })
-    }
-    return response.json()
-  })
+  return simpleFetch('project list?', {}, projectsUrl, 'Failed to load project list')
 }
 
 /**
@@ -53,16 +70,12 @@ function fetchProjectList(projectsUrl) {
  * @returns {Promise} A promise that resolves to server's response.
  */
 function createProject(projectName, projectsUrl) {
-  const fetchInit = makeFetchInit()
-  fetchInit['body'] = JSON.stringify({ type: 'create project?', name: projectName })
-  return fetch(projectsUrl, fetchInit).then(function (response) {
-    if (!response.ok) {
-      return response.text().then(function (message) {
-        throw new Error(`Failed to create project: ${message}`)
-      })
-    }
-    return response.json()
-  })
+  return simpleFetch(
+    'create project?',
+    { name: projectName },
+    projectsUrl,
+    'Failed to create project'
+  )
 }
 
 /**
@@ -72,16 +85,7 @@ function createProject(projectName, projectsUrl) {
  * @returns {Promise} A promise that resolves to server's response.
  */
 function destroyProject(projectId, projectsUrl) {
-  const fetchInit = makeFetchInit()
-  fetchInit['body'] = JSON.stringify({ type: 'destroy project?', id: projectId })
-  return fetch(projectsUrl, fetchInit).then(function (response) {
-    if (!response.ok) {
-      return response.text().then(function (message) {
-        throw new Error(`Failed to delete project: ${message}`)
-      })
-    }
-    return response.json()
-  })
+  return simpleFetch('destroy project?', { id: projectId }, projectsUrl, 'Failed to delete project')
 }
 
 /**
@@ -93,16 +97,12 @@ function destroyProject(projectId, projectsUrl) {
  * @returns {Promise} A promise that resolves to server's response.
  */
 function fetchData(queryType, projectId, url, extraBody = {}) {
-  const fetchInit = makeFetchInit()
-  fetchInit['body'] = JSON.stringify({ type: queryType, projectId: projectId, ...extraBody })
-  return fetch(url, fetchInit).then(function (response) {
-    if (!response.ok) {
-      return response.text().then(function (message) {
-        throw new Error(`Failed to fetch ${queryType}: ${message}`)
-      })
-    }
-    return response.json()
-  })
+  return simpleFetch(
+    queryType,
+    { projectId: projectId, ...extraBody },
+    url,
+    `Failed to fetch ${queryType}`
+  )
 }
 
 /**
@@ -113,22 +113,13 @@ function fetchData(queryType, projectId, url, extraBody = {}) {
  * @param {string} modelUrl Model interface URL.
  * @returns {Promise} Promise that resolves to server's response object.
  */
-function commit(commitData, message, projectId, modelUlr) {
-  const fetchInit = makeFetchInit()
-  fetchInit.body = JSON.stringify({
-    type: 'commit',
-    projectId: projectId,
-    message: message,
-    ...commitData
-  })
-  return fetch(modelUlr, fetchInit).then(function (response) {
-    if (!response.ok) {
-      return response.text().then(function (message) {
-        throw new Error(message)
-      })
-    }
-    return response.json()
-  })
+function commit(commitData, message, projectId, modelUrl) {
+  return simpleFetch(
+    'commit',
+    { projectId: projectId, message: message, ...commitData },
+    modelUrl,
+    'Failed to commit'
+  )
 }
 
 /**
@@ -138,16 +129,12 @@ function commit(commitData, message, projectId, modelUlr) {
  * @returns {Promise} A promise that resolves to server's response.
  */
 function fetchCurrentExecution(projectId, executionsUrl) {
-  const fetchInit = makeFetchInit()
-  fetchInit.body = JSON.stringify({ type: 'current execution?', projectId: projectId })
-  return fetch(executionsUrl, fetchInit).then(function (response) {
-    if (!response.ok) {
-      return response.text().then(function (message) {
-        throw new Error(`Failed to fetch current run: ${message}`)
-      })
-    }
-    return response.json()
-  })
+  return simpleFetch(
+    'current execution?',
+    { projectId: projectId },
+    executionsUrl,
+    'Failed to fetch current run'
+  )
 }
 
 /**
@@ -158,20 +145,12 @@ function fetchCurrentExecution(projectId, executionsUrl) {
  * @returns {Promise} A promise that resolves to server's response.
  */
 function executeExecution(projectId, executionsUrl, scenarios) {
-  const fetchInit = makeFetchInit()
-  fetchInit['body'] = JSON.stringify({
-    type: 'solve model?',
-    projectId: projectId,
-    scenarios: scenarios
-  })
-  return fetch(executionsUrl, fetchInit).then(function (response) {
-    if (!response.ok) {
-      return response.text().then(function (message) {
-        throw new Error(`Failed to execute: ${message}`)
-      })
-    }
-    return response.json()
-  })
+  return simpleFetch(
+    'solve model?',
+    { projectId: projectId, scenarios: scenarios },
+    executionsUrl,
+    'Failed to execute'
+  )
 }
 
 /**
@@ -181,16 +160,12 @@ function executeExecution(projectId, executionsUrl, scenarios) {
  * @returns {Promise} A promise that resolves to server's response.
  */
 function executeExcelInputImport(projectId, executionsUrl) {
-  const fetchInit = makeFetchInit()
-  fetchInit['body'] = JSON.stringify({ type: 'import excel input?', projectId: projectId })
-  return fetch(executionsUrl, fetchInit).then(function (response) {
-    if (!response.ok) {
-      return response.text().then(function (message) {
-        throw new Error(`Failed to execute: ${message}`)
-      })
-    }
-    return response.json()
-  })
+  return simpleFetch(
+    'import excel input?',
+    { projectId: projectId },
+    executionsUrl,
+    'Failed to import Excel file'
+  )
 }
 
 /**
@@ -200,16 +175,7 @@ function executeExcelInputImport(projectId, executionsUrl) {
  * @returns {Promise} A promise that resolves to server's response.
  */
 function abortExecution(projectId, executionsUrl) {
-  const fetchInit = makeFetchInit()
-  fetchInit['body'] = JSON.stringify({ type: 'abort?', projectId: projectId })
-  return fetch(executionsUrl, fetchInit).then(function (response) {
-    if (!response.ok) {
-      return response.text().then(function (message) {
-        throw new Error(`Failed to abort execution: ${message}`)
-      })
-    }
-    return response.json()
-  })
+  return simpleFetch('abort?', { projectId: projectId }, executionsUrl, 'Failed to abort execution')
 }
 
 /**
@@ -219,16 +185,12 @@ function abortExecution(projectId, executionsUrl) {
  * @returns {Promise} A promise that resolves to server's response.
  */
 function fetchExecutionBriefing(projectId, executionsUrl) {
-  const fetchInit = makeFetchInit()
-  fetchInit['body'] = JSON.stringify({ type: 'briefing?', projectId: projectId })
-  return fetch(executionsUrl, fetchInit).then(function (response) {
-    if (!response.ok) {
-      return response.text().then(function (message) {
-        throw new Error(`Failed to fetch execution status: ${message}`)
-      })
-    }
-    return response.json()
-  })
+  return simpleFetch(
+    'briefing?',
+    { projectId: projectId },
+    executionsUrl,
+    'Failed to fetch execution status'
+  )
 }
 
 /**
@@ -239,20 +201,12 @@ function fetchExecutionBriefing(projectId, executionsUrl) {
  * @returns {Promise} A promise that resolves to server's response.
  */
 function fetchSummary(projectId, summaryUrl, scenarioExecutionId) {
-  const fetchInit = makeFetchInit()
-  fetchInit.body = JSON.stringify({
-    type: 'summary?',
-    projectId: projectId,
-    scenarioExecutionId: scenarioExecutionId
-  })
-  return fetch(summaryUrl, fetchInit).then(function (response) {
-    if (!response.ok) {
-      return response.text().then(function (message) {
-        throw new Error(`Failed to load summary: ${message}`)
-      })
-    }
-    return response.json()
-  })
+  return simpleFetch(
+    'summary?',
+    { projectId: projectId, scenarioExecutionId: scenarioExecutionId },
+    summaryUrl,
+    'Failed to load summary'
+  )
 }
 
 /**
@@ -262,16 +216,12 @@ function fetchSummary(projectId, summaryUrl, scenarioExecutionId) {
  * @returns {Promise} A promise that resolves to server's response.
  */
 function fetchExecutedScenarioList(projectId, summaryUrl) {
-  const fetchInit = makeFetchInit()
-  fetchInit.body = JSON.stringify({ type: 'scenario list?', projectId: projectId })
-  return fetch(summaryUrl, fetchInit).then(function (response) {
-    if (!response.ok) {
-      return response.text().then(function (message) {
-        throw new Error(`Failed to load scenarios: ${message}`)
-      })
-    }
-    return response.json()
-  })
+  return simpleFetch(
+    'scenario list?',
+    { projectId: projectId },
+    summaryUrl,
+    'Failed to load scenarios'
+  )
 }
 
 /**
@@ -281,20 +231,12 @@ function fetchExecutedScenarioList(projectId, summaryUrl) {
  * @param {string} scenarioExecutionId Scenario execution id.
  */
 function destroyScenarioExecution(projectId, summaryUrl, scenarioExecutionId) {
-  const fetchInit = makeFetchInit()
-  fetchInit.body = JSON.stringify({
-    type: 'destroy execution?',
-    projectId: projectId,
-    scenarioExecutionId: scenarioExecutionId
-  })
-  return fetch(summaryUrl, fetchInit).then(function (response) {
-    if (!response.ok) {
-      return response.text().then(function (message) {
-        throw new Error(`Failed to destroy scenario execution: ${message}`)
-      })
-    }
-    return
-  })
+  return simpleFetch(
+    'destroy execution?',
+    { projectId: projectId, scenarioExecutionId: scenarioExecutionId },
+    summaryUrl,
+    'Failed to destroy scenario execution'
+  )
 }
 
 /**
@@ -304,19 +246,12 @@ function destroyScenarioExecution(projectId, summaryUrl, scenarioExecutionId) {
  * @returns {Promise} A promise that resolves to server's response.
  */
 function fetchResultEntityClasses(projectId, analysisUrl) {
-  const fetchInit = makeFetchInit()
-  fetchInit.body = JSON.stringify({
-    type: 'entity classes?',
-    projectId: projectId
-  })
-  return fetch(analysisUrl, fetchInit).then(function (response) {
-    if (!response.ok) {
-      return response.text().then(function (message) {
-        throw new Error(`Failed to fetch entity classes: ${message}`)
-      })
-    }
-    return response.json()
-  })
+  return simpleFetch(
+    'entity classes?',
+    { projectId: projectId },
+    analysisUrl,
+    'Failed to fetch entity classes'
+  )
 }
 
 /**
@@ -327,20 +262,12 @@ function fetchResultEntityClasses(projectId, analysisUrl) {
  * @returns {Promise} A promise that resolves to server's response.
  */
 function fetchResultEntities(projectId, analysisUrl, classes) {
-  const fetchInit = makeFetchInit()
-  fetchInit.body = JSON.stringify({
-    type: 'entities?',
-    projectId: projectId,
-    classes: classes
-  })
-  return fetch(analysisUrl, fetchInit).then(function (response) {
-    if (!response.ok) {
-      return response.text().then(function (message) {
-        throw new Error(`Failed to fetch entities: ${message}`)
-      })
-    }
-    return response.json()
-  })
+  return simpleFetch(
+    'entities?',
+    { projectId: projectId, classes: classes },
+    analysisUrl,
+    'Failed to fetch entities'
+  )
 }
 
 /**
@@ -351,20 +278,12 @@ function fetchResultEntities(projectId, analysisUrl, classes) {
  * @returns {Promise} A promise that resolves to server's response.
  */
 function fetchResultParameters(projectId, analysisUrl, classes) {
-  const fetchInit = makeFetchInit()
-  fetchInit.body = JSON.stringify({
-    type: 'parameters?',
-    projectId: projectId,
-    classes: classes
-  })
-  return fetch(analysisUrl, fetchInit).then(function (response) {
-    if (!response.ok) {
-      return response.text().then(function (message) {
-        throw new Error(`Failed to fetch parameters: ${message}`)
-      })
-    }
-    return response.json()
-  })
+  return simpleFetch(
+    'parameters?',
+    { projectId: projectId, classes: classes },
+    analysisUrl,
+    'Failed to fetch parameters'
+  )
 }
 
 /**
@@ -383,22 +302,17 @@ function fetchResultParameterValueIndexes(
   classes,
   parameters
 ) {
-  const fetchInit = makeFetchInit()
-  fetchInit.body = JSON.stringify({
-    type: 'value indexes?',
-    projectId: projectId,
-    scenarioExecutionIds: scenarioExecutionIds,
-    classes: classes,
-    parameters: parameters
-  })
-  return fetch(analysisUrl, fetchInit).then(function (response) {
-    if (!response.ok) {
-      return response.text().then(function (message) {
-        throw new Error(`Failed to fetch parameter value indexes: ${message}`)
-      })
-    }
-    return response.json()
-  })
+  return simpleFetch(
+    'value indexes?',
+    {
+      projectId: projectId,
+      scenarioExecutionIds: scenarioExecutionIds,
+      classes: classes,
+      parameters: parameters
+    },
+    analysisUrl,
+    'Failed to fetch parameter value indexes'
+  )
 }
 
 /**
@@ -419,69 +333,130 @@ function fetchResultParameterValues(
   objects,
   parameters
 ) {
-  const fetchInit = makeFetchInit()
-  fetchInit.body = JSON.stringify({
-    type: 'values?',
-    projectId: projectId,
-    scenarioExecutionIds: scenarioExecutionIds,
-    classes: classes,
-    objects: objects,
-    parameters: parameters
-  })
-  return fetch(analysisUrl, fetchInit).then(function (response) {
-    if (!response.ok) {
-      return response.text().then(function (message) {
-        throw new Error(`Failed to fetch parameter values: ${message}`)
-      })
-    }
-    return response.json()
-  })
+  return simpleFetch(
+    'values?',
+    {
+      projectId: projectId,
+      scenarioExecutionIds: scenarioExecutionIds,
+      classes: classes,
+      objects: objects,
+      parameters: parameters
+    },
+    analysisUrl,
+    'Failed to fetch parameter values'
+  )
 }
 
 /**
- * Fetches plot specification from server.
+ * Fetches the default plot specification from server.
  * @param {number} projectId Project id.
  * @param {string} analysisUrl URL to server's analysis interface.
  * @returns {Promise} A promise that resolves to server's response.
  */
-function fetchPlotSpecification(projectId, analysisUrl) {
-  const fetchInit = makeFetchInit()
-  fetchInit.body = JSON.stringify({
-    type: 'plot specification?',
-    projectId: projectId
-  })
-  return fetch(analysisUrl, fetchInit).then(function (response) {
-    if (!response.ok) {
-      return response.text().then(function (message) {
-        throw new Error(`Failed to fetch plot specification: ${message}`)
-      })
-    }
-    return response.json()
-  })
+function fetchDefaultPlotSpecification(projectId, analysisUrl) {
+  return simpleFetch(
+    'default plot specification?',
+    { projectId: projectId },
+    analysisUrl,
+    'Failed to fetch default plot specification'
+  )
 }
 
 /**
- * Fetches plot specification from server.
+ * Stores the default plot specification to server.
  * @param {number} projectId Project id.
  * @param {string} analysisUrl URL to server's analysis interface.
  * @param {object} specification Plot specification
  * @returns {Promise} A promise that resolves to server's response.
  */
-function storePlotSpecification(projectId, analysisUrl, specification) {
-  const fetchInit = makeFetchInit()
-  fetchInit.body = JSON.stringify({
-    type: 'store plot specification',
-    projectId: projectId,
-    specification: specification
-  })
-  return fetch(analysisUrl, fetchInit).then(function (response) {
-    if (!response.ok) {
-      return response.text().then(function (message) {
-        throw new Error(`Failed to store plot specification: ${message}`)
-      })
-    }
-    return response.json()
-  })
+function storeDefaultPlotSpecification(projectId, analysisUrl, specification) {
+  return simpleFetch(
+    'store default plot specification',
+    { projectId: projectId, specification: specification },
+    analysisUrl,
+    'Failed to store plot specification'
+  )
+}
+
+/**
+ * Fetches the names of all custom plot specifications from server.
+ * @param {number} projectId Project id.
+ * @param {string} analysisUrl URL to server's analysis interface.
+ * @returns {Promise} A promise that resolves to server's response.
+ */
+function fetchCustomPlotSpecificationNames(projectId, analysisUrl) {
+  return simpleFetch(
+    'custom plot specification names?',
+    { projectId: projectId },
+    analysisUrl,
+    'Failed to fetch the names of custom plot specifications'
+  )
+}
+
+/**
+ * Fetches a custom plot specifications from server.
+ * @param {number} projectId Project id.
+ * @param {string} analysisUrl URL to server's analysis interface.
+ * @param {string} name Name of the specification.
+ * @returns {Promise} A promise that resolves to server's response.
+ */
+function fetchCustomPlotSpecification(projectId, analysisUrl, name) {
+  return simpleFetch(
+    'custom plot specification?',
+    { projectId: projectId, name: name },
+    analysisUrl,
+    'Failed to fetch custom plot specification'
+  )
+}
+
+/**
+ * Stores a custom plot specification to server.
+ * @param {number} projectId Project id.
+ * @param {string} analysisUrl URL to server's analysis interface.
+ * @param {string} name Name of the specification.
+ * @param {object} specification Plot specification
+ * @returns {Promise} A promise that resolves to server's response.
+ */
+function storeCustomPlotSpecification(projectId, analysisUrl, name, specification) {
+  return simpleFetch(
+    'store custom plot specification',
+    { projectId: projectId, name: name, specification: specification },
+    analysisUrl,
+    'Failed to store plot specification'
+  )
+}
+
+/**
+ * Removes a custom plot specification from server.
+ * @param {number} projectId Project id.
+ * @param {string} analysisUrl URL to server's analysis interface.
+ * @param {string} name Name of the specification.
+ * @returns {Promise} A promise that resolves to server's response.
+ */
+function removeCustomPlotSpecification(projectId, analysisUrl, name) {
+  return simpleFetch(
+    'remove custom plot specification',
+    { projectId: projectId, name: name },
+    analysisUrl,
+    'Failed to remove plot specification'
+  )
+}
+
+/**
+ * Renames a custom plot specification on server.
+ * @param {number} projectId Project id.
+ * @param {string} analysisUrl URL to server's analysis interface.
+ * @param {string} name Name of the specification.
+ * @param {string} newName Target name.
+ * @returns {Promise} A promise that resolves to server's response.
+ */
+function renameCustomPlotSpecification(projectId, analysisUrl, name, newName) {
+  return simpleFetch(
+    'rename custom plot specification',
+    { projectId: projectId, name: name, newName: newName },
+    analysisUrl,
+    'Failed to rename plot specification'
+  )
 }
 
 /**
@@ -491,16 +466,12 @@ function storePlotSpecification(projectId, analysisUrl, specification) {
  * @returns {Promise} A promise that resolves to server's response.
  */
 function fetchExampleList(projectId, examplesUrl) {
-  const fetchInit = makeFetchInit()
-  fetchInit['body'] = JSON.stringify({ type: 'example list?', projectId: projectId })
-  return fetch(examplesUrl, fetchInit).then(function (response) {
-    if (!response.ok) {
-      return response.text().then(function (message) {
-        throw new Error(`Failed to load example list: ${message}`)
-      })
-    }
-    return response.json()
-  })
+  return simpleFetch(
+    'example list?',
+    { projectId: projectId },
+    examplesUrl,
+    'Failed to load example list'
+  )
 }
 
 /**
@@ -511,20 +482,12 @@ function fetchExampleList(projectId, examplesUrl) {
  * @returns {Promise} A promise that resolves to server's response.
  */
 function addExample(projectId, examplesUrl, exampleName) {
-  const fetchInit = makeFetchInit()
-  fetchInit['body'] = JSON.stringify({
-    type: 'add to model',
-    name: exampleName,
-    projectId: projectId
-  })
-  return fetch(examplesUrl, fetchInit).then(function (response) {
-    if (!response.ok) {
-      return response.text().then(function (message) {
-        throw new Error(`Failed to add example to model: ${message}`)
-      })
-    }
-    return response.json()
-  })
+  return simpleFetch(
+    'add to model',
+    { projectId: projectId, name: exampleName },
+    examplesUrl,
+    'Failed to add example to model'
+  )
 }
 
 export {
@@ -548,8 +511,13 @@ export {
   fetchResultParameters,
   fetchResultParameterValueIndexes,
   fetchResultParameterValues,
-  fetchPlotSpecification,
-  storePlotSpecification,
+  fetchDefaultPlotSpecification,
+  storeDefaultPlotSpecification,
+  fetchCustomPlotSpecificationNames,
+  fetchCustomPlotSpecification,
+  storeCustomPlotSpecification,
+  removeCustomPlotSpecification,
+  renameCustomPlotSpecification,
   fetchExampleList,
   addExample
 }

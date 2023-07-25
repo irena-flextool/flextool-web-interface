@@ -152,6 +152,13 @@ class ProjectModelTests(TestCase):
             expected_path = Path(project.path) / database_relative_path
             self.assertEqual(project.initialization_database_path(), expected_path)
 
+    def test_custom_results_plots_path_is_correct(self):
+        user = User(username="baron", password="it's a secret")
+        user.save()
+        with new_project(user) as project:
+            expected_path = Path(project.path) / "custom_results_plots"
+            self.assertTrue(expected_path.exists())
+
 
 class ScenarioExecutionModelTests(TestCase):
     baron = None
@@ -3754,27 +3761,6 @@ class AnalysisInterfaceTests(TestCase):
                 }
                 self.assertEqual(content, expected)
 
-    def test_get_plot_specification(self):
-        test_specification = {"hello": "world"}
-        with new_project(self.baron) as project:
-            project.plot_specification_path().write_text(
-                json.dumps(test_specification), encoding="utf-8"
-            )
-            with login_as_baron(self.client) as login_successful:
-                self.assertTrue(login_successful)
-                response = self.client.post(
-                    self.analysis_url,
-                    {"type": "plot specification?", "projectId": 1},
-                    content_type="application/json",
-                )
-                self.assertEqual(response.status_code, 200)
-                content = json.loads(response.content)
-                self.assertEqual(len(content), 1)
-                self.assertIn("plot_specification", content)
-                self.assertEqual(
-                    json.loads(content["plot_specification"]), test_specification
-                )
-
     def test_get_default_plot_specification(self):
         test_specification = {"hello": "world"}
         with new_project(self.baron) as project:
@@ -3785,7 +3771,7 @@ class AnalysisInterfaceTests(TestCase):
                 self.assertTrue(login_successful)
                 response = self.client.post(
                     self.analysis_url,
-                    {"type": "plot specification?", "projectId": 1},
+                    {"type": "default plot specification?", "projectId": 1},
                     content_type="application/json",
                 )
                 self.assertEqual(response.status_code, 200)
@@ -3796,14 +3782,43 @@ class AnalysisInterfaceTests(TestCase):
                     json.loads(content["plot_specification"]), test_specification
                 )
 
-    def test_set_plot_specification(self):
+    def test_get_custom_plot_specification(self):
+        test_specification = {"hello": "world"}
+        specification_name = "custom specification"
+        with new_project(self.baron) as project:
+            specification_path = project.custom_plot_specifications_directory() / (
+                specification_name + ".json"
+            )
+            specification_path.write_text(
+                json.dumps(test_specification), encoding="utf-8"
+            )
+            with login_as_baron(self.client) as login_successful:
+                self.assertTrue(login_successful)
+                response = self.client.post(
+                    self.analysis_url,
+                    {
+                        "type": "custom plot specification?",
+                        "projectId": 1,
+                        "name": specification_name,
+                    },
+                    content_type="application/json",
+                )
+                self.assertEqual(response.status_code, 200)
+                content = json.loads(response.content)
+                self.assertEqual(len(content), 1)
+                self.assertIn("plot_specification", content)
+                self.assertEqual(
+                    json.loads(content["plot_specification"]), test_specification
+                )
+
+    def test_set_default_plot_specification(self):
         with new_project(self.baron) as project:
             with login_as_baron(self.client) as login_successful:
                 self.assertTrue(login_successful)
                 response = self.client.post(
                     self.analysis_url,
                     {
-                        "type": "store plot specification",
+                        "type": "store default plot specification",
                         "projectId": project.id,
                         "specification": {"hello": "world"},
                     },
@@ -3813,7 +3828,93 @@ class AnalysisInterfaceTests(TestCase):
                 content = json.loads(response.content)
                 self.assertEqual(content, {"status": "ok"})
             specification = json.loads(
-                project.plot_specification_path().read_text(encoding="utf-8")
+                project.default_plot_specification_path().read_text(encoding="utf-8")
+            )
+            self.assertEqual(specification, {"hello": "world"})
+
+    def test_set_custom_plot_specification(self):
+        specification_name = "custom specification"
+        with new_project(self.baron) as project:
+            with login_as_baron(self.client) as login_successful:
+                self.assertTrue(login_successful)
+                response = self.client.post(
+                    self.analysis_url,
+                    {
+                        "type": "store custom plot specification",
+                        "projectId": project.id,
+                        "name": specification_name,
+                        "specification": {"hello": "world"},
+                    },
+                    content_type="application/json",
+                )
+                self.assertEqual(response.status_code, 200)
+                content = json.loads(response.content)
+                self.assertEqual(content, {"status": "ok"})
+            specification_path = project.custom_plot_specifications_directory() / (
+                specification_name + ".json"
+            )
+            specification = json.loads(specification_path.read_text(encoding="utf-8"))
+            self.assertEqual(specification, {"hello": "world"})
+
+    def test_remove_custom_plot_specification(self):
+        specification_name = "custom specification"
+        with new_project(self.baron) as project:
+            specification_path = project.custom_plot_specifications_directory() / (
+                specification_name + ".json"
+            )
+            specification_path.write_text(
+                json.dumps({"hello": "world"}), encoding="utf-8"
+            )
+            self.assertTrue(specification_path.exists())
+            with login_as_baron(self.client) as login_successful:
+                self.assertTrue(login_successful)
+                response = self.client.post(
+                    self.analysis_url,
+                    {
+                        "type": "remove custom plot specification",
+                        "projectId": project.id,
+                        "name": specification_name,
+                    },
+                    content_type="application/json",
+                )
+                self.assertEqual(response.status_code, 200)
+                content = json.loads(response.content)
+                self.assertEqual(content, {"status": "ok"})
+            self.assertFalse(specification_path.exists())
+
+    def test_rename_custom_plot_specification(self):
+        specification_name = "custom specification"
+        with new_project(self.baron) as project:
+            specification_path = project.custom_plot_specifications_directory() / (
+                specification_name + ".json"
+            )
+            specification_path.write_text(
+                json.dumps({"hello": "world"}), encoding="utf-8"
+            )
+            self.assertTrue(specification_path.exists())
+            with login_as_baron(self.client) as login_successful:
+                self.assertTrue(login_successful)
+                response = self.client.post(
+                    self.analysis_url,
+                    {
+                        "type": "rename custom plot specification",
+                        "projectId": project.id,
+                        "name": specification_name,
+                        "newName": "another specification",
+                    },
+                    content_type="application/json",
+                )
+                self.assertEqual(response.status_code, 200)
+                content = json.loads(response.content)
+                self.assertEqual(content, {"status": "ok"})
+            self.assertFalse(specification_path.exists())
+            new_specification_path = (
+                project.custom_plot_specifications_directory()
+                / "another specification.json"
+            )
+            self.assertTrue(new_specification_path.exists())
+            specification = json.loads(
+                new_specification_path.read_text(encoding="utf-8")
             )
             self.assertEqual(specification, {"hello": "world"})
 

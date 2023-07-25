@@ -373,10 +373,20 @@ def analysis(request):
             return analysis_view.get_value_indexes(project, body)
         if type_ == "values?":
             return analysis_view.get_parameter_values(project, body)
-        if type_ == "plot specification?":
-            return analysis_view.get_plot_specification(project)
-        if type_ == "store plot specification":
-            return analysis_view.set_plot_specification(project, body)
+        if type_ == "default plot specification?":
+            return analysis_view.get_default_plot_specification(project)
+        if type_ == "custom plot specification names?":
+            return analysis_view.get_custom_plot_specification_names(project)
+        if type_ == "custom plot specification?":
+            return analysis_view.get_custom_plot_specification(project, body)
+        if type_ == "store default plot specification":
+            return analysis_view.set_default_plot_specification(project, body)
+        if type_ == "store custom plot specification":
+            return analysis_view.set_custom_plot_specification(project, body)
+        if type_ == "remove custom plot specification":
+            return analysis_view.remove_custom_plot_specification(project, body)
+        if type_ == "rename custom plot specification":
+            return analysis_view.rename_custom_plot_specification(project, body)
     except FlexToolException as error:
         return HttpResponseBadRequest(str(error))
     return HttpResponseBadRequest("Unknown 'type'.")

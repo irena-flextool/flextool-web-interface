@@ -48,42 +48,47 @@ const defaultConfig = { responsive: true, displaylogo: false }
 
 let nextSpecificationId = 0
 
-const plotSpecifications = reactive({
-  specifications: new Map(),
+/**Creates a reactive plot specification bundle.
+ * @returns {Ref} Plot specification bundle.
+ */
+function makePlotSpecificationBundle() {
+  return reactive({
+    specifications: new Map(),
 
-  get(identifier) {
-    return this.specifications.get(identifier)
-  },
-  add(specification) {
-    const identifier = nextSpecificationId
-    ++nextSpecificationId
-    this.specifications.set(identifier, specification)
-    return identifier
-  },
-  new() {
-    return this.add(makeSpecification())
-  },
-  delete(identifier) {
-    this.specifications.delete(identifier)
-  },
-  asArray() {
-    const identifiers = []
-    for (const identifier of this.specifications.keys()) {
-      identifiers.push(identifier)
+    get(identifier) {
+      return this.specifications.get(identifier)
+    },
+    add(specification) {
+      const identifier = nextSpecificationId
+      ++nextSpecificationId
+      this.specifications.set(identifier, specification)
+      return identifier
+    },
+    new() {
+      return this.add(makeEmptyPlotSpecification())
+    },
+    delete(identifier) {
+      this.specifications.delete(identifier)
+    },
+    asArray() {
+      const identifiers = []
+      for (const identifier of this.specifications.keys()) {
+        identifiers.push(identifier)
+      }
+      identifiers.sort()
+      const specifications = []
+      for (const identifier of identifiers) {
+        specifications.push(this.specifications.get(identifier))
+      }
+      return specifications
     }
-    identifiers.sort()
-    const specifications = []
-    for (const identifier of identifiers) {
-      specifications.push(this.specifications.get(identifier))
-    }
-    return specifications
-  }
-})
+  })
+}
 
 /**Creates an empty plot specification.
  * @returns {object} Empty plot specification.
  */
-function makeSpecification() {
+function makeEmptyPlotSpecification() {
   return {
     plot_type: 'line',
     selection: { entity_class: [], parameter: [] },
@@ -562,5 +567,6 @@ export {
   isParameterIndexName,
   makeBasicChart,
   makeHeatmapChart,
-  plotSpecifications
+  makePlotSpecificationBundle,
+  makeEmptyPlotSpecification
 }

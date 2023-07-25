@@ -8,7 +8,7 @@ function interpretClassTypeId(typeId) {
     case 2:
       return relationshipClassType
     default:
-      throw Error('Unknown entity class type id')
+      throw new Error('Unknown entity class type id')
   }
 }
 

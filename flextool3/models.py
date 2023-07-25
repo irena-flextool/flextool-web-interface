@@ -50,6 +50,8 @@ class Project(models.Model):
         result_database_template = project_dir / "Results_template.sqlite"
         result_database = project_dir / "Results.sqlite"
         move(result_database_template, result_database)
+        custom_result_plots_directory = project_dir / "custom_results_plots"
+        custom_result_plots_directory.mkdir()
         return Project(user=user, name=project_name, path=str(project_dir))
 
     def remove_project_dir(self):
@@ -123,13 +125,16 @@ class Project(models.Model):
             "url": reverse("flextool3:detail", args=(self.id,)),
         }
 
-    def plot_specification_path(self):
-        """Returns path to plot specification.
+    def custom_plot_specifications_directory(self):
+        """Returns path to directory containing custom plot specifications.
 
         Returns:
-            Path: path to the specification file
+            Path: path to the specification directory
         """
-        return Path(self.path) / "result_plots.json"
+        directory = Path(self.path) / "custom_results_plots"
+        if not directory.exists():
+            directory.mkdir()
+        return directory
 
     def default_plot_specification_path(self):
         """Returns path to default plot specification.

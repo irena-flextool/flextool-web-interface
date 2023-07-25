@@ -12,7 +12,15 @@
 </template>
 
 <script>
-import { computed, nextTick, onMounted, ref, toRef, watch } from 'vue/dist/vue.esm-bundler.js'
+import {
+  computed,
+  nextTick,
+  onMounted,
+  onUnmounted,
+  ref,
+  toRef,
+  watch
+} from 'vue/dist/vue.esm-bundler.js'
 import Plotly from 'plotly.js-cartesian-dist-min'
 import { DataFrame } from 'data-forge'
 import { downloadAsCsv } from '../modules/figures.mjs'
@@ -53,8 +61,12 @@ function plotMinHeight(subplotCount) {
  * @param {object} plotSpecification Plot specification.
  * @param {string} plotId Plot div element id.
  * @param {Ref} plotDivStyle Plot div element.
+ * @param {object} ongoingPlottingTasks Structure that contains information about running plotting tasks.
  */
-function replot(dataFrame, plotSpecification, plotId, plotDivStyle) {
+function replot(dataFrame, plotSpecification, plotId, plotDivStyle, ongoingPlottingTasks) {
+  if (ongoingPlottingTasks.cancelling) {
+    return
+  }
   let plotObject = undefined
   switch (plotSpecification.plot_type) {
     case 'bar':
@@ -86,9 +98,9 @@ function replot(dataFrame, plotSpecification, plotId, plotDivStyle) {
     case 'table':
       break
     default:
-      throw Error(`Unknown plot type '${plotSpecification.plot_type}'`)
+      throw new Error(`Unknown plot type '${plotSpecification.plot_type}'`)
   }
-  if (plotObject !== undefined) {
+  if (plotObject !== undefined && !ongoingPlottingTasks.cancelling) {
     const subplotCount =
       plotObject.layout.grid !== undefined
         ? plotObject.layout.grid.rows
@@ -107,6 +119,7 @@ function replot(dataFrame, plotSpecification, plotId, plotDivStyle) {
  * @param {string} plotId Plot div element id.
  * @param {Ref} plotCount Subplot count.
  * @param {Ref} hasData Flag indicating if the there is data to plot.
+ * @param {object} ongoingPlottingTasks Structure that contains information about running plotting tasks.
  * @param {Ref} state Fetching state.
  * @param {Ref} errorMessage Fetch error message.
  */
@@ -119,6 +132,7 @@ function fetchDataFrame(
   plotId,
   plotCount,
   hasData,
+  ongoingPlottingTasks,
   state,
   errorMessage
 ) {
@@ -147,19 +161,31 @@ function fetchDataFrame(
   if (parameters.length === 0) {
     return
   }
-  fetchResultParameterValues(
-    projectId,
-    analysisUrl,
-    scenarioExecutionIds,
-    classes,
-    objects,
-    parameters
-  )
+  ongoingPlottingTasks.chainLength += 1
+  if (ongoingPlottingTasks.plottingPromise === null) {
+    ongoingPlottingTasks.plottingPromise = Promise.resolve()
+  } else {
+    ongoingPlottingTasks.cancelling = true
+  }
+  ongoingPlottingTasks.plottingPromise = ongoingPlottingTasks.plottingPromise
+    .then(function () {
+      return fetchResultParameterValues(
+        projectId,
+        analysisUrl,
+        scenarioExecutionIds,
+        classes,
+        objects,
+        parameters
+      )
+    })
     .then(function (data) {
       const parameterValues = data.values
       if (parameterValues.length === 0) {
         state.value = Fetchable.state.ready
         hasData.value = false
+        return
+      }
+      if (ongoingPlottingTasks.cancelling) {
         return
       }
       hasData.value = true
@@ -207,11 +233,20 @@ function fetchDataFrame(
       dataFrame = filterDeselectedIndexNames(dataFrame, plotSpecification.selection)
       currentDataFrame.value = dataFrame
       state.value = Fetchable.state.ready
-      nextTick(() => replot(dataFrame, plotSpecification, plotId, plotCount))
+      replot(dataFrame, plotSpecification, plotId, plotCount, ongoingPlottingTasks)
     })
     .catch(function (error) {
       errorMessage.value = error.message
       state.value = Fetchable.state.error
+    })
+    .finally(function () {
+      ongoingPlottingTasks.chainLength -= 1
+      if (ongoingPlottingTasks.chainLength === 0) {
+        ongoingPlottingTasks.plottingPromise = null
+      }
+      if (ongoingPlottingTasks.chainLength === 1) {
+        ongoingPlottingTasks.cancelling = false
+      }
     })
 }
 
@@ -224,6 +259,7 @@ function fetchDataFrame(
  * @param {string} plotId Plot div element id.
  * @param {Ref} plotCount Subplot count.
  * @param {Ref} hasData Flag indicating if the there is data to plot.
+ * @param {object} ongoingPlottingTasks Structure that contains information about running plotting tasks.
  * @param {Ref} state Fetching state.
  * @param {Ref} errorMessage Fetch error message.
  */
@@ -236,6 +272,7 @@ function plotIfPossible(
   plotId,
   plotCount,
   hasData,
+  ongoingPlottingTasks,
   state,
   errorMessage
 ) {
@@ -254,6 +291,7 @@ function plotIfPossible(
     plotId,
     plotCount,
     hasData,
+    ongoingPlottingTasks,
     state,
     errorMessage
   )
@@ -280,6 +318,7 @@ export default {
     const showTable = computed(() => hasData.value && props.plotSpecification.plot_type === 'table')
     const currentDataFrame = ref(null)
     const plotDivStyle = ref({ minHeight: emptyPlotMinHeight + 'px' })
+    const ongoingPlottingTasks = { plottingPromise: null, cancelling: false, chainLength: 0 }
     watch(toRef(props, 'scenarioExecutionIds'), function () {
       plotIfPossible(
         props.projectId,
@@ -290,6 +329,7 @@ export default {
         plotId,
         plotDivStyle,
         hasData,
+        ongoingPlottingTasks,
         state,
         errorMessage
       )
@@ -306,6 +346,7 @@ export default {
           plotId,
           plotDivStyle,
           hasData,
+          ongoingPlottingTasks,
           state,
           errorMessage
         )
@@ -322,9 +363,20 @@ export default {
         plotId,
         plotDivStyle,
         hasData,
+        ongoingPlottingTasks,
         state,
         errorMessage
       )
+    })
+    onUnmounted(function () {
+      if (ongoingPlottingTasks.plottingPromise !== null) {
+        ongoingPlottingTasks.cancelling = true
+        ongoingPlottingTasks.plottingPromise = ongoingPlottingTasks.plottingPromise.then(
+          function () {
+            ongoingPlottingTasks.cancelling = false
+          }
+        )
+      }
     })
     return {
       state: state,

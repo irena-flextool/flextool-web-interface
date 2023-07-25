@@ -122,7 +122,7 @@ class EntityDiff {
           objectDeletions.push(action.id)
           return
         } else {
-          throw Error('Unknown object action.')
+          throw new Error('Unknown object action.')
         }
       }
       pending.parameters.forEach(function (alternatives, definitionId) {

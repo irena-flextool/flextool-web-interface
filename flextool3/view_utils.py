@@ -49,4 +49,3 @@ def resolve_scenario_execution(project, body_or_id):
             f"Scenario execution with id {scenario_execution_id} doesn't exist."
         )
     return scenario_execution
-

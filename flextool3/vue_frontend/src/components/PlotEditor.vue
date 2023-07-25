@@ -1,100 +1,104 @@
 <template>
   <n-space vertical>
-    <n-thing>
-      <template #header> Dimensions </template>
-      <n-space>
-        <n-space vertical>
-          <n-text strong>x-axis:</n-text>
-          <n-select
-            class="dimension-select"
-            v-model:value="plotSpecification.dimensions.x1"
-            filterable
-            tag
-            clearable
-            placeholder="Use default"
-            :options="availableIndexNames"
-            @update:value="resolveDimensionConflictsX1"
-            :consistent-menu-width="false"
-          />
-        </n-space>
-        <n-space vertical>
-          <n-text strong>1st x-category:</n-text>
-          <n-select
-            class="dimension-select"
-            v-model:value="plotSpecification.dimensions.x2"
-            filterable
-            tag
-            clearable
-            placeholder="No category"
-            :options="availableIndexNames"
-            @update:value="resolveDimensionConflictsX2"
-            :consistent-menu-width="false"
-          />
-        </n-space>
-        <n-space vertical>
-          <n-text strong>2nd x-category:</n-text>
-          <n-select
-            class="dimension-select"
-            v-model:value="plotSpecification.dimensions.x3"
-            filterable
-            tag
-            clearable
-            placeholder="No category"
-            :options="availableIndexNames"
-            @update:value="resolveDimensionConflictsX3"
-            :consistent-menu-width="false"
-          />
-        </n-space>
-        <n-space vertical>
-          <n-text strong>Subplot by:</n-text>
-          <n-select
-            class="dimension-select"
-            v-model:value="plotSpecification.dimensions.separate_window"
-            filterable
-            tag
-            clearable
-            placeholder="No subplots"
-            :options="availableIndexNames"
-            @update:value="resolveDimensionConflictsSeparateWindow"
-            :consistent-menu-width="false"
-          />
-        </n-space>
-      </n-space>
-    </n-thing>
-    <n-thing>
-      <template #header> Selection </template>
-      <n-space>
-        <n-space vertical v-for="(select, index) in selectionSelects" :key="index">
-          <n-text strong>{{ select.label }}:</n-text>
-          <n-select
-            class="multi-item-select"
-            value-field="label"
-            v-model:value="plotSpecification.selection[select.type]"
-            multiple
-            filterable
-            tag
-            clearable
-            size="small"
-            :placeholder="select.placeholder"
-            :options="select.options"
-            @update:value="select.updateCallback"
-            :consistent-menu-width="false"
-            :max-tag-count="5"
-          />
-        </n-space>
-      </n-space>
-    </n-thing>
-    <n-thing>
-      <template #header> Plot type </template>
-      <n-space align="end">
-        <n-select
-          class="plot-type-select"
-          v-model:value="plotSpecification.plot_type"
-          :options="plotTypeOptions"
-          :consistent-menu-width="false"
-        />
-      </n-space>
-    </n-thing>
+    <n-collapse :default-expanded-names="expandedItems">
+      <n-collapse-item name="plot-settings" title="Settings">
+        <n-thing>
+          <template #header> Dimensions </template>
+          <n-space>
+            <n-space vertical>
+              <n-text strong>x-axis:</n-text>
+              <n-select
+                class="dimension-select"
+                v-model:value="plotSpecification.dimensions.x1"
+                filterable
+                tag
+                clearable
+                placeholder="Use default"
+                :options="availableIndexNames"
+                @update:value="resolveDimensionConflictsX1"
+                :consistent-menu-width="false"
+              />
+            </n-space>
+            <n-space vertical>
+              <n-text strong>1st x-category:</n-text>
+              <n-select
+                class="dimension-select"
+                v-model:value="plotSpecification.dimensions.x2"
+                filterable
+                tag
+                clearable
+                placeholder="No category"
+                :options="availableIndexNames"
+                @update:value="resolveDimensionConflictsX2"
+                :consistent-menu-width="false"
+              />
+            </n-space>
+            <n-space vertical>
+              <n-text strong>2nd x-category:</n-text>
+              <n-select
+                class="dimension-select"
+                v-model:value="plotSpecification.dimensions.x3"
+                filterable
+                tag
+                clearable
+                placeholder="No category"
+                :options="availableIndexNames"
+                @update:value="resolveDimensionConflictsX3"
+                :consistent-menu-width="false"
+              />
+            </n-space>
+            <n-space vertical>
+              <n-text strong>Subplot by:</n-text>
+              <n-select
+                class="dimension-select"
+                v-model:value="plotSpecification.dimensions.separate_window"
+                filterable
+                tag
+                clearable
+                placeholder="No subplots"
+                :options="availableIndexNames"
+                @update:value="resolveDimensionConflictsSeparateWindow"
+                :consistent-menu-width="false"
+              />
+            </n-space>
+          </n-space>
+        </n-thing>
+        <n-thing>
+          <template #header> Selection </template>
+          <n-space>
+            <n-space vertical v-for="(select, index) in selectionSelects" :key="index">
+              <n-text strong>{{ select.label }}:</n-text>
+              <n-select
+                class="multi-item-select"
+                value-field="label"
+                v-model:value="plotSpecification.selection[select.type]"
+                multiple
+                filterable
+                tag
+                clearable
+                size="small"
+                :placeholder="select.placeholder"
+                :options="select.options"
+                @update:value="select.updateCallback"
+                :consistent-menu-width="false"
+                :max-tag-count="5"
+              />
+            </n-space>
+          </n-space>
+        </n-thing>
+        <n-thing>
+          <template #header> Plot type </template>
+          <n-space align="end">
+            <n-select
+              class="plot-type-select"
+              v-model:value="plotSpecification.plot_type"
+              :options="plotTypeOptions"
+              :consistent-menu-width="false"
+            />
+          </n-space>
+        </n-thing>
+      </n-collapse-item>
+    </n-collapse>
     <plot-figure
       v-if="plottingPossible"
       :identifier="identifier"
@@ -115,7 +119,7 @@ import {
   fetchResultParameters,
   fetchResultParameterValueIndexes
 } from '../modules/communication.mjs'
-import { isParameterIndexName, plotSpecifications } from '../modules/plots.mjs'
+import { isParameterIndexName } from '../modules/plots.mjs'
 import {
   addFetchedEntities,
   addFetchedParameters,
@@ -422,15 +426,21 @@ async function updateEntityClassDependentSelects(
 
 export default {
   props: {
+    isCustom: { type: Boolean, required: true },
     identifier: { type: Number, required: true },
     projectId: { type: Number, required: true },
     analysisUrl: { type: String, required: true },
-    scenarioExecutionIds: { type: Array, required: true }
+    scenarioExecutionIds: { type: Array, required: true },
+    plotSpecificationBundle: { type: Object, required: true }
   },
   components: {
     'plot-figure': PlotFigure
   },
   setup(props) {
+    const expandedItems = ref([])
+    if (props.isCustom) {
+      expandedItems.value.push('plot-settings')
+    }
     const initialIndexNames = []
     for (const [value, label] of indexNameLabels) {
       initialIndexNames.push({
@@ -441,7 +451,7 @@ export default {
     }
     const dimensionsOptions = ref(initialIndexNames)
     const selectionOptions = new Map([[entityClassKey, ref([])]])
-    const plotSpecification = plotSpecifications.get(props.identifier)
+    const plotSpecification = props.plotSpecificationBundle.get(props.identifier)
     const parameterIndexUpdateCallback = function () {
       updateParameterIndexes(
         props.projectId,
@@ -530,12 +540,13 @@ export default {
       })
     })
     return {
+      expandedItems,
       availableIndexNames: dimensionsOptions,
-      selectionSelects: selectionSelects,
-      plotSpecification: plotSpecification,
-      plotTypeOptions: plotTypeOptions,
-      plottingPossible: plottingPossible,
-      cannotPlotMessage: cannotPlotMessage,
+      selectionSelects,
+      plotSpecification,
+      plotTypeOptions,
+      plottingPossible,
+      cannotPlotMessage,
       resolveDimensionConflictsX1(value) {
         nullifyDuplicateDimensions(value, 'x1', plotSpecification.dimensions)
       },

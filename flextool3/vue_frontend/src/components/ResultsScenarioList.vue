@@ -31,16 +31,40 @@ import Fetchable from './Fetchable.vue'
 let busyDeletingId = null
 
 /**
+ * Builds list of selected scenarios for emitting "scenarioSelect".
+ * @param {object[]} scenarios List of scenarios.
+ * @returns {object[]} List of selected scenario infos.
+ */
+function selectedScenarioInfos(scenarios) {
+  const scenarioInfoList = []
+  for (const scenario of scenarios) {
+    if (scenario.selected.length === 0) {
+      continue
+    }
+    const selectedLookup = new Set(scenario.selected)
+    for (const execution of scenario.executions) {
+      if (selectedLookup.has(execution.key)) {
+        scenarioInfoList.push({
+          scenario: execution.scenario,
+          scenarioExecutionId: execution.key
+        })
+      }
+    }
+  }
+  return scenarioInfoList
+}
+
+/**
  * Deletes scenario execution.
  * @param {number} projectId Project id.
  * @param {string} summaryUrl Summary interface URL.
  * @param {number} id Scenario execution id.
- * @param {object[]} executions Execution tree items.
+ * @param {string} scenarioName Scenario name.
+ * @param {Ref} scenarios All scenarios.
  * @callback emit Callable to emit "scenarioSelect".
  * @param {object} message Message API.
  */
 function destroyExecution(projectId, summaryUrl, id, scenarioName, scenarios, emit, message) {
-  busyDeletingId = id
   const scenarioIndex = scenarios.value.findIndex((scenario) => scenario.name === scenarioName)
   const scenario = scenarios.value[scenarioIndex]
   const executionIndex = scenario.executions.findIndex((execution) => execution.key === id)
@@ -57,7 +81,7 @@ function destroyExecution(projectId, summaryUrl, id, scenarioName, scenarios, em
       const selectedIndex = scenario.selected.findIndex((selected) => selected === id)
       if (selectedIndex !== -1) {
         scenario.selected.splice(selectedIndex, 1)
-        emit('scenarioSelect', null)
+        emit('scenarioSelect', selectedScenarioInfos(scenarios.value))
       }
     })
     .catch(function (error) {
@@ -65,9 +89,6 @@ function destroyExecution(projectId, summaryUrl, id, scenarioName, scenarios, em
       execution.deleteDisabled = false
       execution.deleting = false
       message.error(error.message)
-    })
-    .finally(function () {
-      busyDeletingId = null
     })
 }
 
@@ -126,22 +147,7 @@ export default {
         ])
       } else {
         scenario.selected = keys
-        const scenarioInfoList = []
-        for (const scenario of scenarios.value) {
-          if (scenario.selected.length === 0) {
-            continue
-          }
-          const selectedLookup = new Set(scenario.selected)
-          for (const execution of scenario.executions) {
-            if (selectedLookup.has(execution.key)) {
-              scenarioInfoList.push({
-                scenario: execution.scenario,
-                scenarioExecutionId: execution.key
-              })
-            }
-          }
-        }
-        context.emit('scenarioSelect', scenarioInfoList)
+        context.emit('scenarioSelect', selectedScenarioInfos(scenarios.value))
       }
     }
     onMounted(function () {
@@ -217,6 +223,7 @@ export default {
             loading: info.option.deleting,
             onClick() {
               info.option.deleteDisabled = true
+              info.option.deleting = true
               destroyExecution(
                 props.projectId,
                 props.summaryUrl,

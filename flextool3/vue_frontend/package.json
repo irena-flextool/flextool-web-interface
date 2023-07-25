@@ -7,15 +7,15 @@
     "build": "vite build",
     "preview": "vite preview",
     "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs --fix --ignore-path .gitignore",
-    "format": "prettier --write src/",
+    "format": "prettier --write src/ test/",
     "test": "mocha"
   },
   "dependencies": {
-    "vue": "^3.2.47",
-    "naive-ui": "^2.34.3",
     "@vicons/fa": "^0.12.0",
     "data-forge": "^1.10.0",
-    "plotly.js-cartesian-dist-min": "^2.22.0"
+    "naive-ui": "^2.34.3",
+    "plotly.js-cartesian-dist-min": "^2.22.0",
+    "vue": "^3.2.47"
   },
   "devDependencies": {
     "@rushstack/eslint-patch": "^1.2.0",
@@ -23,8 +23,8 @@
     "@vue/eslint-config-prettier": "^7.1.0",
     "eslint": "^8.34.0",
     "eslint-plugin-vue": "^9.9.0",
+    "mocha": "^10.2.0",
     "prettier": "^2.8.4",
-    "vite": "^4.1.4",
-    "mocha": "^10.2.0"
+    "vite": "^4.1.4"
   }
 }

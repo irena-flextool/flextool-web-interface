@@ -61,7 +61,9 @@ def database_map(project, database, filter_configs=None):
     try:
         db_map = DatabaseMapping(url)
     except SpineDBAPIError:
-        raise FlexToolException(f"could not open database at '{project.database_path(database)}'")
+        raise FlexToolException(
+            f"could not open database at '{project.database_path(database)}'"
+        )
     try:
         yield db_map
     finally:

@@ -1,7 +1,7 @@
 import json
 from operator import attrgetter
 
-from django.http import JsonResponse, HttpResponseServerError
+from django.http import JsonResponse, HttpResponseBadRequest
 from sqlalchemy.sql.expression import Alias, and_
 
 from .utils import Database, database_map, EntityType, get_and_validate
@@ -452,8 +452,8 @@ def _execution_alternatives(project, body):
     }
 
 
-def get_plot_specification(project):
-    """Sends the plot specification.
+def get_default_plot_specification(project):
+    """Sends the default plot specification to client.
 
     Args:
         project (Project): a project
@@ -461,18 +461,51 @@ def get_plot_specification(project):
     Returns:
         HTTPResponse: a response object
     """
-    specification_path = project.plot_specification_path()
+    specification_path = project.default_plot_specification_path()
     if not specification_path.exists():
-        specification_path = project.default_plot_specification_path()
-        if not specification_path.exists():
-            return JsonResponse({"plot_specification": json.dumps({"plots": []})})
+        return JsonResponse({"plot_specification": json.dumps({"plots": []})})
     return JsonResponse(
         {"plot_specification": specification_path.read_text(encoding="utf-8")}
     )
 
 
-def set_plot_specification(project, body):
-    """Sets a new plot specification.
+def get_custom_plot_specification_names(project):
+    """Sends the names of all custom plot specifications to client.
+
+    Args:
+        project (Project): a project
+
+    Returns:
+        HTTPResponse: a response object
+    """
+    specification_directory = project.custom_plot_specifications_directory()
+    return JsonResponse(
+        {"names": [path.stem for path in specification_directory.glob("*.json")]}
+    )
+
+
+def get_custom_plot_specification(project, body):
+    """Sends a custom plot specification to client.
+
+    Args:
+        project (Project): a project
+        body (dict): request body
+
+    Returns:
+        HTTPResponse: a response object
+    """
+    name = get_and_validate(body, "name", str)
+    specification_directory = project.custom_plot_specifications_directory()
+    specification_path = specification_directory / (name + ".json")
+    if not specification_path.exists():
+        return HttpResponseBadRequest("Specification not found.")
+    return JsonResponse(
+        {"plot_specification": specification_path.read_text(encoding="utf-8")}
+    )
+
+
+def set_default_plot_specification(project, body):
+    """Sets a new default plot specification.
 
     Args:
         project (Project): a project
@@ -482,8 +515,71 @@ def set_plot_specification(project, body):
         HTTPResponse: a response object
     """
     plot_specification = get_and_validate(body, "specification", dict)
-    specification_path = project.plot_specification_path()
+    specification_path = project.default_plot_specification_path()
     specification_path.write_text(
         json.dumps(plot_specification, sort_keys=True, indent=2), encoding="utf-8"
     )
+    return JsonResponse({"status": "ok"})
+
+
+def set_custom_plot_specification(project, body):
+    """Sets a custom plot specification.
+
+    Args:
+        project (Project): a project
+        body (dict): request body
+
+    Returns:
+        HTTPResponse: a response object
+    """
+    name = get_and_validate(body, "name", str)
+    plot_specification = get_and_validate(body, "specification", dict)
+    specification_directory = project.custom_plot_specifications_directory()
+    specification_path = specification_directory / (name + ".json")
+    specification_path.write_text(
+        json.dumps(plot_specification, sort_keys=True, indent=2), encoding="utf-8"
+    )
+    return JsonResponse({"status": "ok"})
+
+
+def remove_custom_plot_specification(project, body):
+    """Removes a custom plot specification.
+
+    Args:
+        project (Project): a project
+        body (dict): request body
+
+    Returns:
+        HTTPResponse: a response object
+    """
+    name = get_and_validate(body, "name", str)
+    specification_directory = project.custom_plot_specifications_directory()
+    specification_path = specification_directory / (name + ".json")
+    try:
+        specification_path.unlink()
+    except FileNotFoundError:
+        return HttpResponseBadRequest("Specification not found.")
+    return JsonResponse({"status": "ok"})
+
+
+def rename_custom_plot_specification(project, body):
+    """Renames a custom plot specification.
+
+    Args:
+        project (Project): a project
+        body (dict): request body
+
+    Returns:
+        HTTPResponse: a response object
+    """
+    name = get_and_validate(body, "name", str)
+    new_name = get_and_validate(body, "newName", str)
+    specification_directory = project.custom_plot_specifications_directory()
+    specification_path = specification_directory / (name + ".json")
+    if not specification_path.exists():
+        return HttpResponseBadRequest("Specification not found.")
+    target_path = specification_path.parent / (new_name + ".json")
+    if target_path.exists():
+        return JsonResponse({"status": "exists"})
+    specification_path.rename(target_path)
     return JsonResponse({"status": "ok"})
