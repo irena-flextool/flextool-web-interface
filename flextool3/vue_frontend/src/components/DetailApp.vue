@@ -84,7 +84,7 @@
         </n-p>
         <n-h1>Example systems</n-h1>
         <n-p>Add example systems to the model from the list below.</n-p>
-        <examples :project-id="projectId" :examples-url="examplesUrl" />
+        <examples-list :project-id="projectId" :examples-url="examplesUrl" />
       </n-space>
     </n-space>
     <n-modal v-model:show="isExcelImportLogDialogShown">
@@ -105,7 +105,7 @@ import {
   fetchCurrentExecution
 } from '../modules/communication.mjs'
 import { executionStatus, executionType, followExecution } from '../modules/executions.mjs'
-import Examples from './Examples.vue'
+import ExamplesList from './ExamplesList.vue'
 import Page from './Page.vue'
 import PagePath from './PagePath.vue'
 
@@ -141,7 +141,7 @@ export default {
     fileUploadUrl: { type: String, required: true }
   },
   components: {
-    examples: Examples,
+    'examples-list': ExamplesList,
     page: Page,
     'page-path': PagePath
   },
