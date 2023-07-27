@@ -29,44 +29,45 @@
           ref="scenarioList"
         />
       </n-layout-sider>
-      <n-layout-content content-style="margin-left: 1em; margin-right: 1em">
+      <n-layout-content content-style="margin-left: 1em;">
         <n-tabs
           type="card"
           v-model:value="currentTab"
           closable
           addable
+          pane-style="position: absolute; margin-top: 50px; margin-left: 1em; width: calc(100% - 1em)"
           @update:value="setScenarioSelectionToSingleOrMulti"
           @close="closeTab"
           @add="addTab"
         >
           <n-tab-pane :closable="false" name="Summary" display-directive="show:lazy">
-            <results-summary
-              :project-id="projectId"
-              :summary-url="summaryUrl"
-              @ready="loadSummary"
-              ref="summary"
-            />
+            <div class="tab-pane-scroll">
+              <results-summary
+                :project-id="projectId"
+                :summary-url="summaryUrl"
+                @ready="loadSummary"
+                ref="summary"
+              />
+            </div>
             <template #tab>
-              <n-space size="small">
-                <n-icon><icon-table /></n-icon>
-                Summary
-              </n-space>
+              <n-icon class="tab-icon"><icon-table /></n-icon>
+              Summary
             </template>
           </n-tab-pane>
           <n-tab-pane :closable="false" name="Default plots" display-directive="show:lazy">
-            <results-figures
-              :is-custom="false"
-              name="default-plots"
-              :project-id="projectId"
-              :analysis-url="analysisUrl"
-              @ready="setDefaultFiguresScenario"
-              ref="defaultFigures"
-            />
+            <div class="tab-pane-scroll">
+              <results-figures
+                :is-custom="false"
+                name="default-plots"
+                :project-id="projectId"
+                :analysis-url="analysisUrl"
+                @ready="setDefaultFiguresScenario"
+                ref="defaultFigures"
+              />
+            </div>
             <template #tab>
-              <n-space size="small">
-                <n-icon><icon-chart-area /></n-icon>
-                Default plots
-              </n-space>
+              <n-icon class="tab-icon"><icon-chart-area /></n-icon>
+              Default plots
             </template>
           </n-tab-pane>
           <n-tab-pane
@@ -75,14 +76,16 @@
             :key="tab"
             display-directive="show:lazy"
           >
-            <results-figures
-              :is-custom="true"
-              :name="tab"
-              :project-id="projectId"
-              :analysis-url="analysisUrl"
-              @ready="setCustomFiguresScenario"
-              ref="customFigures"
-            />
+            <div class="tab-pane-scroll">
+              <results-figures
+                :is-custom="true"
+                :name="tab"
+                :project-id="projectId"
+                :analysis-url="analysisUrl"
+                @ready="setCustomFiguresScenario"
+                ref="customFigures"
+              />
+            </div>
             <template #tab>
               <editable-text :text="tab" @edited="renameTab"></editable-text>
             </template>
@@ -286,5 +289,14 @@ export default {
 #main-layout {
   top: 100px;
   margin-left: 1em;
+}
+
+.tab-icon {
+  margin-right: 10px;
+}
+
+.tab-pane-scroll {
+  overflow: auto;
+  height: calc(100vh - 163px);
 }
 </style>

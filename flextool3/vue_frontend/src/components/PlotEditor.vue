@@ -106,6 +106,7 @@
       :analysisUrl="analysisUrl"
       :scenario-execution-ids="scenarioExecutionIds"
       :plot-specification="plotSpecification"
+      @update:title="emitPlotTitleUpdate"
     />
     <n-empty v-else :description="cannotPlotMessage" />
   </n-space>
@@ -433,10 +434,11 @@ export default {
     scenarioExecutionIds: { type: Array, required: true },
     plotSpecificationBundle: { type: Object, required: true }
   },
+  emits: ['plotTypeChanged', 'update:title'],
   components: {
     'plot-figure': PlotFigure
   },
-  setup(props) {
+  setup(props, context) {
     const expandedItems = ref([])
     if (props.isCustom) {
       expandedItems.value.push('plot-settings')
@@ -513,6 +515,9 @@ export default {
     watch(toRef(props, 'scenarioExecutionIds'), function () {
       parameterIndexUpdateCallback()
     })
+    watch(toRef(plotSpecification, 'plot_type'), function (plotType) {
+      context.emit('plotTypeChanged', { identifier: props.identifier, plotType: plotType })
+    })
     onMounted(function () {
       fetchResultEntityClasses(props.projectId, props.analysisUrl).then(function (data) {
         const classes = data.entity_classes
@@ -558,6 +563,9 @@ export default {
       },
       resolveDimensionConflictsSeparateWindow(value) {
         nullifyDuplicateDimensions(value, 'separate_window', plotSpecification.dimensions)
+      },
+      emitPlotTitleUpdate(titleInfo) {
+        context.emit('update:title', titleInfo)
       }
     }
   }

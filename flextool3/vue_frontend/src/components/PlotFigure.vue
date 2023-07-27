@@ -62,6 +62,7 @@ function plotMinHeight(subplotCount) {
  * @param {string} plotId Plot div element id.
  * @param {Ref} plotDivStyle Plot div element.
  * @param {object} ongoingPlottingTasks Structure that contains information about running plotting tasks.
+ * @return {string} Plot title.
  */
 function replot(dataFrame, plotSpecification, plotId, plotDivStyle, ongoingPlottingTasks) {
   if (ongoingPlottingTasks.cancelling) {
@@ -100,6 +101,7 @@ function replot(dataFrame, plotSpecification, plotId, plotDivStyle, ongoingPlott
     default:
       throw new Error(`Unknown plot type '${plotSpecification.plot_type}'`)
   }
+  let plotTitle = undefined
   if (plotObject !== undefined && !ongoingPlottingTasks.cancelling) {
     const subplotCount =
       plotObject.layout.grid !== undefined
@@ -107,7 +109,11 @@ function replot(dataFrame, plotSpecification, plotId, plotDivStyle, ongoingPlott
         : Math.min(plotObject.data.length, 1)
     plotDivStyle.value.minHeight = plotMinHeight(subplotCount) + 'px'
     nextTick(() => Plotly.newPlot(plotId, plotObject))
+    if ('layout' in plotObject) {
+      plotTitle = plotObject.layout.title
+    }
   }
+  return plotTitle
 }
 
 /**Fetches parameter values and creates the data frame.
@@ -122,6 +128,7 @@ function replot(dataFrame, plotSpecification, plotId, plotDivStyle, ongoingPlott
  * @param {object} ongoingPlottingTasks Structure that contains information about running plotting tasks.
  * @param {Ref} state Fetching state.
  * @param {Ref} errorMessage Fetch error message.
+ * @callback plotTitleChanged Function to call when plot title has changed.
  */
 function fetchDataFrame(
   projectId,
@@ -134,7 +141,8 @@ function fetchDataFrame(
   hasData,
   ongoingPlottingTasks,
   state,
-  errorMessage
+  errorMessage,
+  plotTitleChanged
 ) {
   errorMessage.value = ''
   state.value = Fetchable.state.loading
@@ -233,7 +241,17 @@ function fetchDataFrame(
       dataFrame = filterDeselectedIndexNames(dataFrame, plotSpecification.selection)
       currentDataFrame.value = dataFrame
       state.value = Fetchable.state.ready
-      replot(dataFrame, plotSpecification, plotId, plotCount, ongoingPlottingTasks)
+      const plotTitle = replot(
+        dataFrame,
+        plotSpecification,
+        plotId,
+        plotCount,
+        ongoingPlottingTasks
+      )
+      return plotTitle
+    })
+    .then(function (plotTitle) {
+      plotTitleChanged(plotTitle)
     })
     .catch(function (error) {
       errorMessage.value = error.message
@@ -262,6 +280,7 @@ function fetchDataFrame(
  * @param {object} ongoingPlottingTasks Structure that contains information about running plotting tasks.
  * @param {Ref} state Fetching state.
  * @param {Ref} errorMessage Fetch error message.
+ * @callback plotTitleChaged Function to call when plot title has changed.
  */
 function plotIfPossible(
   projectId,
@@ -274,7 +293,8 @@ function plotIfPossible(
   hasData,
   ongoingPlottingTasks,
   state,
-  errorMessage
+  errorMessage,
+  plotTitleChanged
 ) {
   if (
     plotSpecification.selection.entity_class.length === 0 ||
@@ -293,7 +313,8 @@ function plotIfPossible(
     hasData,
     ongoingPlottingTasks,
     state,
-    errorMessage
+    errorMessage,
+    plotTitleChanged
   )
 }
 
@@ -305,11 +326,12 @@ export default {
     scenarioExecutionIds: { type: Array, required: true },
     plotSpecification: { type: Object, required: true }
   },
+  emits: ['update:title'],
   components: {
     fetchable: Fetchable,
     'plot-table': PlotTable
   },
-  setup(props) {
+  setup(props, context) {
     const state = ref(Fetchable.state.waiting)
     const errorMessage = ref('')
     const hasData = ref(true)
@@ -319,6 +341,9 @@ export default {
     const currentDataFrame = ref(null)
     const plotDivStyle = ref({ minHeight: emptyPlotMinHeight + 'px' })
     const ongoingPlottingTasks = { plottingPromise: null, cancelling: false, chainLength: 0 }
+    const emitPlotTitleChanged = function (plotTitle) {
+      context.emit('update:title', { identifier: props.identifier, plotTitle })
+    }
     watch(toRef(props, 'scenarioExecutionIds'), function () {
       plotIfPossible(
         props.projectId,
@@ -331,7 +356,8 @@ export default {
         hasData,
         ongoingPlottingTasks,
         state,
-        errorMessage
+        errorMessage,
+        emitPlotTitleChanged
       )
     })
     watch(
@@ -348,7 +374,8 @@ export default {
           hasData,
           ongoingPlottingTasks,
           state,
-          errorMessage
+          errorMessage,
+          emitPlotTitleChanged
         )
       },
       { deep: true }
@@ -365,7 +392,8 @@ export default {
         hasData,
         ongoingPlottingTasks,
         state,
-        errorMessage
+        errorMessage,
+        emitPlotTitleChanged
       )
     })
     onUnmounted(function () {

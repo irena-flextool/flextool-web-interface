@@ -103,12 +103,12 @@
     "src": "src/index.js"
   },
   "src/results.css": {
-    "file": "assets/results-2034e404.css",
+    "file": "assets/results-6bd13645.css",
     "src": "src/results.css"
   },
   "src/results.js": {
     "css": [
-      "assets/results-2034e404.css"
+      "assets/results-6bd13645.css"
     ],
     "file": "results.js",
     "imports": [
