@@ -1,4 +1,6 @@
 """Django models for server database."""
+import subprocess
+import sys
 from bisect import bisect_left
 import datetime
 import os
@@ -47,9 +49,10 @@ class Project(models.Model):
             "docs", "tests", "execution_tests", ".git*", "*.zip", "*.txt", "*.md"
         )
         copytree(template_dir, project_dir, ignore=ignored)
-        result_database_template = project_dir / "Results_template.sqlite"
-        result_database = project_dir / "Results.sqlite"
-        move(result_database_template, result_database)
+        update_script_path = project_dir / "update_flextool.py"
+        completed_process = subprocess.run([sys.executable, str(update_script_path), "--skip-git"], cwd=update_script_path.parent, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        if completed_process.returncode != 0:
+            raise FlexToolException("Failed to initialize databases.")
         custom_result_plots_directory = project_dir / "custom_results_plots"
         custom_result_plots_directory.mkdir()
         return Project(user=user, name=project_name, path=str(project_dir))
