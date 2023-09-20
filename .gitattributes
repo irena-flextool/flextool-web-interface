@@ -1,0 +1,17 @@
+* text=auto
+*.cjs text
+*.css text
+*.html text
+*.lock text
+*.ico -text
+*.jpg -text
+*.js text
+*.json text
+*.mjs text
+*.py text
+*.png -text
+*.toml text
+*.txt text
+*.vue text
+
+flextool3/static/** -text
