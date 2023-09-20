@@ -7,7 +7,10 @@
       <n-layout-content @scroll="testScrolling">
         <n-grid cols="1">
           <n-grid-item v-for="box in boxes" :key="box.key">
-            <keyed-card :fingerprint="box.key" @close="dropBox">
+            <keyed-card :title="box.label" :fingerprint="box.key" @close="dropBox">
+              <template #header>
+                <plot-name :name="box.label" :identifier="box.key" @update:name="updatePlotTitle" />
+              </template>
               <plot-editor
                 :id="boxElementId(box)"
                 :is-custom="isCustom"
@@ -17,7 +20,7 @@
                 :scenario-execution-ids="scenarioExecutionIds"
                 :plot-specification-bundle="plotSpecificationBundle"
                 @plot-type-changed="updateBoxPlotType"
-                @update:title="updatePlotTitle"
+                @update:name="updatePlotTitle"
               />
             </keyed-card>
           </n-grid-item>
@@ -40,10 +43,11 @@ import {
   fetchCustomPlotSpecification,
   storeCustomPlotSpecification
 } from '../modules/communication.mjs'
-import { makePlotSpecificationBundle } from '../modules/plots.mjs'
+import { makePlotSpecificationBundle, updateSpecification } from '../modules/plots.mjs'
 import Fetchable from './Fetchable.vue'
 import KeyedCard from './KeyedCard.vue'
 import PlotEditor from './PlotEditor.vue'
+import PlotName from './PlotName.vue'
 
 /**
  * Creates an icon for box.
@@ -69,16 +73,21 @@ function boxIcon(plotType) {
   }
 }
 
-const untitledLabel = '<untitled>'
+const undefinedPlotName = '<untitled>'
 
 /**
- * Creates a box that does not have a plot label.
+ * Creates a box with label.
  * @param {string} key Box key.
+ * @param {string} plotName Plot name.
  * @param {string} plotType Plot type.
  * @returns {object} Box object.
  */
-function makeBox(key, plotType) {
-  return { key: key, label: untitledLabel, icon: boxIcon(plotType) }
+function makeBox(key, plotName, plotType) {
+  return {
+    key: key,
+    label: plotName !== null ? plotName : undefinedPlotName,
+    icon: boxIcon(plotType)
+  }
 }
 
 /**
@@ -101,7 +110,8 @@ export default {
   components: {
     fetchable: Fetchable,
     'keyed-card': KeyedCard,
-    'plot-editor': PlotEditor
+    'plot-editor': PlotEditor,
+    'plot-name': PlotName
   },
   setup(props, context) {
     const state = ref(Fetchable.state.loading)
@@ -140,8 +150,9 @@ export default {
         .then(function (data) {
           const specifications = JSON.parse(data.plot_specification)
           for (const specification of specifications.plots) {
+            updateSpecification(specification)
             const identifier = plotSpecificationBundle.add(specification)
-            boxes.value.push(makeBox(identifier, specification.plot_type))
+            boxes.value.push(makeBox(identifier, specification.name, specification.plot_type))
           }
         })
         .catch(function (error) {
@@ -163,7 +174,7 @@ export default {
       addBox() {
         const identifier = plotSpecificationBundle.new()
         const specification = plotSpecificationBundle.get(identifier)
-        boxes.value.push(makeBox(identifier, specification.plot_type))
+        boxes.value.push(makeBox(identifier, specification.name, specification.plot_type))
       },
       dropBox(identifier) {
         for (const [i, box] of boxes.value.entries()) {
@@ -184,11 +195,11 @@ export default {
             return
           }
         }
-        throw new Error(`Box '${identifier}' not found.`)
+        throw new Error(`Box '${plotTypeData.identifier}' not found.`)
       },
       boxElementId,
       scrollToBox(identifier) {
-        for (const [i, box] of boxes.value.entries()) {
+        for (const box of boxes.value) {
           if (box.key === identifier) {
             const boxElement = document.getElementById(boxElementId(box))
             boxElement.scrollIntoView()
@@ -197,13 +208,20 @@ export default {
         }
         throw new Error(`Box '${identifier}' not found.`)
       },
-      updatePlotTitle({ identifier, plotTitle }) {
+      updatePlotTitle({ identifier, plotName, updateSpecification }) {
         for (const box of boxes.value) {
           if (box.key === identifier) {
-            if (plotTitle !== undefined && plotTitle !== '') {
-              box.label = plotTitle
+            const specification = plotSpecificationBundle.get(identifier)
+            if (plotName !== null && plotName !== '') {
+              box.label = plotName
+              if (updateSpecification && plotName !== specification.name) {
+                specification.name = plotName
+              }
             } else {
-              box.label = untitledLabel
+              box.label = undefinedPlotName
+              if (updateSpecification && specification.name !== null) {
+                specification.name = null
+              }
             }
             return
           }

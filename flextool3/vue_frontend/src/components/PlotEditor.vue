@@ -1,5 +1,5 @@
 <template>
-  <n-space vertical>
+  <n-space vertical size="small">
     <n-collapse :default-expanded-names="expandedItems">
       <n-collapse-item name="plot-settings" title="Settings">
         <n-thing>
@@ -106,7 +106,7 @@
       :analysisUrl="analysisUrl"
       :scenario-execution-ids="scenarioExecutionIds"
       :plot-specification="plotSpecification"
-      @update:title="emitPlotTitleUpdate"
+      @update:name="emitPlotNameUpdate"
     />
     <n-empty v-else :description="cannotPlotMessage" />
   </n-space>
@@ -434,7 +434,7 @@ export default {
     scenarioExecutionIds: { type: Array, required: true },
     plotSpecificationBundle: { type: Object, required: true }
   },
-  emits: ['plotTypeChanged', 'update:title'],
+  emits: ['plotTypeChanged', 'update:name'],
   components: {
     'plot-figure': PlotFigure
   },
@@ -564,8 +564,8 @@ export default {
       resolveDimensionConflictsSeparateWindow(value) {
         nullifyDuplicateDimensions(value, 'separate_window', plotSpecification.dimensions)
       },
-      emitPlotTitleUpdate(titleInfo) {
-        context.emit('update:title', titleInfo)
+      emitPlotNameUpdate(nameInfo) {
+        context.emit('update:name', nameInfo)
       }
     }
   }

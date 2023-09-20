@@ -12,15 +12,7 @@
 </template>
 
 <script>
-import {
-  computed,
-  nextTick,
-  onMounted,
-  onUnmounted,
-  ref,
-  toRef,
-  watch
-} from 'vue/dist/vue.esm-bundler.js'
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue/dist/vue.esm-bundler.js'
 import Plotly from 'plotly.js-cartesian-dist-min'
 import { DataFrame } from 'data-forge'
 import { downloadAsCsv } from '../modules/figures.mjs'
@@ -36,6 +28,7 @@ import {
   scenarioKey,
   valueIndexKeyPrefix
 } from '../modules/plotEditors.mjs'
+import { singleAttributeNotEqual } from '../modules/comparison.mjs'
 import Fetchable from './Fetchable.vue'
 import PlotTable from './PlotTable.vue'
 
@@ -62,11 +55,11 @@ function plotMinHeight(subplotCount) {
  * @param {string} plotId Plot div element id.
  * @param {Ref} plotDivStyle Plot div element.
  * @param {object} ongoingPlottingTasks Structure that contains information about running plotting tasks.
- * @return {string} Plot title.
+ * @return {string} Plot name.
  */
 function replot(dataFrame, plotSpecification, plotId, plotDivStyle, ongoingPlottingTasks) {
   if (ongoingPlottingTasks.cancelling) {
-    return
+    return null
   }
   let plotObject = undefined
   switch (plotSpecification.plot_type) {
@@ -101,19 +94,22 @@ function replot(dataFrame, plotSpecification, plotId, plotDivStyle, ongoingPlott
     default:
       throw new Error(`Unknown plot type '${plotSpecification.plot_type}'`)
   }
-  let plotTitle = undefined
+  let plotName = null
   if (plotObject !== undefined && !ongoingPlottingTasks.cancelling) {
     const subplotCount =
       plotObject.layout.grid !== undefined
         ? plotObject.layout.grid.rows
         : Math.min(plotObject.data.length, 1)
     plotDivStyle.value.minHeight = plotMinHeight(subplotCount) + 'px'
-    nextTick(() => Plotly.newPlot(plotId, plotObject))
     if ('layout' in plotObject) {
-      plotTitle = plotObject.layout.title
+      plotName = plotObject.layout.title
+      if (plotSpecification.name !== null) {
+        plotObject.layout.title = plotSpecification.name
+      }
     }
+    nextTick(() => Plotly.newPlot(plotId, plotObject))
   }
-  return plotTitle
+  return plotName
 }
 
 /**Fetches parameter values and creates the data frame.
@@ -128,7 +124,7 @@ function replot(dataFrame, plotSpecification, plotId, plotDivStyle, ongoingPlott
  * @param {object} ongoingPlottingTasks Structure that contains information about running plotting tasks.
  * @param {Ref} state Fetching state.
  * @param {Ref} errorMessage Fetch error message.
- * @callback plotTitleChanged Function to call when plot title has changed.
+ * @callback plotNameChanged Function to call when plot name has changed.
  */
 function fetchDataFrame(
   projectId,
@@ -142,7 +138,7 @@ function fetchDataFrame(
   ongoingPlottingTasks,
   state,
   errorMessage,
-  plotTitleChanged
+  plotNameChanged
 ) {
   errorMessage.value = ''
   state.value = Fetchable.state.loading
@@ -191,10 +187,10 @@ function fetchDataFrame(
       if (parameterValues.length === 0) {
         state.value = Fetchable.state.ready
         hasData.value = false
-        return
+        return null
       }
       if (ongoingPlottingTasks.cancelling) {
-        return
+        return undefined
       }
       hasData.value = true
       const valueObjects = []
@@ -241,17 +237,13 @@ function fetchDataFrame(
       dataFrame = filterDeselectedIndexNames(dataFrame, plotSpecification.selection)
       currentDataFrame.value = dataFrame
       state.value = Fetchable.state.ready
-      const plotTitle = replot(
-        dataFrame,
-        plotSpecification,
-        plotId,
-        plotCount,
-        ongoingPlottingTasks
-      )
-      return plotTitle
+      const plotName = replot(dataFrame, plotSpecification, plotId, plotCount, ongoingPlottingTasks)
+      return plotName
     })
-    .then(function (plotTitle) {
-      plotTitleChanged(plotTitle)
+    .then(function (plotName) {
+      if (plotName !== undefined) {
+        plotNameChanged(plotName)
+      }
     })
     .catch(function (error) {
       errorMessage.value = error.message
@@ -280,7 +272,7 @@ function fetchDataFrame(
  * @param {object} ongoingPlottingTasks Structure that contains information about running plotting tasks.
  * @param {Ref} state Fetching state.
  * @param {Ref} errorMessage Fetch error message.
- * @callback plotTitleChaged Function to call when plot title has changed.
+ * @callback plotNameChaged Function to call when plot name has changed.
  */
 function plotIfPossible(
   projectId,
@@ -294,7 +286,7 @@ function plotIfPossible(
   ongoingPlottingTasks,
   state,
   errorMessage,
-  plotTitleChanged
+  plotNameChanged
 ) {
   if (
     plotSpecification.selection.entity_class.length === 0 ||
@@ -314,7 +306,7 @@ function plotIfPossible(
     ongoingPlottingTasks,
     state,
     errorMessage,
-    plotTitleChanged
+    plotNameChanged
   )
 }
 
@@ -326,7 +318,7 @@ export default {
     scenarioExecutionIds: { type: Array, required: true },
     plotSpecification: { type: Object, required: true }
   },
-  emits: ['update:title'],
+  emits: ['update:name'],
   components: {
     fetchable: Fetchable,
     'plot-table': PlotTable
@@ -341,10 +333,15 @@ export default {
     const currentDataFrame = ref(null)
     const plotDivStyle = ref({ minHeight: emptyPlotMinHeight + 'px' })
     const ongoingPlottingTasks = { plottingPromise: null, cancelling: false, chainLength: 0 }
-    const emitPlotTitleChanged = function (plotTitle) {
-      context.emit('update:title', { identifier: props.identifier, plotTitle })
+    let plotSpecificationSnapshot = { ...props.plotSpecification }
+    let automaticPlotName = null
+    const emitPlotNameChanged = function (plotName) {
+      automaticPlotName = plotName
+      if (props.plotSpecification.name === null) {
+        context.emit('update:name', { identifier: props.identifier, plotName })
+      }
     }
-    watch(toRef(props, 'scenarioExecutionIds'), function () {
+    watch(props.scenarioExecutionIds, function () {
       plotIfPossible(
         props.projectId,
         props.analysisUrl,
@@ -357,26 +354,41 @@ export default {
         ongoingPlottingTasks,
         state,
         errorMessage,
-        emitPlotTitleChanged
+        emitPlotNameChanged
       )
     })
     watch(
-      () => toRef(props, 'plotSpecification'),
-      function () {
-        plotIfPossible(
-          props.projectId,
-          props.analysisUrl,
-          props.plotSpecification,
-          props.scenarioExecutionIds,
-          currentDataFrame,
-          plotId,
-          plotDivStyle,
-          hasData,
-          ongoingPlottingTasks,
-          state,
-          errorMessage,
-          emitPlotTitleChanged
-        )
+      props.plotSpecification,
+      function (currentSpecification) {
+        if (singleAttributeNotEqual(currentSpecification, plotSpecificationSnapshot, 'name')) {
+          if (!showGraph.value) {
+            return
+          } else if (currentSpecification.name !== null) {
+            Plotly.relayout(plotId, { title: currentSpecification.name })
+          } else {
+            Plotly.relayout(plotId, { title: automaticPlotName })
+            context.emit('update:name', {
+              identifier: props.identifier,
+              plotName: automaticPlotName
+            })
+          }
+        } else {
+          plotIfPossible(
+            props.projectId,
+            props.analysisUrl,
+            currentSpecification,
+            props.scenarioExecutionIds,
+            currentDataFrame,
+            plotId,
+            plotDivStyle,
+            hasData,
+            ongoingPlottingTasks,
+            state,
+            errorMessage,
+            emitPlotNameChanged
+          )
+        }
+        plotSpecificationSnapshot = { ...currentSpecification }
       },
       { deep: true }
     )
@@ -393,7 +405,7 @@ export default {
         ongoingPlottingTasks,
         state,
         errorMessage,
-        emitPlotTitleChanged
+        emitPlotNameChanged
       )
     })
     onUnmounted(function () {

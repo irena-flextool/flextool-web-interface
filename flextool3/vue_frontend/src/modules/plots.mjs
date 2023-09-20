@@ -85,11 +85,21 @@ function makePlotSpecificationBundle() {
   })
 }
 
+/**Updates old plot specification in-place.
+ * @param {object} specification Plot specification.
+ */
+function updateSpecification(specification) {
+  if (!specification.name) {
+    specification.name = null
+  }
+}
+
 /**Creates an empty plot specification.
  * @returns {object} Empty plot specification.
  */
 function makeEmptyPlotSpecification() {
   return {
+    name: null,
     plot_type: 'line',
     selection: { entity_class: [], parameter: [] },
     dimensions: {
@@ -121,7 +131,7 @@ function isParameterIndexName(name) {
 function makeBasicChart(dataFrame, plotDimensions, staticData = {}, staticLayout = {}) {
   const specialColumns = declareSpecialColumns(dataFrame, plotDimensions)
   const categoryColumns = makeCategoryColumns(specialColumns)
-  let { lineWindows, plotTitle } = prepareForPlotting(
+  let { lineWindows, plotName } = prepareForPlotting(
     dataFrame,
     categoryColumns,
     plotDimensions.separate_window
@@ -169,8 +179,8 @@ function makeBasicChart(dataFrame, plotDimensions, staticData = {}, staticLayout
     ...(subplot !== null ? subplot.subplotLayout : {}),
     ...staticLayout
   }
-  if (plotTitle !== undefined) {
-    layout.title = plotTitle
+  if (plotName !== null) {
+    layout.title = plotName
   }
   if (data.every((d) => d.name.length === 0)) {
     layout.showlegend = false
@@ -196,7 +206,7 @@ function makeHeatmapChart(dataFrame, plotDimensions) {
   const specialColumns = declareSpecialColumns(dataFrame, plotDimensions)
   const categoryColumns = makeCategoryColumns(specialColumns)
   dataFrame = padCategoriesByNulls(dataFrame, specialColumns)
-  let { lineWindows, plotTitle } = prepareForPlotting(
+  let { lineWindows, plotName } = prepareForPlotting(
     dataFrame,
     categoryColumns,
     plotDimensions.separate_window
@@ -259,8 +269,8 @@ function makeHeatmapChart(dataFrame, plotDimensions) {
   if (subplot !== null) {
     layout = { ...layout, ...subplot.subplotLayout, coloraxis: {} }
   }
-  if (plotTitle !== undefined) {
-    layout.title = plotTitle
+  if (plotName !== null) {
+    layout.title = plotName
   }
   const config = { ...defaultConfig }
   return {
@@ -524,11 +534,12 @@ function filterDeselectedIndexNames(dataFrame, plotSelection) {
 /**Breaks data into lines.
  * @param {DataFrame} dataFrame Data frame to prepare.
  * @param {Set} categoryColumns Category columns.
- * @return {Array} Lines and plot title.
+ * @param {number} subplotTitleColumn Column index of sublot title.
+ * @return {Array} Lines and final plot name.
  */
 function prepareForPlotting(dataFrame, categoryColumns, subplotTitleColumn) {
   const distinct = distinctColumns(dataFrame)
-  let plotTitle = undefined
+  let plotName = null
   if (distinct.length > 0) {
     const actuallyNonDistinctColumns = new Set(categoryColumns)
     if (subplotTitleColumn !== undefined) {
@@ -544,8 +555,8 @@ function prepareForPlotting(dataFrame, categoryColumns, subplotTitleColumn) {
     for (const column of distinct) {
       names.push(dataFrame.first()[column])
     }
+    plotName = names.join(' | ')
     dataFrame = dataFrame.dropSeries(distinct)
-    plotTitle = names.join(' | ')
   }
   const columns = dataFrame
     .getColumnNames()
@@ -559,7 +570,7 @@ function prepareForPlotting(dataFrame, categoryColumns, subplotTitleColumn) {
     }
     return true
   })
-  return { lineWindows: lineWindows, plotTitle: plotTitle }
+  return { lineWindows: lineWindows, plotName: plotName }
 }
 
 export {
@@ -568,5 +579,6 @@ export {
   makeBasicChart,
   makeHeatmapChart,
   makePlotSpecificationBundle,
-  makeEmptyPlotSpecification
+  makeEmptyPlotSpecification,
+  updateSpecification
 }

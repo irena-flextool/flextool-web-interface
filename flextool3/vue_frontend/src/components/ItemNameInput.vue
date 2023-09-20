@@ -14,7 +14,8 @@
 import { onMounted, ref } from 'vue/dist/vue.esm-bundler.js'
 export default {
   props: {
-    name: String
+    name: { type: String, required: true },
+    acceptEmpty: { type: Boolean, required: false, default: false }
   },
   emits: ['accept', 'cancel'],
   setup(props, context) {
@@ -34,7 +35,7 @@ export default {
         const sanitized = value.value.trim()
         switch (keyInfo.key) {
           case 'Enter':
-            if (sanitized && sanitized !== props.name) {
+            if ((props.acceptEmpty || sanitized) && sanitized !== props.name) {
               context.emit('accept', sanitized)
             } else {
               value.value = props.name

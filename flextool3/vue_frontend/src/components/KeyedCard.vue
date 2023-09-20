@@ -1,5 +1,8 @@
 <template>
   <n-card closable :title="title" @close="emitClose" size="small">
+    <template #header>
+      <slot name="header"></slot>
+    </template>
     <slot></slot>
   </n-card>
 </template>

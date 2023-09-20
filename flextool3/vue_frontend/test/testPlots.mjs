@@ -754,6 +754,7 @@ describe('plots module', function () {
       const bundleId = bundle.new()
       const specification = bundle.get(bundleId)
       assert.deepEqual(specification, {
+        name: null,
         dimensions: {
           separate_window: null,
           x1: null,

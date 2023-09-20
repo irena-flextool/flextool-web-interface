@@ -1,6 +1,12 @@
 <template>
   <n-text v-if="!isEditing" @dblclick="startEditing">{{ text }}</n-text>
-  <item-name-input v-else :name="text" @accept="changeText" @cancel="cancel"></item-name-input>
+  <item-name-input
+    v-else
+    :name="text"
+    :accept-empty="acceptEmpty"
+    @accept="changeText"
+    @cancel="cancel"
+  ></item-name-input>
 </template>
 
 <script>
@@ -9,7 +15,8 @@ import ItemNameInput from './ItemNameInput.vue'
 
 export default {
   props: {
-    text: { type: String, required: true }
+    text: { type: String, required: true },
+    acceptEmpty: { type: Boolean, required: false, default: false }
   },
   emits: ['edited'],
   components: {
