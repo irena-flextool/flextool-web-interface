@@ -7,7 +7,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs --fix --ignore-path .gitignore --ignore-pattern vite.config.js",
-    "format": "prettier --write src/ test/",
+    "format": "prettier --end-of-line=auto --write src/ test/",
     "test": "mocha"
   },
   "dependencies": {

@@ -7,12 +7,16 @@
       <n-layout-content @scroll="testScrolling">
         <n-grid cols="1">
           <n-grid-item v-for="box in boxes" :key="box.key">
-            <keyed-card :title="box.label" :fingerprint="box.key" @close="dropBox">
+            <keyed-card
+              :id="boxElementId(box)"
+              :title="box.label"
+              :fingerprint="box.key"
+              @close="dropBox"
+            >
               <template #header>
                 <plot-name :name="box.label" :identifier="box.key" @update:name="updatePlotName" />
               </template>
               <plot-editor
-                :id="boxElementId(box)"
                 :is-custom="isCustom"
                 :identifier="box.key"
                 :project-id="projectId"
@@ -122,6 +126,7 @@ export default {
     let fetchingSpecifications = false
     const message = useMessage()
     const plotSpecificationBundle = makePlotSpecificationBundle()
+    let scrollDetectionDisabled = false
     watch(plotSpecificationBundle, function (specificationBundle) {
       if (fetchingSpecifications) {
         return
@@ -199,6 +204,7 @@ export default {
       },
       boxElementId,
       scrollToBox(identifier) {
+        scrollDetectionDisabled = true
         for (const box of boxes.value) {
           if (box.key === identifier) {
             const boxElement = document.getElementById(boxElementId(box))
@@ -229,6 +235,10 @@ export default {
         throw new Error(`Box '${identifier}' not found.`)
       },
       testScrolling() {
+        if (scrollDetectionDisabled) {
+          scrollDetectionDisabled = false
+          return
+        }
         let topClosestToZero = Number.MAX_VALUE
         let closestBoxKey = undefined
         for (const box of boxes.value) {
