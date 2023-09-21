@@ -9,7 +9,7 @@
           <n-grid-item v-for="box in boxes" :key="box.key">
             <keyed-card :title="box.label" :fingerprint="box.key" @close="dropBox">
               <template #header>
-                <plot-name :name="box.label" :identifier="box.key" @update:name="updatePlotTitle" />
+                <plot-name :name="box.label" :identifier="box.key" @update:name="updatePlotName" />
               </template>
               <plot-editor
                 :id="boxElementId(box)"
@@ -20,7 +20,7 @@
                 :scenario-execution-ids="scenarioExecutionIds"
                 :plot-specification-bundle="plotSpecificationBundle"
                 @plot-type-changed="updateBoxPlotType"
-                @update:name="updatePlotTitle"
+                @update:name="updatePlotName"
               />
             </keyed-card>
           </n-grid-item>
@@ -208,7 +208,7 @@ export default {
         }
         throw new Error(`Box '${identifier}' not found.`)
       },
-      updatePlotTitle({ identifier, plotName, updateSpecification }) {
+      updatePlotName({ identifier, plotName, updateSpecification }) {
         for (const box of boxes.value) {
           if (box.key === identifier) {
             const specification = plotSpecificationBundle.get(identifier)
