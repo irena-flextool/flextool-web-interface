@@ -1,6 +1,6 @@
 <template>
   <fetchable :state="state" :error-message="errorMessage">
-    <n-layout has-sider position="absolute">
+    <n-layout has-sider style="height: 100%">
       <n-layout-sider collapse-mode="width" :show-trigger="true">
         <n-menu v-model:value="selectedBoxKey" :options="boxes" @update:value="scrollToBox" />
       </n-layout-sider>
@@ -25,6 +25,7 @@
                 :plot-specification-bundle="plotSpecificationBundle"
                 @plot-type-changed="updateBoxPlotType"
                 @update:name="updatePlotName"
+                ref="plotEditors"
               />
             </keyed-card>
           </n-grid-item>
@@ -106,6 +107,7 @@ function boxElementId(box) {
 export default {
   props: {
     isCustom: { type: Boolean, required: true },
+    plotCategory: { type: String, required: true },
     name: { type: String, required: true },
     projectId: { type: Number, required: true },
     analysisUrl: { type: String, required: true }
@@ -127,6 +129,7 @@ export default {
     const message = useMessage()
     const plotSpecificationBundle = makePlotSpecificationBundle()
     let scrollDetectionDisabled = false
+    const plotEditors = ref([])
     watch(plotSpecificationBundle, function (specificationBundle) {
       if (fetchingSpecifications) {
         return
@@ -139,9 +142,15 @@ export default {
             props.projectId,
             props.analysisUrl,
             props.name,
+            props.plotCategory,
             specifications
           )
-        : storeDefaultPlotSpecification(props.projectId, props.analysisUrl, specifications)
+        : storeDefaultPlotSpecification(
+            props.projectId,
+            props.analysisUrl,
+            props.plotCategory,
+            specifications
+          )
       storePromise.catch(function (error) {
         message.warning(error.message)
       })
@@ -149,8 +158,13 @@ export default {
     onMounted(function () {
       fetchingSpecifications = true
       const specificationPromise = props.isCustom
-        ? fetchCustomPlotSpecification(props.projectId, props.analysisUrl, props.name)
-        : fetchDefaultPlotSpecification(props.projectId, props.analysisUrl)
+        ? fetchCustomPlotSpecification(
+            props.projectId,
+            props.analysisUrl,
+            props.name,
+            props.plotCategory
+          )
+        : fetchDefaultPlotSpecification(props.projectId, props.analysisUrl, props.plotCategory)
       specificationPromise
         .then(function (data) {
           const specifications = JSON.parse(data.plot_specification)
@@ -176,6 +190,7 @@ export default {
       scenarioExecutionIds,
       selectedBoxKey,
       plotSpecificationBundle,
+      plotEditors,
       addBox() {
         const identifier = plotSpecificationBundle.new()
         const specification = plotSpecificationBundle.get(identifier)
@@ -191,7 +206,7 @@ export default {
         plotSpecificationBundle.delete(identifier)
       },
       setScenarioExecutionIds(ids) {
-        scenarioExecutionIds.value = ids
+        scenarioExecutionIds.value.splice(0, scenarioExecutionIds.value.length, ...ids)
       },
       updateBoxPlotType(plotTypeData) {
         for (const box of boxes.value) {
@@ -255,6 +270,11 @@ export default {
       },
       componentName() {
         return props.name
+      },
+      notifyActivated() {
+        for (const editor of plotEditors.value) {
+          editor.notifyActivated()
+        }
       }
     }
   }

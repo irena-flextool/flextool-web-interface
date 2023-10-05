@@ -55,8 +55,8 @@ export default {
       tables: tables,
       state: state,
       errorMessage: errorMessage,
-      loadSummary(scenarioInfo) {
-        if (scenarioInfo === null) {
+      loadSummary(executionId) {
+        if (executionId === null) {
           title.value = ''
           tables.value.length = 0
           state.value = Fetchable.state.waiting
@@ -64,7 +64,7 @@ export default {
         }
         context.emit('busy', true)
         state.value = Fetchable.state.loading
-        fetchSummary(props.projectId, props.summaryUrl, scenarioInfo.scenarioExecutionId)
+        fetchSummary(props.projectId, props.summaryUrl, executionId)
           .then(function (data) {
             const summaryData = data.summary
             if (summaryData.length === 0) {

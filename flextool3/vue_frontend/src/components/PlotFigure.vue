@@ -107,7 +107,12 @@ function replot(dataFrame, plotSpecification, plotId, plotDivStyle, ongoingPlott
         plotObject.layout.title = plotSpecification.name
       }
     }
-    nextTick(() => Plotly.newPlot(plotId, plotObject))
+    nextTick(function () {
+      if (!document.body.contains(document.getElementById(plotId))) {
+        return
+      }
+      Plotly.newPlot(plotId, plotObject)
+    })
   }
   return plotName
 }
@@ -246,8 +251,10 @@ function fetchDataFrame(
       }
     })
     .catch(function (error) {
-      errorMessage.value = error.message
-      state.value = Fetchable.state.error
+      if (ongoingPlottingTasks.chainLength === 1) {
+        errorMessage.value = error.message
+        state.value = Fetchable.state.error
+      }
     })
     .finally(function () {
       ongoingPlottingTasks.chainLength -= 1
@@ -419,15 +426,21 @@ export default {
       }
     })
     return {
-      state: state,
-      errorMessage: errorMessage,
-      plotId: plotId,
-      showGraph: showGraph,
-      showTable: showTable,
-      currentDataFrame: currentDataFrame,
-      plotDivStyle: plotDivStyle,
+      state,
+      errorMessage,
+      plotId,
+      showGraph,
+      showTable,
+      currentDataFrame,
+      plotDivStyle,
       download() {
         downloadAsCsv(currentDataFrame.value)
+      },
+      notifyActivated() {
+        if (!showGraph.value) {
+          return
+        }
+        nextTick(() => Plotly.relayout(plotId, {}))
       }
     }
   }

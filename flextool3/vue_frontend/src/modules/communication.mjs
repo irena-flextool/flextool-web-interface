@@ -351,12 +351,13 @@ function fetchResultParameterValues(
  * Fetches the default plot specification from server.
  * @param {number} projectId Project id.
  * @param {string} analysisUrl URL to server's analysis interface.
+ * @param {string} category Plot category.
  * @returns {Promise} A promise that resolves to server's response.
  */
-function fetchDefaultPlotSpecification(projectId, analysisUrl) {
+function fetchDefaultPlotSpecification(projectId, analysisUrl, category) {
   return simpleFetch(
     'default plot specification?',
-    { projectId: projectId },
+    { projectId, category },
     analysisUrl,
     'Failed to fetch default plot specification'
   )
@@ -366,13 +367,14 @@ function fetchDefaultPlotSpecification(projectId, analysisUrl) {
  * Stores the default plot specification to server.
  * @param {number} projectId Project id.
  * @param {string} analysisUrl URL to server's analysis interface.
+ * @param {string} category Plot category.
  * @param {object} specification Plot specification
  * @returns {Promise} A promise that resolves to server's response.
  */
-function storeDefaultPlotSpecification(projectId, analysisUrl, specification) {
+function storeDefaultPlotSpecification(projectId, analysisUrl, category, specification) {
   return simpleFetch(
     'store default plot specification',
-    { projectId: projectId, specification: specification },
+    { projectId, category, specification },
     analysisUrl,
     'Failed to store plot specification'
   )
@@ -382,12 +384,13 @@ function storeDefaultPlotSpecification(projectId, analysisUrl, specification) {
  * Fetches the names of all custom plot specifications from server.
  * @param {number} projectId Project id.
  * @param {string} analysisUrl URL to server's analysis interface.
+ * @param {string} category Plot category.
  * @returns {Promise} A promise that resolves to server's response.
  */
-function fetchCustomPlotSpecificationNames(projectId, analysisUrl) {
+function fetchCustomPlotSpecificationNames(projectId, analysisUrl, category) {
   return simpleFetch(
     'custom plot specification names?',
-    { projectId: projectId },
+    { projectId, category },
     analysisUrl,
     'Failed to fetch the names of custom plot specifications'
   )
@@ -398,12 +401,13 @@ function fetchCustomPlotSpecificationNames(projectId, analysisUrl) {
  * @param {number} projectId Project id.
  * @param {string} analysisUrl URL to server's analysis interface.
  * @param {string} name Name of the specification.
+ * @param {string} category Plot category.
  * @returns {Promise} A promise that resolves to server's response.
  */
-function fetchCustomPlotSpecification(projectId, analysisUrl, name) {
+function fetchCustomPlotSpecification(projectId, analysisUrl, name, category) {
   return simpleFetch(
     'custom plot specification?',
-    { projectId: projectId, name: name },
+    { projectId, name, category },
     analysisUrl,
     'Failed to fetch custom plot specification'
   )
@@ -414,13 +418,14 @@ function fetchCustomPlotSpecification(projectId, analysisUrl, name) {
  * @param {number} projectId Project id.
  * @param {string} analysisUrl URL to server's analysis interface.
  * @param {string} name Name of the specification.
+ * @param {string} category Plot category.
  * @param {object} specification Plot specification
  * @returns {Promise} A promise that resolves to server's response.
  */
-function storeCustomPlotSpecification(projectId, analysisUrl, name, specification) {
+function storeCustomPlotSpecification(projectId, analysisUrl, name, category, specification) {
   return simpleFetch(
     'store custom plot specification',
-    { projectId: projectId, name: name, specification: specification },
+    { projectId, name, category, specification },
     analysisUrl,
     'Failed to store plot specification'
   )
@@ -431,12 +436,13 @@ function storeCustomPlotSpecification(projectId, analysisUrl, name, specificatio
  * @param {number} projectId Project id.
  * @param {string} analysisUrl URL to server's analysis interface.
  * @param {string} name Name of the specification.
+ * @param {string} category Plot category.
  * @returns {Promise} A promise that resolves to server's response.
  */
-function removeCustomPlotSpecification(projectId, analysisUrl, name) {
+function removeCustomPlotSpecification(projectId, analysisUrl, name, category) {
   return simpleFetch(
     'remove custom plot specification',
-    { projectId: projectId, name: name },
+    { projectId, name, category },
     analysisUrl,
     'Failed to remove plot specification'
   )
@@ -450,10 +456,10 @@ function removeCustomPlotSpecification(projectId, analysisUrl, name) {
  * @param {string} newName Target name.
  * @returns {Promise} A promise that resolves to server's response.
  */
-function renameCustomPlotSpecification(projectId, analysisUrl, name, newName) {
+function renameCustomPlotSpecification(projectId, analysisUrl, name, category, newName) {
   return simpleFetch(
     'rename custom plot specification',
-    { projectId: projectId, name: name, newName: newName },
+    { projectId, name, category, newName },
     analysisUrl,
     'Failed to rename plot specification'
   )

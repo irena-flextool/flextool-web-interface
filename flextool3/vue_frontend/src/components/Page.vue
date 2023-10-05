@@ -1,5 +1,5 @@
 <template>
-  <n-layout position="absolute">
+  <n-layout position="absolute" content-style="display: flex; flex-direction: column;">
     <n-layout-header>
       <n-card size="small">
         <navigation-menu
@@ -13,13 +13,11 @@
           :logo-url="logoUrl"
         />
       </n-card>
-      <div class="page-content">
-        <slot name="header"></slot>
-      </div>
+      <slot name="header"></slot>
     </n-layout-header>
-    <div class="page-content">
+    <n-layout-content content-style="margin-left: 1em; maring-right: 1em;">
       <slot></slot>
-    </div>
+    </n-layout-content>
   </n-layout>
 </template>
 
@@ -42,10 +40,3 @@ export default {
   }
 }
 </script>
-
-<style>
-.page-content {
-  margin-left: 1em;
-  margin-right: 1em;
-}
-</style>

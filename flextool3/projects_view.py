@@ -44,7 +44,7 @@ def create_project(user, request_body):
     except KeyError as missing:
         return HttpResponseBadRequest(f"Missing '{missing}'")
     project_name = project_name[:PROJECT_NAME_LENGTH].strip()
-    if re.match(r"(^\w&)|(^\w(\w|\s)*\w$)", project_name) is None:
+    if re.match(r"(^\w&)|(^\w(\w|\s|-|_|\.)*\w$)", project_name) is None:
         return HttpResponseBadRequest("Invalid project name.")
     try:
         new_project = Project.create(

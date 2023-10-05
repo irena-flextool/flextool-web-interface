@@ -6,7 +6,7 @@ import datetime
 import os
 from pathlib import Path
 import re
-from shutil import copytree, move, rmtree, ignore_patterns
+from shutil import copytree, rmtree, ignore_patterns
 import stat
 from django.contrib.auth.models import User
 from django.db import models
@@ -16,6 +16,19 @@ from .utils import naive_local_time, database_map, Database
 
 PROJECT_NAME_LENGTH = 60
 SUMMARY_FILE_NAME = "summary_solve.csv"
+UPDATE_SCRIPT_FILE_NAME = "update_flextool.py"
+PLOT_SPECIFICATION_DIRECTORY_NAME = "plot_settings"
+PLOT_MULTIPLE_SPECIFICATION_DIRECTORY_NAME = "multiple_datasets"
+PLOT_SINGLE_SPECIFICATION_DIRECTORY_NAME = "single_dataset"
+DEFAULT_PLOT_SPECIFICATION_FILE_NAME = "default_result_plots.json"
+CUSTOM_PLOT_SPECIFICATION_DIRECTORY_NAME = "custom"
+
+
+class PlotCategories:
+    """Available result plot categories."""
+
+    SINGLE = "single"
+    MULTIPLE = "multiple"
 
 
 class Project(models.Model):
@@ -49,12 +62,26 @@ class Project(models.Model):
             "docs", "tests", "execution_tests", ".git*", "*.zip", "*.txt", "*.md"
         )
         copytree(template_dir, project_dir, ignore=ignored)
-        update_script_path = project_dir / "update_flextool.py"
-        completed_process = subprocess.run([sys.executable, str(update_script_path), "--skip-git"], cwd=update_script_path.parent, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        update_script_path = project_dir / UPDATE_SCRIPT_FILE_NAME
+        completed_process = subprocess.run(
+            [sys.executable, str(update_script_path), "--skip-git"],
+            cwd=update_script_path.parent,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
         if completed_process.returncode != 0:
             raise FlexToolException("Failed to initialize databases.")
-        custom_result_plots_directory = project_dir / "custom_results_plots"
-        custom_result_plots_directory.mkdir()
+        for plot_type_directory in (
+            PLOT_SINGLE_SPECIFICATION_DIRECTORY_NAME,
+            PLOT_MULTIPLE_SPECIFICATION_DIRECTORY_NAME,
+        ):
+            custom_result_plots_directory = (
+                project_dir
+                / PLOT_SPECIFICATION_DIRECTORY_NAME
+                / plot_type_directory
+                / CUSTOM_PLOT_SPECIFICATION_DIRECTORY_NAME
+            )
+            custom_result_plots_directory.mkdir()
         return Project(user=user, name=project_name, path=str(project_dir))
 
     def remove_project_dir(self):
@@ -128,24 +155,59 @@ class Project(models.Model):
             "url": reverse("flextool3:detail", args=(self.id,)),
         }
 
-    def custom_plot_specifications_directory(self):
-        """Returns path to directory containing custom plot specifications.
+    def custom_plot_specification_directory(self, category):
+        """Returns path to directory containing custom single dataset plot specifications.
+
+        Args:
+            category (str): plot category
 
         Returns:
-            Path: path to the specification directory
+            Path: path to the custom specification directory
         """
-        directory = Path(self.path) / "custom_results_plots"
-        if not directory.exists():
-            directory.mkdir()
+        category_directory = _plot_category_directory(category)
+        directory = (
+            Path(self.path)
+            / PLOT_SPECIFICATION_DIRECTORY_NAME
+            / category_directory
+            / CUSTOM_PLOT_SPECIFICATION_DIRECTORY_NAME
+        )
+        directory.mkdir(exist_ok=True)
         return directory
 
-    def default_plot_specification_path(self):
-        """Returns path to default plot specification.
+    def default_plot_specification_path(self, category):
+        """Returns path to default single dataset plot specification.
+
+        Args:
+            category (str): plot category
 
         Returns:
             Path: path to the default specification file
         """
-        return Path(self.path) / "default_result_plots.json"
+        category_directory = _plot_category_directory(category)
+        return (
+            Path(self.path)
+            / PLOT_SPECIFICATION_DIRECTORY_NAME
+            / category_directory
+            / DEFAULT_PLOT_SPECIFICATION_FILE_NAME
+        )
+
+
+def _plot_category_directory(category):
+    """Selects plot specification directory name according to plot category.
+
+    Args:
+        category (str): plot category
+
+    Returns:
+        str: directory name
+    """
+    try:
+        return {
+            PlotCategories.SINGLE: PLOT_SINGLE_SPECIFICATION_DIRECTORY_NAME,
+            PlotCategories.MULTIPLE: PLOT_MULTIPLE_SPECIFICATION_DIRECTORY_NAME,
+        }[category]
+    except KeyError:
+        raise FlexToolException(f"Unknown plot category '{category}'")
 
 
 def _find_next_summary(summary_files, time_point, timezone_offset):

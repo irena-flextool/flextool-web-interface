@@ -66,7 +66,7 @@ describe('plots module', function () {
     return {
       data: charts,
       config: { displaylogo: false, responsive: true },
-      layout: { title: '', xaxis: { title: '' }, showlegend: false }
+      layout: { title: '', xaxis: { title: '', automargin: true }, showlegend: false }
     }
   }
 

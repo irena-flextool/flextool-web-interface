@@ -175,7 +175,7 @@ function makeBasicChart(dataFrame, plotDimensions, staticData = {}, staticLayout
     })
   }
   const layout = {
-    xaxis: { title: nameFromKey(specialColumns.x1) },
+    xaxis: { title: nameFromKey(specialColumns.x1), automargin: true },
     ...(subplot !== null ? subplot.subplotLayout : {}),
     ...staticLayout
   }

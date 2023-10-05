@@ -1,42 +1,35 @@
 <template>
-  <fetchable :state="state" :error-message="errorMessage">
-    <n-p v-if="!hasScenarios">
-      No scenario results found. Go to the <n-a :href="runUrl">Run page</n-a> to solve the model.
-    </n-p>
-    <n-list v-else>
-      <n-list-item v-for="(scenario, index) in scenarios" :key="index">
-        <n-thing :title="scenario.name">
-          <n-tree
-            :data="scenario.executions"
-            selectable
-            :multiple="isMultiSelection"
-            block-line
-            :selected-keys="scenario.selected"
-            :render-suffix="renderSuffix"
-            @update:selected-keys="scenario.emitScenarioSelect"
-          />
-        </n-thing>
-      </n-list-item>
-    </n-list>
-  </fetchable>
+  <n-p v-if="!hasScenarios">
+    No scenario results found. Go to the <n-a :href="runUrl">Run page</n-a> to solve the model.
+  </n-p>
+  <n-list v-else>
+    <n-list-item v-for="(scenario, index) in scenarios" :key="index">
+      <n-thing :title="scenario.name">
+        <n-tree
+          :data="scenario.executions"
+          selectable
+          :multiple="isMultiSelection"
+          block-line
+          :selected-keys="scenario.selected"
+          :render-suffix="renderSuffix"
+          @update:selected-keys="scenario.emitExecutionSelect"
+        />
+      </n-thing>
+    </n-list-item>
+  </n-list>
 </template>
 
 <script>
-import { computed, h, onMounted, ref, toRef, watch } from 'vue/dist/vue.esm-bundler.js'
-import { NButton, useMessage } from 'naive-ui'
-import { fetchExecutedScenarioList, destroyScenarioExecution } from '../modules/communication.mjs'
-import { timeFormat } from '../modules/scenarios.mjs'
-import Fetchable from './Fetchable.vue'
-
-let busyDeletingId = null
+import { computed, h, ref } from 'vue/dist/vue.esm-bundler.js'
+import { NButton } from 'naive-ui'
 
 /**
- * Builds list of selected scenarios for emitting "scenarioSelect".
- * @param {object[]} scenarios List of scenarios.
- * @returns {object[]} List of selected scenario infos.
+ * Builds an array of selected execution ids.
+ * @param {object[]} scenarios Array of scenarios.
+ * @returns {object[]} Array of selected execution ids.
  */
-function selectedScenarioInfos(scenarios) {
-  const scenarioInfoList = []
+function selectedExecutionIds(scenarios) {
+  const executionInfoList = []
   for (const scenario of scenarios) {
     if (scenario.selected.length === 0) {
       continue
@@ -44,92 +37,51 @@ function selectedScenarioInfos(scenarios) {
     const selectedLookup = new Set(scenario.selected)
     for (const execution of scenario.executions) {
       if (selectedLookup.has(execution.key)) {
-        scenarioInfoList.push({
-          scenario: execution.scenario,
-          scenarioExecutionId: execution.key
-        })
+        executionInfoList.push(execution.key)
       }
     }
   }
-  return scenarioInfoList
+  return executionInfoList
 }
 
 /**
- * Deletes scenario execution.
- * @param {number} projectId Project id.
- * @param {string} summaryUrl Summary interface URL.
- * @param {number} id Scenario execution id.
- * @param {string} scenarioName Scenario name.
- * @param {Ref} scenarios All scenarios.
- * @callback emit Callable to emit "scenarioSelect".
- * @param {object} message Message API.
+ * Collects keys of executions that are busy.
+ * @param {object[]} scenarios Array of scenarios.
+ * @returns {Set} Busy keys.
  */
-function destroyExecution(projectId, summaryUrl, id, scenarioName, scenarios, emit, message) {
-  const scenarioIndex = scenarios.value.findIndex((scenario) => scenario.name === scenarioName)
-  const scenario = scenarios.value[scenarioIndex]
-  const executionIndex = scenario.executions.findIndex((execution) => execution.key === id)
-  const execution = scenario.executions[executionIndex]
-  execution.disabled = true
-  execution.deleteDisabled = true
-  execution.deleting = true
-  destroyScenarioExecution(projectId, summaryUrl, id)
-    .then(function () {
-      scenario.executions.splice(executionIndex, 1)
-      if (scenario.executions.length === 0) {
-        scenarios.value.splice(scenarioIndex, 1)
+function dyingExecutionKeys(scenarios) {
+  const busyIds = new Set()
+  for (const scenario of scenarios) {
+    for (const execution of scenario.executions) {
+      if (execution.deleting) {
+        busyIds.add(execution.key)
       }
-      const selectedIndex = scenario.selected.findIndex((selected) => selected === id)
-      if (selectedIndex !== -1) {
-        scenario.selected.splice(selectedIndex, 1)
-        emit('scenarioSelect', selectedScenarioInfos(scenarios.value))
-      }
-    })
-    .catch(function (error) {
-      execution.disabled = false
-      execution.deleteDisabled = false
-      execution.deleting = false
-      message.error(error.message)
-    })
+    }
+  }
+  return busyIds
 }
 
 export default {
   props: {
     projectId: { type: Number, required: true },
+    initialScenarios: { type: Array, required: true },
     runUrl: { type: String, required: true },
     summaryUrl: { type: String, required: true },
     isMultiSelection: { type: Boolean, required: true }
   },
-  emits: ['scenarioSelect'],
-  components: {
-    fetchable: Fetchable
-  },
+  emits: ['executionRemoveRequest', 'executionSelect'],
   setup(props, context) {
     const scenarios = ref([])
-    const state = ref(Fetchable.state.loading)
-    const errorMessage = ref('')
     const hasScenarios = computed(() => scenarios.value.length > 0)
-    const message = useMessage()
-    watch(toRef(props, 'isMultiSelection'), function () {
-      if (!props.isMultiSelection) {
-        let selectedDeclared = false
-        for (const scenario of scenarios.value) {
-          if (scenario.selected.length > 0) {
-            if (!selectedDeclared) {
-              scenario.selected = [scenario.selected[0]]
-              selectedDeclared = true
-            } else {
-              scenario.selected.length = 0
-            }
+    const emitExecutionSelect = function (keys, options, scenarioName) {
+      const busyKeys = dyingExecutionKeys(scenarios.value)
+      if (busyKeys.length !== 0) {
+        const keysToCheck = [...keys]
+        for (const [index, key] of keysToCheck.entries()) {
+          if (busyKeys.has(key)) {
+            keys.splice(index, 1)
+            options.splice(index, 1)
           }
-        }
-      }
-    })
-    const emitScenarioSelect = function (keys, options, scenarioName) {
-      if (busyDeletingId !== null) {
-        const ignoredKeyIndex = keys.findIndex((key) => key === busyDeletingId)
-        if (ignoredKeyIndex !== -1) {
-          keys.splice(ignoredKeyIndex, 1)
-          options.splice(ignoredKeyIndex, 1)
         }
       }
       if (keys.length === 0 && !props.isMultiSelection) {
@@ -142,77 +94,64 @@ export default {
         }
         scenario.selected = [keys[0]]
         const option = options[0]
-        context.emit('scenarioSelect', [
-          { scenario: option.scenario, scenarioExecutionId: option.key }
-        ])
+        context.emit('executionSelect', [option.key])
       } else {
         scenario.selected = keys
-        context.emit('scenarioSelect', selectedScenarioInfos(scenarios.value))
+        context.emit('executionSelect', selectedExecutionIds(scenarios.value))
       }
     }
-    onMounted(function () {
-      fetchExecutedScenarioList(props.projectId, props.summaryUrl)
-        .then(function (response) {
-          for (const scenarioName in response.scenarios) {
-            const scenarioInfoList = []
-            for (const executionInfo of response.scenarios[scenarioName]) {
-              scenarioInfoList.push({
-                timeStamp: new Date(executionInfo.time_stamp),
-                scenarioExecutionId: executionInfo.scenario_execution_id
-              })
-            }
-            const executions = []
-            for (let i = 0; i < scenarioInfoList.length; ++i) {
-              const scenarioInfo = scenarioInfoList[i]
-              const timeString = timeFormat.format(scenarioInfo.timeStamp)
-              const label = i == 0 ? timeString.concat(' (latest)') : timeString
-              executions.push({
-                label: label,
-                key: scenarioInfo.scenarioExecutionId,
-                disabled: false,
-                deleteDisabled: false,
-                deleting: false,
-                scenario: scenarioName
-              })
-            }
-            const scenario = {
-              name: scenarioName,
-              executions: executions,
-              selected: [],
-              emitScenarioSelect: (keys, options) => emitScenarioSelect(keys, options, scenarioName)
-            }
-            scenarios.value.push(scenario)
-          }
-          state.value = Fetchable.state.ready
+    for (const scenario of props.initialScenarios) {
+      const executions = []
+      for (const execution of scenario.executions) {
+        executions.push({
+          disabled: false,
+          deleteDisabled: false,
+          deleting: false,
+          ...execution
         })
-        .catch(function (error) {
-          errorMessage.value = error.message
-          state.value = Fetchable.state.error
-        })
-    })
+      }
+      const specificEmitExecutionSelect = (keys, option) =>
+        emitExecutionSelect(keys, option, scenario.name)
+      scenarios.value.push({
+        name: scenario.name,
+        emitExecutionSelect: specificEmitExecutionSelect,
+        selected: [],
+        executions
+      })
+    }
     return {
       scenarios: scenarios,
       hasScenarios: hasScenarios,
-      state: state,
-      errorMessage: errorMessage,
-      setSelectedBusy(busy) {
+      setExecutionBusy(executionKey, busy) {
         for (const scenario of scenarios.value) {
-          if (scenario.selected.length > 0) {
-            for (const execution of scenario.executions) {
-              if (scenario.selected.find((selected) => selected === execution.key) !== undefined) {
-                execution.deleteDisabled = busy
-              } else if (execution.deleteDisabled) {
-                execution.deleteDisabled = false
-              }
-            }
-          } else {
-            for (const execution of scenario.executions) {
-              if (execution.deleteDisabled) {
-                execution.deleteDisabled = false
-              }
-            }
+          const execution = scenario.executions.find((e) => e.key === executionKey)
+          if (execution === undefined) {
+            continue
           }
+          execution.deleteDisabled = busy
+          execution.deleting = busy
+          return
         }
+        throw Error(`Couldn't find execution with key ${executionKey}`)
+      },
+      removeExecution(executionKey) {
+        for (const [scenarioIndex, scenario] of scenarios.value.entries()) {
+          const executionIndex = scenario.executions.findIndex((e) => e.key === executionKey)
+          if (executionIndex === -1) {
+            continue
+          }
+          const selectionIndex = scenario.selected.findIndex((key) => key === executionKey)
+          if (selectionIndex !== -1) {
+            scenario.selected.splice(selectionIndex, 1)
+            context.emit('executionSelect', selectedExecutionIds(scenarios.value))
+          }
+          scenario.executions.splice(executionIndex, 1)
+          if (scenario.executions.length === 0) {
+            scenarios.value.splice(scenarioIndex, 1)
+          }
+          return
+        }
+        throw Error(`Couldn't find scenario for execution ${executionKey}.`)
       },
       renderSuffix(info) {
         return h(
@@ -222,17 +161,7 @@ export default {
             disabled: info.option.deleteDisabled,
             loading: info.option.deleting,
             onClick() {
-              info.option.deleteDisabled = true
-              info.option.deleting = true
-              destroyExecution(
-                props.projectId,
-                props.summaryUrl,
-                info.option.key,
-                info.option.scenario,
-                scenarios,
-                context.emit,
-                message
-              )
+              context.emit('executionRemoveRequest', info.option.key)
             }
           },
           {

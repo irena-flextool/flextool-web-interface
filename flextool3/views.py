@@ -374,9 +374,9 @@ def analysis(request):
         if type_ == "values?":
             return analysis_view.get_parameter_values(project, body)
         if type_ == "default plot specification?":
-            return analysis_view.get_default_plot_specification(project)
+            return analysis_view.get_default_plot_specification(project, body)
         if type_ == "custom plot specification names?":
-            return analysis_view.get_custom_plot_specification_names(project)
+            return analysis_view.get_custom_plot_specification_names(project, body)
         if type_ == "custom plot specification?":
             return analysis_view.get_custom_plot_specification(project, body)
         if type_ == "store default plot specification":

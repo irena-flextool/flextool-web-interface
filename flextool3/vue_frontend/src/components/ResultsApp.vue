@@ -18,104 +18,90 @@
         leaf-name="Results"
       />
     </template>
-    <n-layout id="main-layout" has-sider position="absolute">
-      <n-layout-sider>
-        <results-scenario-list
-          :project-id="projectId"
-          :run-url="runUrl"
-          :summary-url="summaryUrl"
-          :is-multi-selection="multiSelectScenarios"
-          @scenario-select="loadResults"
-          ref="scenarioList"
-        />
-      </n-layout-sider>
-      <n-layout-content content-style="margin-left: 1em;">
-        <n-tabs
-          type="card"
-          v-model:value="currentTab"
-          closable
-          addable
-          pane-style="position: absolute; margin-top: 50px; margin-left: 1em; width: calc(100% - 1em)"
-          @update:value="setScenarioSelectionToSingleOrMulti"
-          @close="closeTab"
-          @add="addTab"
-        >
-          <n-tab-pane :closable="false" name="Summary" display-directive="show:lazy">
-            <div class="tab-pane-scroll">
-              <results-summary
-                :project-id="projectId"
-                :summary-url="summaryUrl"
-                @ready="loadSummary"
-                ref="summary"
-              />
-            </div>
-            <template #tab>
-              <n-icon class="tab-icon"><icon-table /></n-icon>
-              Summary
-            </template>
-          </n-tab-pane>
-          <n-tab-pane :closable="false" name="Default plots" display-directive="show:lazy">
-            <div class="tab-pane-scroll">
-              <results-figures
-                :is-custom="false"
-                name="default-plots"
-                :project-id="projectId"
-                :analysis-url="analysisUrl"
-                @ready="setDefaultFiguresScenario"
-                ref="defaultFigures"
-              />
-            </div>
-            <template #tab>
-              <n-icon class="tab-icon"><icon-chart-area /></n-icon>
-              Default plots
-            </template>
-          </n-tab-pane>
-          <n-tab-pane
-            v-for="tab in customPlotTabs"
-            :name="tab"
-            :key="tab"
-            display-directive="show:lazy"
-          >
-            <div class="tab-pane-scroll">
-              <results-figures
-                :is-custom="true"
-                :name="tab"
-                :project-id="projectId"
-                :analysis-url="analysisUrl"
-                @ready="setCustomFiguresScenario"
-                ref="customFigures"
-              />
-            </div>
-            <template #tab>
-              <editable-text :text="tab" @edited="renameTab"></editable-text>
-            </template>
-          </n-tab-pane>
-        </n-tabs>
-      </n-layout-content>
-    </n-layout>
+    <fetchable :state="state" :error-message="errorMessage">
+      <n-tabs type="card" placement="left" style="height: 100%">
+        <n-tab-pane name="Investigate single" display-directive="show">
+          <results-tab
+            plot-category="single"
+            :project-name="projectName"
+            :project-id="projectId"
+            :initialScenarios="scenarios"
+            :analysis-url="analysisUrl"
+            :run-url="runUrl"
+            :summary-url="summaryUrl"
+            @execution-remove-request="removeExecution"
+            ref="investigationTab"
+          />
+        </n-tab-pane>
+        <n-tab-pane name="Compare multiple" display-directive="show">
+          <results-tab
+            plot-category="multiple"
+            :project-name="projectName"
+            :project-id="projectId"
+            :initialScenarios="scenarios"
+            :analysis-url="analysisUrl"
+            :run-url="runUrl"
+            :summary-url="summaryUrl"
+            @execution-remove-request="removeExecution"
+            ref="comparisonTab"
+          />
+        </n-tab-pane>
+      </n-tabs>
+    </fetchable>
   </page>
 </template>
 
 <script>
 import { ref, onMounted } from 'vue/dist/vue.esm-bundler.js'
 import { useMessage } from 'naive-ui'
-import { ChartArea, Table } from '@vicons/fa'
-import {
-  fetchCustomPlotSpecificationNames,
-  storeCustomPlotSpecification,
-  removeCustomPlotSpecification,
-  renameCustomPlotSpecification
-} from '../modules/communication.mjs'
-import { makeEmptyPlotSpecification } from '../modules/plots.mjs'
-import EditableText from './EditableText.vue'
+import { destroyScenarioExecution, fetchExecutedScenarioList } from '../modules/communication.mjs'
+import { timeFormat } from '../modules/scenarios.mjs'
+import Fetchable from './Fetchable.vue'
 import Page from './Page.vue'
 import PagePath from './PagePath.vue'
-import ResultsFigures from './ResultsFigures.vue'
-import ResultsScenarioList from './ResultsScenarioList.vue'
-import ResultsSummary from './ResultsSummary.vue'
+import ResultsTab from './ResultsTab.vue'
 
-const customPlotPrefix = 'Custom plots'
-const customPlotNameRegExp = /^Custom plots [0-9]+$/
+/**
+ * Deletes scenario execution.
+ * @param {number} projectId Project id.
+ * @param {string} summaryUrl Summary interface URL.
+ * @param {number} id Scenario execution id.
+ * @param {object[]} scenarios Array of scenarios.
+ * @callback setExecutionBusy Callable to set widgets connected to execution busy.
+ * @callback executionRemoved Callable to call after execution has been removed.
+ * @param {object} message Message API.
+ */
+function destroyExecution(
+  projectId,
+  summaryUrl,
+  id,
+  scenarios,
+  setExecutionBusy,
+  executionRemoved,
+  message
+) {
+  setExecutionBusy(id, true)
+  destroyScenarioExecution(projectId, summaryUrl, id)
+    .then(function () {
+      for (const [scenarioIndex, scenario] of scenarios.entries()) {
+        const executionIndex = scenario.executions.findIndex((e) => e.key === id)
+        if (executionIndex === -1) {
+          continue
+        }
+        scenario.executions.splice(executionIndex, 1)
+        if (scenario.executions.lenght === 0) {
+          scenarios.splice(scenarioIndex, 1)
+        }
+        executionRemoved(id)
+        return
+      }
+      throw Error(`Couldn't find execution with id ${id}.`)
+    })
+    .catch(function (error) {
+      message.error(error.message)
+      setExecutionBusy(id, false)
+    })
+}
 
 export default {
   props: {
@@ -132,153 +118,82 @@ export default {
     logoUrl: { type: String, required: true }
   },
   components: {
-    'editable-text': EditableText,
-    'icon-chart-area': ChartArea,
-    'icon-table': Table,
+    fetchable: Fetchable,
     page: Page,
     'page-path': PagePath,
-    'results-figures': ResultsFigures,
-    'results-scenario-list': ResultsScenarioList,
-    'results-summary': ResultsSummary
+    'results-tab': ResultsTab
   },
   setup(props) {
-    const currentTab = ref('Summary')
-    const customPlotTabs = ref([])
-    const scenarioList = ref(null)
-    const summary = ref(null)
-    const defaultFigures = ref(null)
-    const customFigures = ref([])
-    const multiSelectScenarios = ref(false)
+    const state = ref(Fetchable.state.loading)
+    const errorMessage = ref('')
+    const investigationTab = ref(null)
+    const comparisonTab = ref(null)
+    const scenarios = []
     const message = useMessage()
-    let currentScenarioInfoList = []
-    const loadSummary = function () {
-      if (currentScenarioInfoList.length === 0) {
-        summary.value.loadSummary(null)
-      } else {
-        summary.value.loadSummary(currentScenarioInfoList[0])
-      }
-    }
-    const setDefaultFiguresScenario = function () {
-      const scenarioExecutionIds = []
-      for (const scenarioInfo of currentScenarioInfoList) {
-        scenarioExecutionIds.push(scenarioInfo.scenarioExecutionId)
-      }
-      defaultFigures.value.setScenarioExecutionIds(scenarioExecutionIds)
-    }
-    const setCustomFiguresScenario = function (tabName) {
-      for (const figures of customFigures.value) {
-        if (figures.componentName() === tabName) {
-          const scenarioExecutionIds = []
-          for (const scenarioInfo of currentScenarioInfoList) {
-            scenarioExecutionIds.push(scenarioInfo.scenarioExecutionId)
-          }
-          figures.setScenarioExecutionIds(scenarioExecutionIds)
-          return
+    function setExecutionBusyInTabs(executionId, busy) {
+      for (const tab of [investigationTab.value, comparisonTab.value]) {
+        if (tab !== null) {
+          tab.setExecutionBusy(executionId, busy)
         }
       }
-      throw new Error(`Cannot find tab '${tabName}'`)
+    }
+    function removeExecutionFromTabs(executionId) {
+      for (const tab of [investigationTab.value, comparisonTab.value]) {
+        if (tab !== null) {
+          tab.removeExecution(executionId)
+        }
+      }
     }
     onMounted(function () {
-      fetchCustomPlotSpecificationNames(props.projectId, props.analysisUrl).then(function (data) {
-        const names = data.names
-        for (const name of names) {
-          customPlotTabs.value.push(name)
-        }
-      })
+      fetchExecutedScenarioList(props.projectId, props.summaryUrl)
+        .then(function (response) {
+          for (const scenarioName in response.scenarios) {
+            const scenarioInfoList = []
+            for (const executionInfo of response.scenarios[scenarioName]) {
+              scenarioInfoList.push({
+                timeStamp: new Date(executionInfo.time_stamp),
+                scenarioExecutionId: executionInfo.scenario_execution_id
+              })
+            }
+            const executions = []
+            for (let i = 0; i < scenarioInfoList.length; ++i) {
+              const scenarioInfo = scenarioInfoList[i]
+              const timeString = timeFormat.format(scenarioInfo.timeStamp)
+              const label = i == 0 ? timeString.concat(' (latest)') : timeString
+              executions.push({
+                label: label,
+                key: scenarioInfo.scenarioExecutionId
+              })
+            }
+            const scenario = {
+              name: scenarioName,
+              executions: executions
+            }
+            scenarios.push(scenario)
+          }
+          state.value = Fetchable.state.ready
+        })
+        .catch(function (error) {
+          errorMessage.value = error.message
+          state.value = Fetchable.state.error
+        })
     })
     return {
-      currentTab,
-      customPlotTabs,
-      summary,
-      defaultFigures,
-      customFigures,
-      scenarioList,
-      multiSelectScenarios,
-      loadResults(scenarioInfoList) {
-        currentScenarioInfoList = scenarioInfoList
-        if (summary.value !== null) {
-          loadSummary()
-        }
-        const scenarioExecutionIds = []
-        for (const scenarioInfo of currentScenarioInfoList) {
-          scenarioExecutionIds.push(scenarioInfo.scenarioExecutionId)
-        }
-        if (defaultFigures.value !== null) {
-          defaultFigures.value.setScenarioExecutionIds(scenarioExecutionIds)
-        }
-        for (const figures of customFigures.value) {
-          figures.setScenarioExecutionIds(scenarioExecutionIds)
-        }
-      },
-      loadSummary: loadSummary,
-      setDefaultFiguresScenario,
-      setCustomFiguresScenario,
-      setScenarioSelectionToSingleOrMulti(tabName) {
-        multiSelectScenarios.value = tabName !== 'Summary'
-      },
-      addTab() {
-        const numbers = []
-        for (const tab of customPlotTabs.value) {
-          if (customPlotNameRegExp.test(tab)) {
-            const number = tab.slice(tab.lastIndexOf(' ') + 1)
-            numbers.push(parseInt(number))
-          }
-        }
-        const index = numbers.length === 0 ? 1 : Math.max(...numbers) + 1
-        const tabName = `${customPlotPrefix} ${index}`
-        const emptyPlotSpecification = { plots: [makeEmptyPlotSpecification()] }
-        storeCustomPlotSpecification(
+      state,
+      errorMessage,
+      scenarios,
+      investigationTab,
+      comparisonTab,
+      removeExecution(executionId) {
+        destroyExecution(
           props.projectId,
-          props.analysisUrl,
-          tabName,
-          emptyPlotSpecification
-        ).then(function () {
-          customPlotTabs.value.push(tabName)
-          currentTab.value = tabName
-        })
-      },
-      closeTab(name) {
-        for (const [index, tab] of customPlotTabs.value.entries()) {
-          if (tab === name) {
-            removeCustomPlotSpecification(props.projectId, props.analysisUrl, name).then(
-              function () {
-                customPlotTabs.value.splice(index, 1)
-              }
-            )
-            return
-          }
-        }
-        throw new Error(`Logic error: tab '${name}' not found`)
-      },
-      renameTab(renameData) {
-        if (renameData.new === 'Summary' || renameData.new === 'Default plots') {
-          message.error('Cannot rename tab: name already in use.')
-          return
-        }
-        for (const tab of customPlotTabs.value) {
-          if (renameData.new === tab) {
-            message.error('Cannot rename tab: name already in use.')
-            return
-          }
-        }
-        for (const [i, tab] of customPlotTabs.value.entries()) {
-          if (renameData.old === tab) {
-            renameCustomPlotSpecification(
-              props.projectId,
-              props.analysisUrl,
-              renameData.old,
-              renameData.new
-            ).then(function () {
-              const wasSelected = tab === currentTab.value
-              customPlotTabs.value[i] = renameData.new
-              if (wasSelected) {
-                currentTab.value = renameData.new
-              }
-            })
-            return
-          }
-        }
-        throw new Error(`Couldn't find tab '${renameData.old}' for renaming`)
+          props.summaryUrl,
+          executionId,
+          scenarios,
+          setExecutionBusyInTabs,
+          removeExecutionFromTabs,
+          message
+        )
       }
     }
   }
@@ -286,17 +201,7 @@ export default {
 </script>
 
 <style>
-#main-layout {
-  top: 100px;
-  margin-left: 1em;
-}
-
 .tab-icon {
   margin-right: 10px;
-}
-
-.tab-pane-scroll {
-  overflow: auto;
-  height: calc(100vh - 163px);
 }
 </style>

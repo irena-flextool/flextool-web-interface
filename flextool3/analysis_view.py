@@ -4,6 +4,7 @@ from operator import attrgetter
 from django.http import JsonResponse, HttpResponseBadRequest
 from sqlalchemy.sql.expression import Alias, and_
 
+from .exception import FlexToolException
 from .utils import Database, database_map, EntityType, get_and_validate
 from .view_utils import resolve_scenario_execution
 
@@ -234,7 +235,10 @@ def _query_parameter_values(
             and _reject_objects(objects, accept_objects)
         ):
             continue
-        execution = alternative_to_execution[row.alternative_id]
+        try:
+            execution = alternative_to_execution[row.alternative_id]
+        except KeyError:
+            raise FlexToolException(f"No execution for alternative id.")
         record = {
             "class": get_class_name(row),
             "object_classes": get_object_labels(row),
@@ -452,16 +456,18 @@ def _execution_alternatives(project, body):
     }
 
 
-def get_default_plot_specification(project):
+def get_default_plot_specification(project, body):
     """Sends the default plot specification to client.
 
     Args:
         project (Project): a project
+        body (dict): request body
 
     Returns:
         HTTPResponse: a response object
     """
-    specification_path = project.default_plot_specification_path()
+    category = get_and_validate(body, "category", str)
+    specification_path = project.default_plot_specification_path(category)
     if not specification_path.exists():
         return JsonResponse({"plot_specification": json.dumps({"plots": []})})
     return JsonResponse(
@@ -469,16 +475,18 @@ def get_default_plot_specification(project):
     )
 
 
-def get_custom_plot_specification_names(project):
+def get_custom_plot_specification_names(project, body):
     """Sends the names of all custom plot specifications to client.
 
     Args:
         project (Project): a project
+        body (dict): request body
 
     Returns:
         HTTPResponse: a response object
     """
-    specification_directory = project.custom_plot_specifications_directory()
+    category = get_and_validate(body, "category", str)
+    specification_directory = project.custom_plot_specification_directory(category)
     return JsonResponse(
         {"names": [path.stem for path in specification_directory.glob("*.json")]}
     )
@@ -495,7 +503,8 @@ def get_custom_plot_specification(project, body):
         HTTPResponse: a response object
     """
     name = get_and_validate(body, "name", str)
-    specification_directory = project.custom_plot_specifications_directory()
+    category = get_and_validate(body, "category", str)
+    specification_directory = project.custom_plot_specification_directory(category)
     specification_path = specification_directory / (name + ".json")
     if not specification_path.exists():
         return HttpResponseBadRequest("Specification not found.")
@@ -514,8 +523,9 @@ def set_default_plot_specification(project, body):
     Returns:
         HTTPResponse: a response object
     """
+    category = get_and_validate(body, "category", str)
     plot_specification = get_and_validate(body, "specification", dict)
-    specification_path = project.default_plot_specification_path()
+    specification_path = project.default_plot_specification_path(category)
     specification_path.write_text(
         json.dumps(plot_specification, sort_keys=True, indent=2), encoding="utf-8"
     )
@@ -533,8 +543,9 @@ def set_custom_plot_specification(project, body):
         HTTPResponse: a response object
     """
     name = get_and_validate(body, "name", str)
+    category = get_and_validate(body, "category", str)
     plot_specification = get_and_validate(body, "specification", dict)
-    specification_directory = project.custom_plot_specifications_directory()
+    specification_directory = project.custom_plot_specification_directory(category)
     specification_path = specification_directory / (name + ".json")
     specification_path.write_text(
         json.dumps(plot_specification, sort_keys=True, indent=2), encoding="utf-8"
@@ -553,7 +564,8 @@ def remove_custom_plot_specification(project, body):
         HTTPResponse: a response object
     """
     name = get_and_validate(body, "name", str)
-    specification_directory = project.custom_plot_specifications_directory()
+    category = get_and_validate(body, "category", str)
+    specification_directory = project.custom_plot_specification_directory(category)
     specification_path = specification_directory / (name + ".json")
     try:
         specification_path.unlink()
@@ -574,7 +586,8 @@ def rename_custom_plot_specification(project, body):
     """
     name = get_and_validate(body, "name", str)
     new_name = get_and_validate(body, "newName", str)
-    specification_directory = project.custom_plot_specifications_directory()
+    category = get_and_validate(body, "category", str)
+    specification_directory = project.custom_plot_specification_directory(category)
     specification_path = specification_directory / (name + ".json")
     if not specification_path.exists():
         return HttpResponseBadRequest("Specification not found.")

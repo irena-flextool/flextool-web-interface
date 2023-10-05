@@ -107,6 +107,7 @@
       :scenario-execution-ids="scenarioExecutionIds"
       :plot-specification="plotSpecification"
       @update:name="emitPlotNameUpdate"
+      ref="plotFigure"
     />
     <n-empty v-else :description="cannotPlotMessage" />
   </n-space>
@@ -440,6 +441,7 @@ export default {
   },
   setup(props, context) {
     const expandedItems = ref([])
+    const plotFigure = ref(null)
     if (props.isCustom) {
       expandedItems.value.push('plot-settings')
     }
@@ -512,9 +514,7 @@ export default {
         plotSpecification.selection.parameter.length > 0
       )
     })
-    watch(toRef(props, 'scenarioExecutionIds'), function () {
-      parameterIndexUpdateCallback()
-    })
+    watch(toRef(props, 'scenarioExecutionIds'), parameterIndexUpdateCallback)
     watch(toRef(plotSpecification, 'plot_type'), function (plotType) {
       context.emit('plotTypeChanged', { identifier: props.identifier, plotType: plotType })
     })
@@ -546,6 +546,7 @@ export default {
     })
     return {
       expandedItems,
+      plotFigure,
       availableIndexNames: dimensionsOptions,
       selectionSelects,
       plotSpecification,
@@ -566,6 +567,12 @@ export default {
       },
       emitPlotNameUpdate(nameInfo) {
         context.emit('update:name', nameInfo)
+      },
+      notifyActivated() {
+        if (!plottingPossible.value || plotFigure.value === null) {
+          return
+        }
+        plotFigure.value.notifyActivated()
       }
     }
   }

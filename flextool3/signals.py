@@ -1,10 +1,11 @@
-from shutil import rmtree
+import multiprocessing as mp
 from django.dispatch import receiver
 from django.db.models.signals import pre_delete
 
 from flextool3.models import ScenarioExecution
 from flextool3.utils import database_map, Database, FlexToolException
 
+from .side_quest import delete_directory
 
 @receiver(pre_delete, sender=ScenarioExecution)
 def delete_result_data(sender, **kwargs):
@@ -18,7 +19,8 @@ def delete_result_data(sender, **kwargs):
     summary_path = scenario_execution.summary_path()
     if summary_path is not None:
         tool_output_path = summary_path.parent.parent
-        rmtree(tool_output_path)
+        deletion_process = mp.Process(target=delete_directory, args=(tool_output_path,))
+        deletion_process.start()
     try:
         alternative_id = scenario_execution.results_alternative_id()
     except FlexToolException:

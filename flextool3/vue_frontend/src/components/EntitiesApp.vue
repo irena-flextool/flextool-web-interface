@@ -27,7 +27,7 @@
         @commitRequest="commit"
       />
     </template>
-    <n-layout id="main-layout" has-sider position="absolute">
+    <n-layout has-sider position="absolute">
       <n-layout-sider :width="siderWidth">
         <n-space>
           <n-space vertical>
@@ -263,9 +263,3 @@ export default {
   }
 }
 </script>
-
-<style>
-#main-layout {
-  top: 270px;
-}
-</style>

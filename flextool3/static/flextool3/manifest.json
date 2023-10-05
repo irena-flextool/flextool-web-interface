@@ -20,24 +20,17 @@
   "__plugin-vue_export-helper-0666fbf1.js": {
     "file": "assets/_plugin-vue_export-helper-0666fbf1.js"
   },
-  "_communication-ed06992e.js": {
-    "css": [
-      "assets/communication-1b59de5f.css"
-    ],
-    "file": "assets/communication-ed06992e.js",
+  "_communication-2a568822.js": {
+    "file": "assets/communication-2a568822.js",
     "imports": [
       "__plugin-vue_export-helper-0666fbf1.js"
     ]
   },
-  "_executions-940609e9.js": {
-    "file": "assets/executions-940609e9.js",
+  "_executions-b70e0910.js": {
+    "file": "assets/executions-b70e0910.js",
     "imports": [
-      "_communication-ed06992e.js"
+      "_communication-2a568822.js"
     ]
-  },
-  "communication.css": {
-    "file": "assets/communication-1b59de5f.css",
-    "src": "communication.css"
   },
   "src/detail.css": {
     "file": "assets/detail-73fc16c6.css",
@@ -50,8 +43,8 @@
     "file": "detail.js",
     "imports": [
       "__plugin-vue_export-helper-0666fbf1.js",
-      "_communication-ed06992e.js",
-      "_executions-940609e9.js",
+      "_communication-2a568822.js",
+      "_executions-b70e0910.js",
       "_Fetchable-59ae5fbd.js"
     ],
     "isEntry": true,
@@ -61,24 +54,24 @@
     "file": "edit.js",
     "imports": [
       "__plugin-vue_export-helper-0666fbf1.js",
-      "_communication-ed06992e.js",
+      "_communication-2a568822.js",
       "_Fetchable-59ae5fbd.js"
     ],
     "isEntry": true,
     "src": "src/edit.js"
   },
   "src/entities.css": {
-    "file": "assets/entities-7a3cd628.css",
+    "file": "assets/entities-8cc7fd7c.css",
     "src": "src/entities.css"
   },
   "src/entities.js": {
     "css": [
-      "assets/entities-7a3cd628.css"
+      "assets/entities-8cc7fd7c.css"
     ],
     "file": "entities.js",
     "imports": [
       "__plugin-vue_export-helper-0666fbf1.js",
-      "_communication-ed06992e.js",
+      "_communication-2a568822.js",
       "_NewNamedItemRow-e38ece02.js",
       "_Fetchable-59ae5fbd.js",
       "_ItemNameInput-672f3faa.js"
@@ -97,25 +90,25 @@
     "file": "index.js",
     "imports": [
       "__plugin-vue_export-helper-0666fbf1.js",
-      "_communication-ed06992e.js"
+      "_communication-2a568822.js"
     ],
     "isEntry": true,
     "src": "src/index.js"
   },
   "src/results.css": {
-    "file": "assets/results-6bd13645.css",
+    "file": "assets/results-be9e95e4.css",
     "src": "src/results.css"
   },
   "src/results.js": {
     "css": [
-      "assets/results-6bd13645.css"
+      "assets/results-be9e95e4.css"
     ],
     "file": "results.js",
     "imports": [
       "__plugin-vue_export-helper-0666fbf1.js",
-      "_communication-ed06992e.js",
-      "_ItemNameInput-672f3faa.js",
-      "_Fetchable-59ae5fbd.js"
+      "_communication-2a568822.js",
+      "_Fetchable-59ae5fbd.js",
+      "_ItemNameInput-672f3faa.js"
     ],
     "isEntry": true,
     "src": "src/results.js"
@@ -124,9 +117,9 @@
     "file": "run.js",
     "imports": [
       "__plugin-vue_export-helper-0666fbf1.js",
-      "_communication-ed06992e.js",
+      "_communication-2a568822.js",
       "_Fetchable-59ae5fbd.js",
-      "_executions-940609e9.js"
+      "_executions-b70e0910.js"
     ],
     "isEntry": true,
     "src": "src/run.js"
@@ -135,7 +128,7 @@
     "file": "scenarios.js",
     "imports": [
       "__plugin-vue_export-helper-0666fbf1.js",
-      "_communication-ed06992e.js",
+      "_communication-2a568822.js",
       "_NewNamedItemRow-e38ece02.js",
       "_Fetchable-59ae5fbd.js",
       "_ItemNameInput-672f3faa.js"
