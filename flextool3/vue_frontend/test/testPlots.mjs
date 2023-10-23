@@ -4,7 +4,8 @@ import {
   filterDeselectedIndexNames,
   makeBasicChart,
   makeHeatmapChart,
-  makePlotSpecificationBundle
+  makePlotSpecificationBundle,
+  stackLines
 } from '../src/modules/plots.mjs'
 import { valueIndexKeyPrefix } from '../src/modules/plotEditors.mjs'
 
@@ -784,6 +785,91 @@ describe('plots module', function () {
       bundle.add({ number: 1 })
       bundle.add({ number: 2 })
       assert.deepEqual(bundle.asArray(), [{ number: 1 }, { number: 2 }])
+    })
+  })
+  describe('stackLines', function () {
+    it('should stack positive y to positive stack group', function () {
+      const line = {
+        x: [-1, 0, 1],
+        y: [2, 3, 1],
+        name: 'positive line',
+        showlegend: true,
+        marker: {
+          color: '#ffffff'
+        },
+        line: {
+          color: '#aaaabb'
+        },
+        fillcolor: '#ccffee'
+      }
+      const plotObject = {
+        data: [line],
+        layout: { xaxis: { title: '(X)' } },
+        config: { responsive: true }
+      }
+      const stacked = stackLines(plotObject)
+      const expected = plotObject
+      expected.data[0].stackgroup = 'positive'
+      assert.deepEqual(stacked, expected)
+    })
+    it('should stack negative y to negative stack group', function () {
+      const line = {
+        x: [-1, 0, 1],
+        y: [-2, -3, -1],
+        name: 'negative line',
+        showlegend: true,
+        marker: {
+          color: '#ffffff'
+        },
+        line: {
+          color: '#aaaabb'
+        },
+        fillcolor: '#ccffee'
+      }
+      const plotObject = {
+        data: [line],
+        layout: { xaxis: { title: '(X)' } },
+        config: { responsive: true }
+      }
+      const stacked = stackLines(plotObject)
+      const expected = plotObject
+      expected.data[0].stackgroup = 'negative'
+      assert.deepEqual(stacked, expected)
+    })
+    it('should break negative and positive y into different stack groups', function () {
+      const line = {
+        x: [-1, 0, 1],
+        y: [-2, 3, -1],
+        name: 'negative line',
+        showlegend: true,
+        marker: {
+          color: '#ffffff'
+        },
+        line: {
+          color: '#aaaabb'
+        },
+        fillcolor: '#ccffee'
+      }
+      const plotObject = {
+        data: [line],
+        layout: { xaxis: { title: '(X)' } },
+        config: { responsive: true }
+      }
+      const stacked = stackLines(plotObject)
+      const positiveLine = {
+        ...line,
+        y: [0, 3, 0],
+        stackgroup: 'positive'
+      }
+      const negativeLine = {
+        ...line,
+        y: [-2, 0, -1],
+        stackgroup: 'negative',
+        showlegend: false
+      }
+      const expected = plotObject
+      expected.data = [positiveLine, negativeLine]
+      assert.deepEqual(stacked, expected)
     })
   })
 })

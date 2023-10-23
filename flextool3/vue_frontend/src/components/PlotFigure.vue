@@ -18,7 +18,12 @@ import { DataFrame } from 'data-forge'
 import { downloadAsCsv } from '../modules/figures.mjs'
 import { fetchResultParameterValues } from '../modules/communication.mjs'
 import { objectify } from '../modules/parameterValues.mjs'
-import { filterDeselectedIndexNames, makeBasicChart, makeHeatmapChart } from '../modules/plots.mjs'
+import {
+  filterDeselectedIndexNames,
+  makeBasicChart,
+  makeHeatmapChart,
+  stackLines
+} from '../modules/plots.mjs'
 import { timeFormat } from '../modules/scenarios.mjs'
 import {
   entityClassKey,
@@ -48,6 +53,8 @@ function plotMinHeight(subplotCount) {
   }
 }
 
+const lineShape = { shape: 'hvh' }
+
 /**
  * Changes plot type.
  * @param {DataFrame} dataFrame Data frame to plot.
@@ -71,20 +78,21 @@ function replot(dataFrame, plotSpecification, plotId, plotDivStyle, ongoingPlott
         dataFrame,
         plotSpecification.dimensions,
         { type: 'bar' },
-        { barmode: 'stack' }
+        { barmode: 'relative' }
       )
       break
     case 'line':
       plotObject = makeBasicChart(dataFrame, plotSpecification.dimensions, {
-        line: { shape: 'hvh' }
+        line: { ...lineShape }
       })
       break
     case 'stacked line':
-      plotObject = makeBasicChart(dataFrame, plotSpecification.dimensions, {
-        line: { shape: 'hvh' },
-        mode: 'none',
-        stackgroup: 'a'
-      })
+      plotObject = stackLines(
+        makeBasicChart(dataFrame, plotSpecification.dimensions, {
+          line: { ...lineShape },
+          mode: 'none'
+        })
+      )
       break
     case 'heatmap':
       plotObject = makeHeatmapChart(dataFrame, plotSpecification.dimensions)

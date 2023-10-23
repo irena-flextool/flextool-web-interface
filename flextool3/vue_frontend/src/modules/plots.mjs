@@ -194,6 +194,68 @@ function makeBasicChart(dataFrame, plotDimensions, staticData = {}, staticLayout
   }
 }
 
+const postiviveStackGroup = 'positive'
+const negativeStackGroup = 'negative'
+
+/**Breaks line plots into negative and positive stacks.
+ * @param {object} plotObject Plot object to stack.
+ * @returns {object} Stacked plot object.
+ */
+function stackLines(plotObject) {
+  const stackedData = []
+  for (const line of plotObject.data) {
+    const positiveY = []
+    const negativeY = []
+    let hasPositiveY = false
+    let hasNegativeY = false
+    for (const y of line.y) {
+      if (y >= 0) {
+        hasPositiveY = true
+        positiveY.push(y)
+        negativeY.push(0.0)
+      } else {
+        hasNegativeY = true
+        positiveY.push(0.0)
+        negativeY.push(y)
+      }
+    }
+    if (hasPositiveY && !hasNegativeY) {
+      stackedData.push({
+        ...line,
+        x: line.x,
+        y: positiveY,
+        stackgroup: postiviveStackGroup
+      })
+    } else if (!hasPositiveY && hasNegativeY) {
+      stackedData.push({
+        ...line,
+        x: line.x,
+        y: negativeY,
+        stackgroup: negativeStackGroup
+      })
+    } else {
+      stackedData.push({
+        ...line,
+        x: line.x,
+        y: positiveY,
+        stackgroup: postiviveStackGroup
+      })
+      stackedData.push({
+        ...line,
+        x: line.x,
+        y: negativeY,
+        stackgroup: negativeStackGroup,
+        showlegend: false
+      })
+    }
+  }
+  return {
+    data: stackedData,
+    layout: plotObject.layout,
+    config: plotObject.config
+  }
+}
+
 /**Creates a plot object for heatmap chart types.
  * @param {DataFrame} dataFrame Plot data.
  * @param {object} plotDimensions Plot dimensions specification.
@@ -580,5 +642,6 @@ export {
   makeHeatmapChart,
   makePlotSpecificationBundle,
   makeEmptyPlotSpecification,
+  stackLines,
   updateSpecification
 }
