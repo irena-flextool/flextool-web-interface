@@ -163,6 +163,7 @@ function makeBasicChart(dataFrame, plotDimensions, staticData = {}, staticLayout
       y: window.deflate((row) => row.y).toArray(),
       name: name,
       showlegend: showLegend,
+      legendgroup: name,
       marker: {
         color: color
       },

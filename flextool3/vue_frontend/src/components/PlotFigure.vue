@@ -55,19 +55,12 @@ function plotMinHeight(subplotCount) {
 
 const lineShape = { shape: 'hvh' }
 
-/**
- * Changes plot type.
+/**Creates plot object.
  * @param {DataFrame} dataFrame Data frame to plot.
  * @param {object} plotSpecification Plot specification.
- * @param {string} plotId Plot div element id.
- * @param {Ref} plotDivStyle Plot div element.
- * @param {object} ongoingPlottingTasks Structure that contains information about running plotting tasks.
- * @return {string} Plot name.
+ * @returns {object} Plot object or undefined if there is nothing to plot.
  */
-function replot(dataFrame, plotSpecification, plotId, plotDivStyle, ongoingPlottingTasks) {
-  if (ongoingPlottingTasks.cancelling) {
-    return null
-  }
+function makePlotObject(dataFrame, plotSpecification) {
   let plotObject = undefined
   switch (plotSpecification.plot_type) {
     case 'bar':
@@ -102,6 +95,23 @@ function replot(dataFrame, plotSpecification, plotId, plotDivStyle, ongoingPlott
     default:
       throw new Error(`Unknown plot type '${plotSpecification.plot_type}'`)
   }
+  return plotObject
+}
+
+/**
+ * Changes plot type.
+ * @param {DataFrame} dataFrame Data frame to plot.
+ * @param {object} plotSpecification Plot specification.
+ * @param {string} plotId Plot div element id.
+ * @param {Ref} plotDivStyle Plot div element.
+ * @param {object} ongoingPlottingTasks Structure that contains information about running plotting tasks.
+ * @return {string} Plot name.
+ */
+function replot(dataFrame, plotSpecification, plotId, plotDivStyle, ongoingPlottingTasks) {
+  if (ongoingPlottingTasks.cancelling) {
+    return null
+  }
+  const plotObject = makePlotObject(dataFrame, plotSpecification)
   let plotName = null
   if (plotObject !== undefined && !ongoingPlottingTasks.cancelling) {
     const subplotCount =
@@ -116,10 +126,11 @@ function replot(dataFrame, plotSpecification, plotId, plotDivStyle, ongoingPlott
       }
     }
     nextTick(function () {
-      if (!document.body.contains(document.getElementById(plotId))) {
+      const plotDiv = document.getElementById(plotId)
+      if (!document.body.contains(plotDiv)) {
         return
       }
-      Plotly.newPlot(plotId, plotObject)
+      Plotly.react(plotId, plotObject)
     })
   }
   return plotName

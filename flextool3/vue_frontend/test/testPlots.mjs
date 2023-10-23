@@ -61,7 +61,8 @@ describe('plots module', function () {
         fillcolor: defaultColor,
         line: { color: defaultColor },
         marker: { color: defaultColor },
-        showlegend: true
+        showlegend: true,
+        legendgroup: name
       })
     }
     return {
