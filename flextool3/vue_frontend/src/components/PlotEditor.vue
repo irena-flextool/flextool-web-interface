@@ -61,6 +61,20 @@
                 :consistent-menu-width="false"
               />
             </n-space>
+            <n-space vertical>
+              <n-text strong>List by:</n-text>
+              <n-select
+                class="dimension-select"
+                v-model:value="plotSpecification.dimensions.list_by"
+                filterable
+                tag
+                clearable
+                palaceholder="No list"
+                :options="availableIndexNames"
+                @update:value="resolveDimensionConflictsListBy"
+                :consistent-menu-width="false"
+              />
+            </n-space>
           </n-space>
         </n-thing>
         <n-thing>
@@ -172,6 +186,9 @@ function nullifyDuplicateDimensions(value, priorityDimension, plotDimensions) {
   }
   if (priorityDimension !== 'separate_window' && value === plotDimensions.separate_window) {
     plotDimensions.separate_window = null
+  }
+  if (priorityDimension !== 'list_by' && value == plotDimensions.list_by) {
+    plotDimensions.list_by = null
   }
 }
 
@@ -564,6 +581,9 @@ export default {
       },
       resolveDimensionConflictsSeparateWindow(value) {
         nullifyDuplicateDimensions(value, 'separate_window', plotSpecification.dimensions)
+      },
+      resolveDimensionConflictsListBy(value) {
+        nullifyDuplicateDimensions(value, 'list_by', plotSpecification.dimensions)
       },
       emitPlotNameUpdate(nameInfo) {
         context.emit('update:name', nameInfo)

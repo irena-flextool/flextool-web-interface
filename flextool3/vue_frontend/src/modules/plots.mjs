@@ -92,6 +92,9 @@ function updateSpecification(specification) {
   if (!specification.name) {
     specification.name = null
   }
+  if (!specification.dimensions.list_by) {
+    specification.dimensions.list_by = null
+  }
 }
 
 /**Creates an empty plot specification.
@@ -104,6 +107,7 @@ function makeEmptyPlotSpecification() {
     selection: { entity_class: [], parameter: [] },
     dimensions: {
       separate_window: null,
+      list_by: null,
       x1: null,
       x2: null,
       x3: null
@@ -126,7 +130,7 @@ function isParameterIndexName(name) {
  * @param {object} plotDimensions Plot dimensions specification.
  * @param {object} staticData Additional static plot data.
  * @param {object} staticLayout Additional static layout data.
- * @returns {object} Plot object.
+ * @returns {object} Plot object and a map from list value to line name.
  */
 function makeBasicChart(dataFrame, plotDimensions, staticData = {}, staticLayout = {}) {
   const specialColumns = declareSpecialColumns(dataFrame, plotDimensions)
@@ -134,7 +138,8 @@ function makeBasicChart(dataFrame, plotDimensions, staticData = {}, staticLayout
   let { lineWindows, plotName } = prepareForPlotting(
     dataFrame,
     categoryColumns,
-    plotDimensions.separate_window
+    plotDimensions.separate_window,
+    plotDimensions.list_by
   )
   let subplot = null
   if (plotDimensions.separate_window !== null) {
@@ -142,15 +147,23 @@ function makeBasicChart(dataFrame, plotDimensions, staticData = {}, staticLayout
     lineWindows = subplot.lineWindows
   }
   const data = []
+  const listValues = new Map()
   const colors = new Map()
   const colorGenerator = new ColorGenerator()
   for (const window of lineWindows) {
+    let listValue = null
+    if (plotDimensions.list_by !== null && window.hasSeries(plotDimensions.list_by)) {
+      listValue = window.first()[plotDimensions.list_by]
+    }
     let subplotData = {}
     if (subplot !== null) {
       const subplotCategory = subplot.windowSubplotCategories.splice(0, 1)[0]
       subplotData = subplot.windowSubplotData.get(subplotCategory)
     }
     const name = makeLineLabel(window, categoryColumns)
+    if (listValue !== null) {
+      listValues.set(listValue, name)
+    }
     let color = colors.get(name)
     const showLegend = color === undefined
     if (showLegend) {
@@ -183,15 +196,17 @@ function makeBasicChart(dataFrame, plotDimensions, staticData = {}, staticLayout
   if (plotName !== null) {
     layout.title = plotName
   }
-  if (data.every((d) => d.name.length === 0)) {
-    layout.showlegend = false
-  }
+  layout.showlegend =
+    data.reduce((nonEmptyNames, name) => nonEmptyNames + (name.length === 0 ? 0 : 1), 0) > 0
   const config = { ...defaultConfig }
 
   return {
-    data: data,
-    layout: layout,
-    config: config
+    plotObject: {
+      data: data,
+      layout: layout,
+      config: config
+    },
+    listValues
   }
 }
 
@@ -392,8 +407,7 @@ function makeSubplotData(lineWindows, separateWindow, specialColumns, staticLayo
     lineWindows: separatedWindows,
     subplotLayout: subplotLayout,
     windowSubplotData: windowSubplotData,
-    windowSubplotCategories: windowSubplotCategories,
-    subplotAnnotations: subplotAnnotations
+    windowSubplotCategories: windowSubplotCategories
   }
 }
 
@@ -517,29 +531,19 @@ function makeLineLabel(lineWindow, categoryColumns) {
   return nameParts.join(' | ')
 }
 
+/** Collects names of columns that contain the same data.
+ * @param {DataFrame} dataFrame Data frame.
+ * @returns {string[]} Array of column names.
+ */
 function distinctColumns(dataFrame) {
-  let columns = dataFrame.getColumnNames()
-  const distinct = new Map()
-  for (const row of dataFrame) {
-    const surviving = []
-    for (const column of columns) {
-      if (column === 'y') {
-        continue
-      }
-      const existing = distinct.get(column)
-      if (existing === undefined) {
-        distinct.set(column, row[column])
-        surviving.push(column)
-      } else if (row[column] === existing) {
-        surviving.push(column)
-      }
-    }
-    columns = surviving
-    if (surviving.length === 0) {
-      break
+  const distinct = []
+  for (const column of dataFrame.getColumns()) {
+    const first = column.series.first()
+    if (column.name !== 'y' && column.series.all((x) => x === first)) {
+      distinct.push(column.name)
     }
   }
-  return columns
+  return distinct
 }
 
 /**Decides which columns are special.
@@ -597,16 +601,20 @@ function filterDeselectedIndexNames(dataFrame, plotSelection) {
 /**Breaks data into lines.
  * @param {DataFrame} dataFrame Data frame to prepare.
  * @param {Set} categoryColumns Category columns.
- * @param {number} subplotTitleColumn Column index of sublot title.
+ * @param {string} subplotTitleColumn Name of the subplot title column.
+ * @param {string} listColumn Name of separate list column.
  * @return {Array} Lines and final plot name.
  */
-function prepareForPlotting(dataFrame, categoryColumns, subplotTitleColumn) {
+function prepareForPlotting(dataFrame, categoryColumns, subplotTitleColumn, listColumn) {
   const distinct = distinctColumns(dataFrame)
   let plotName = null
   if (distinct.length > 0) {
     const actuallyNonDistinctColumns = new Set(categoryColumns)
-    if (subplotTitleColumn !== undefined) {
+    if (subplotTitleColumn !== null) {
       actuallyNonDistinctColumns.add(subplotTitleColumn)
+    }
+    if (listColumn != null) {
+      actuallyNonDistinctColumns.add(listColumn)
     }
     for (const droppableColumn of actuallyNonDistinctColumns) {
       const droppedIndex = distinct.indexOf(droppableColumn)

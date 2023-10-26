@@ -68,7 +68,7 @@ describe('plots module', function () {
     return {
       data: charts,
       config: { displaylogo: false, responsive: true },
-      layout: { title: '', xaxis: { title: '', automargin: true }, showlegend: false }
+      layout: { title: '', xaxis: { title: '', automargin: true }, showlegend: true }
     }
   }
 
@@ -85,15 +85,17 @@ describe('plots module', function () {
         x1: null,
         x2: null,
         x3: null,
-        separate_window: null
+        separate_window: null,
+        list_by: null
       }
-      const plotData = makeBasicChart(data, plotDimensions)
+      const { plotObject, listValues } = makeBasicChart(data, plotDimensions)
       const expected = make_empty_basic_chart_plot_data([''])
       expected.data[0].x = ['T1']
       expected.data[0].y = [2.3]
       expected.layout.title = 'my_data'
       expected.layout.xaxis.title = 'x'
-      assert.deepEqual(plotData, expected)
+      assert.deepEqual(plotObject, expected)
+      assert.equal(listValues.size, 0)
     })
     it('should ignore x2 if it is the same as defaulted x1', function () {
       const data = new DataFrame([
@@ -107,15 +109,17 @@ describe('plots module', function () {
         x1: null,
         x2: valueIndexKeyPrefix + 'x',
         x3: null,
-        separate_window: null
+        separate_window: null,
+        list_by: null
       }
-      const plotData = makeBasicChart(data, plotDimensions)
+      const { plotObject, listValues } = makeBasicChart(data, plotDimensions)
       const expected = make_empty_basic_chart_plot_data([''])
       expected.data[0].x = ['T1']
       expected.data[0].y = [2.3]
       expected.layout.title = 'my_data'
       expected.layout.xaxis.title = 'x'
-      assert.deepEqual(plotData, expected)
+      assert.deepEqual(plotObject, expected)
+      assert.equal(listValues.size, 0)
     })
     it('should ignore x3 if it is the same as defaulted x1', function () {
       const data = new DataFrame([
@@ -130,15 +134,17 @@ describe('plots module', function () {
         x1: null,
         x2: valueIndexKeyPrefix + 'j',
         x3: valueIndexKeyPrefix + 'x',
-        separate_window: null
+        separate_window: null,
+        list_by: null
       }
-      const plotData = makeBasicChart(data, plotDimensions)
+      const { plotObject, listValues } = makeBasicChart(data, plotDimensions)
       const expected = make_empty_basic_chart_plot_data([''])
       expected.data[0].x = [['your_data'], ['T1']]
       expected.data[0].y = [2.3]
       expected.layout.title = 'my_data'
       expected.layout.xaxis.title = 'x'
-      assert.deepEqual(plotData, expected)
+      assert.deepEqual(plotObject, expected)
+      assert.equal(listValues.size, 0)
     })
     it('should create subplots correctly', function () {
       const data = new DataFrame([
@@ -157,9 +163,10 @@ describe('plots module', function () {
         x1: null,
         x2: null,
         x3: null,
-        separate_window: valueIndexKeyPrefix + 'i'
+        separate_window: valueIndexKeyPrefix + 'i',
+        list_by: null
       }
-      const plotData = makeBasicChart(data, plotDimensions)
+      const { plotObject, listValues } = makeBasicChart(data, plotDimensions)
       const expected = make_empty_basic_chart_plot_data(['', ''])
       expected.data[0].x = ['T1']
       expected.data[0].y = [2.3]
@@ -196,9 +203,10 @@ describe('plots module', function () {
           yref: 'y2 domain'
         }
       ]
-      assert.deepEqual(plotData, expected)
+      assert.deepEqual(plotObject, expected)
+      assert.equal(listValues.size, 0)
     })
-    it('should give colors with different names different colors and show them on legend', function () {
+    it('should give lines with different names different colors and show them on legend', function () {
       const data = new DataFrame([
         {
           [valueIndexKeyPrefix + 'i']: 'data 1',
@@ -215,9 +223,10 @@ describe('plots module', function () {
         x1: null,
         x2: null,
         x3: null,
-        separate_window: null
+        separate_window: null,
+        list_by: null
       }
-      const plotData = makeBasicChart(data, plotDimensions)
+      const { plotObject, listValues } = makeBasicChart(data, plotDimensions)
       const expected = make_empty_basic_chart_plot_data(['data 1', 'data 2'])
       expected.data[0].x = ['T1']
       expected.data[0].y = [2.3]
@@ -229,8 +238,37 @@ describe('plots module', function () {
       expected.data[1].marker.color = defaultSecondColor
       expected.layout.title = ''
       expected.layout.xaxis.title = 'x'
-      delete expected.layout.showlegend
-      assert.deepEqual(plotData, expected)
+      assert.deepEqual(plotObject, expected)
+      assert.equal(listValues.size, 0)
+    })
+    it('should connect list value to plot name with single plot', function () {
+      const data = new DataFrame([
+        {
+          [valueIndexKeyPrefix + 'q']: 'results',
+          [valueIndexKeyPrefix + 'i']: 'my_data',
+          [valueIndexKeyPrefix + 'x']: 'T1',
+          y: 2.3
+        }
+      ])
+      const plotDimensions = {
+        x1: null,
+        x2: null,
+        x3: null,
+        separate_window: null,
+        list_by: valueIndexKeyPrefix + 'q'
+      }
+      const { plotObject, listValues } = makeBasicChart(data, plotDimensions)
+      const expected = make_empty_basic_chart_plot_data([''])
+      expected.data[0].x = ['T1']
+      expected.data[0].y = [2.3]
+      expected.data[0].name = 'results'
+      expected.data[0].legendgroup = 'results'
+      expected.data[0].showlegend = true
+      expected.layout.title = 'my_data'
+      expected.layout.xaxis.title = 'x'
+      assert.deepEqual(plotObject, expected)
+      assert.equal(listValues.size, 1)
+      assert.equal(listValues.get('results'), 'results')
     })
   })
 
@@ -243,9 +281,9 @@ describe('plots module', function () {
         x3: null,
         separate_window: null
       }
-      const plotData = makeHeatmapChart(data, plotDimensions)
+      const plotObject = makeHeatmapChart(data, plotDimensions)
       const expected = make_empty_heat_map_plot_data()
-      assert.deepEqual(plotData, expected)
+      assert.deepEqual(plotObject, expected)
     })
     it('should work with single data point', function () {
       const data = new DataFrame([
@@ -262,14 +300,14 @@ describe('plots module', function () {
         x3: null,
         separate_window: null
       }
-      const plotData = makeHeatmapChart(data, plotDimensions)
+      const plotObject = makeHeatmapChart(data, plotDimensions)
       const expected = make_empty_heat_map_plot_data()
       expected.data[0].x = ['T1']
       expected.data[0].y = ['']
       expected.data[0].z = [[2.3]]
       expected.layout.title = '11-12-13 | my_data'
       expected.layout.xaxis.title = 'x'
-      assert.deepEqual(plotData, expected)
+      assert.deepEqual(plotObject, expected)
     })
     it('should organize data correctly for regular plot', function () {
       const data = new DataFrame([
@@ -308,7 +346,7 @@ describe('plots module', function () {
         x3: null,
         separate_window: null
       }
-      const plotData = makeHeatmapChart(data, plotDimensions)
+      const plotObject = makeHeatmapChart(data, plotDimensions)
       const expected = make_empty_heat_map_plot_data()
       expected.data[0].x = ['T1', 'T2']
       expected.data[0].y = ['alt_1', 'alt_2']
@@ -318,7 +356,7 @@ describe('plots module', function () {
       ]
       expected.layout.title = '11-12-13 | data_1'
       expected.layout.xaxis.title = 'x'
-      assert.deepEqual(plotData, expected)
+      assert.deepEqual(plotObject, expected)
     })
     it('should fill holes in data by nulls', function () {
       const data = new DataFrame([
@@ -341,7 +379,7 @@ describe('plots module', function () {
         x3: null,
         separate_window: null
       }
-      const plotData = makeHeatmapChart(data, plotDimensions)
+      const plotObject = makeHeatmapChart(data, plotDimensions)
       const expected = make_empty_heat_map_plot_data()
       expected.data[0].x = ['T1', 'T2']
       expected.data[0].y = ['data_1', 'data_2']
@@ -351,7 +389,7 @@ describe('plots module', function () {
       ]
       expected.layout.title = '11-12-13'
       expected.layout.xaxis.title = 'x'
-      assert.deepEqual(plotData, expected)
+      assert.deepEqual(plotObject, expected)
     })
     it('should fill missing values in last dataset by nulls', function () {
       const data = new DataFrame([
@@ -380,7 +418,7 @@ describe('plots module', function () {
         x3: null,
         separate_window: null
       }
-      const plotData = makeHeatmapChart(data, plotDimensions)
+      const plotObject = makeHeatmapChart(data, plotDimensions)
       const expected = make_empty_heat_map_plot_data()
       expected.data[0].x = ['T1', 'T2']
       expected.data[0].y = ['data_1', 'data_2']
@@ -390,7 +428,7 @@ describe('plots module', function () {
       ]
       expected.layout.title = '11-12-13'
       expected.layout.xaxis.title = 'x'
-      assert.deepEqual(plotData, expected)
+      assert.deepEqual(plotObject, expected)
     })
     it('should divide data into subplots correctly', function () {
       const data = new DataFrame([
@@ -413,7 +451,7 @@ describe('plots module', function () {
         x3: null,
         separate_window: valueIndexKeyPrefix + 'i'
       }
-      const plotData = makeHeatmapChart(data, plotDimensions)
+      const plotObject = makeHeatmapChart(data, plotDimensions)
       const expected = make_empty_heat_map_plot_data()
       expected.data[0].x = ['T1']
       expected.data[0].y = ['']
@@ -454,7 +492,7 @@ describe('plots module', function () {
           yref: 'y2 domain'
         }
       ]
-      assert.deepEqual(plotData, expected)
+      assert.deepEqual(plotObject, expected)
     })
     it('should get subplot title right even with a single dataset', function () {
       const data = new DataFrame([
@@ -471,7 +509,7 @@ describe('plots module', function () {
         x3: null,
         separate_window: valueIndexKeyPrefix + 'i'
       }
-      const plotData = makeHeatmapChart(data, plotDimensions)
+      const plotObject = makeHeatmapChart(data, plotDimensions)
       const expected = make_empty_heat_map_plot_data()
       expected.data[0].x = ['T1']
       expected.data[0].y = ['']
@@ -493,7 +531,7 @@ describe('plots module', function () {
           yref: 'y1 domain'
         }
       ]
-      assert.deepEqual(plotData, expected)
+      assert.deepEqual(plotObject, expected)
     })
     it('should collect data to the same subplot', function () {
       const data = new DataFrame([
@@ -525,7 +563,7 @@ describe('plots module', function () {
         x3: null,
         separate_window: valueIndexKeyPrefix + 'i'
       }
-      const plotData = makeHeatmapChart(data, plotDimensions)
+      const plotObject = makeHeatmapChart(data, plotDimensions)
       const expected = make_empty_heat_map_plot_data()
       expected.data[0].x = [['A'], ['T1']]
       expected.data[0].y = ['11-12-13', '14-15-16']
@@ -566,7 +604,7 @@ describe('plots module', function () {
           yref: 'y2 domain'
         }
       ]
-      assert.deepEqual(plotData, expected)
+      assert.deepEqual(plotObject, expected)
     })
     it('should get x2 category right', function () {
       const data = new DataFrame([
@@ -589,7 +627,7 @@ describe('plots module', function () {
         x3: null,
         separate_window: null
       }
-      const plotData = makeHeatmapChart(data, plotDimensions)
+      const plotObject = makeHeatmapChart(data, plotDimensions)
       const expected = make_empty_heat_map_plot_data()
       expected.data[0].x = [
         ['my_data', 'your_data'],
@@ -599,7 +637,7 @@ describe('plots module', function () {
       expected.data[0].z = [[2.3, -2.3]]
       expected.layout.title = '11-12-13'
       expected.layout.xaxis.title = 'x'
-      assert.deepEqual(plotData, expected)
+      assert.deepEqual(plotObject, expected)
     })
     it('should pad data with x2 categories by null', function () {
       const data = new DataFrame([
@@ -634,7 +672,7 @@ describe('plots module', function () {
         x3: null,
         separate_window: null
       }
-      const plotData = makeHeatmapChart(data, plotDimensions)
+      const plotObject = makeHeatmapChart(data, plotDimensions)
       const expected = make_empty_heat_map_plot_data()
       expected.data[0].x = [
         ['my_data', 'my_data', 'your_data', 'your_data'],
@@ -646,7 +684,7 @@ describe('plots module', function () {
         [undefined, undefined, -2.3, -5.5]
       ]
       expected.layout.xaxis.title = 'x'
-      assert.deepEqual(plotData, expected)
+      assert.deepEqual(plotObject, expected)
     })
     it('should pad data with uneven x2 categories with nulls', function () {
       const data = new DataFrame([
@@ -693,7 +731,7 @@ describe('plots module', function () {
         x3: null,
         separate_window: null
       }
-      const plotData = makeHeatmapChart(data, plotDimensions)
+      const plotObject = makeHeatmapChart(data, plotDimensions)
       const expected = make_empty_heat_map_plot_data()
       expected.data[0].x = [
         ['my_data', 'my_data', 'your_data', 'your_data'],
@@ -705,7 +743,7 @@ describe('plots module', function () {
         [-2.3, -5.5, 99.0, 101.0]
       ]
       expected.layout.xaxis.title = 'x'
-      assert.deepEqual(plotData, expected)
+      assert.deepEqual(plotObject, expected)
     })
     it('should not pad x-axis when there are only unique x1-x2 points', function () {
       const data = new DataFrame([
@@ -734,7 +772,7 @@ describe('plots module', function () {
         x3: null,
         separate_window: null
       }
-      const plotData = makeHeatmapChart(data, plotDimensions)
+      const plotObject = makeHeatmapChart(data, plotDimensions)
       const expected = make_empty_heat_map_plot_data()
       expected.data[0].x = [
         ['my_data', 'your_data', 'their_data'],
@@ -746,7 +784,7 @@ describe('plots module', function () {
         [undefined, 99.0, 101.0]
       ]
       expected.layout.xaxis.title = 'x'
-      assert.deepEqual(plotData, expected)
+      assert.deepEqual(plotObject, expected)
     })
   })
 
@@ -759,6 +797,7 @@ describe('plots module', function () {
         name: null,
         dimensions: {
           separate_window: null,
+          list_by: null,
           x1: null,
           x2: null,
           x3: null
@@ -841,7 +880,7 @@ describe('plots module', function () {
       const line = {
         x: [-1, 0, 1],
         y: [-2, 3, -1],
-        name: 'negative line',
+        name: 'undulating line',
         showlegend: true,
         marker: {
           color: '#ffffff'
