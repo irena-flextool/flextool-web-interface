@@ -84,7 +84,9 @@
         </n-p>
         <n-h1>Example systems</n-h1>
         <n-p>Add example systems to the model from the list below.</n-p>
-        <examples-list :project-id="projectId" :examples-url="examplesUrl" />
+        <div id="examples">
+          <examples-list :project-id="projectId" :examples-url="examplesUrl" />
+        </div>
       </n-space>
     </n-space>
     <n-modal v-model:show="isExcelImportLogDialogShown">
@@ -311,3 +313,9 @@ export default {
   }
 }
 </script>
+
+<style>
+#examples {
+  display: inline-block;
+}
+</style>

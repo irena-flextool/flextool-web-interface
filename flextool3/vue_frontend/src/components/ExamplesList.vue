@@ -1,6 +1,6 @@
 <template>
   <fetchable :state="state" :error-message="errorMessage">
-    <n-tree id="example-list" :data="examples" :selectable="false" block-line />
+    <n-tree :data="examples" :selectable="false" block-line />
   </fetchable>
 </template>
 
@@ -61,9 +61,3 @@ export default {
   }
 }
 </script>
-
-<style>
-#example-list {
-  max-width: 25em;
-}
-</style>
