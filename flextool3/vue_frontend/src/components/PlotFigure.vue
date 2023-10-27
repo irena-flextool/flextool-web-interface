@@ -114,6 +114,20 @@ function makePlotObject(dataFrame, plotSpecification) {
   }
 }
 
+/**Triggers plot relayouting which forces Plotly to resize it to fit.
+ * @param {string} plotId Plot div element's id.
+ */
+function relayoutPlotSize(plotId) {
+  const plotDiv = document.getElementById(plotId)
+  if (plotDiv === null) {
+    return null
+  }
+  const plotSvg = plotDiv.querySelector('.main-svg')
+  if (plotDiv.offsetWidth > 0 && plotDiv.offsetWidth !== plotSvg.clientWidth) {
+    Plotly.relayout(plotId, { autosize: true })
+  }
+}
+
 /**
  * Changes plot type.
  * @param {DataFrame} dataFrame Data frame to plot.
@@ -157,12 +171,7 @@ function replot(
       if (plotSpecification.dimensions.list_by !== null) {
         replaceIndexListSelection(indexListSelection, listValues)
       }
-      Plotly.react(plotId, plotObject).then(() => {
-        const plotSvg = plotDiv.querySelector('.main-svg')
-        if (plotDiv.offsetWidth > 0 && plotDiv.offsetWidth !== plotSvg.clientWidth) {
-          Plotly.relayout(plotId, { width: plotDiv.offsetWidth })
-        }
-      })
+      Plotly.react(plotId, plotObject).then(() => relayoutPlotSize(plotId))
     })
   }
   return plotName
@@ -566,7 +575,7 @@ export default {
         if (!showGraph.value) {
           return
         }
-        nextTick(() => Plotly.relayout(plotId, {}))
+        nextTick(() => relayoutPlotSize(plotId))
       },
       selectIndex(indices) {
         if (indices.length === 0) {

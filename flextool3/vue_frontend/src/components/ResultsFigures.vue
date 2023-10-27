@@ -1,7 +1,12 @@
 <template>
   <fetchable :state="state" :error-message="errorMessage">
     <n-layout has-sider style="height: 100%">
-      <n-layout-sider collapse-mode="width" :show-trigger="true">
+      <n-layout-sider
+        collapse-mode="width"
+        :show-trigger="true"
+        @after-enter="notifyActivated"
+        @after-leave="notifyActivated"
+      >
         <n-menu v-model:value="selectedBoxKey" :options="boxes" @update:value="scrollToBox" />
       </n-layout-sider>
       <n-layout-content @scroll="testScrolling">
