@@ -1,5 +1,5 @@
 <template>
-  <n-tooltip>
+  <n-tooltip width="350">
     <template #trigger>
       {{ name }}
     </template>
