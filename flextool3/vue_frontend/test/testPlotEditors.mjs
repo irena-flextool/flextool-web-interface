@@ -5,6 +5,7 @@ import {
   addFetchedParameters,
   differingElements,
   entityKey,
+  entityKeyToLabel,
   isEntityKey,
   parameterKey,
   removeExcessSelections,
@@ -361,6 +362,12 @@ describe('plotEditors module', function () {
       const b = new Set([2, 3])
       const diff = differingElements(a, b)
       assert.deepEqual(diff, [1])
+    })
+  })
+
+  describe('entityKeyToLabel', function () {
+    it('should convert entity key to label properly', function () {
+      assert.equal(entityKeyToLabel(entityKey(0)), 'Object 1')
     })
   })
 

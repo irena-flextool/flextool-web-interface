@@ -39,6 +39,7 @@ import { timeFormat } from '../modules/scenarios.mjs'
 import {
   entityClassKey,
   entityKey,
+  entityKeyToLabel,
   isEntityKey,
   parameterKey,
   scenarioKey,
@@ -53,7 +54,11 @@ import PlotTable from './PlotTable.vue'
  * @return {string} Label.
  */
 function nameFromAnyKey(key) {
+  if (isEntityKey(key)) {
+    return entityKeyToLabel(key)
+  }
   const label = nameFromKey(key)
+
   return label.replace('_', ' ')
 }
 
@@ -78,7 +83,7 @@ const lineShape = { shape: 'hvh' }
 /**Creates plot object.
  * @param {DataFrame} dataFrame Data frame to plot.
  * @param {object} plotSpecification Plot specification.
- * @returns {object} Plot object or undefined if there is nothing to plot.
+ * @returns {object} Plot object or undefined if there is nothing to plot and selection list values.
  */
 function makePlotObject(dataFrame, plotSpecification) {
   switch (plotSpecification.plot_type) {
@@ -183,10 +188,11 @@ function replot(
  */
 function replaceIndexListSelection(indexListSelection, listValues) {
   indexListSelection.value.length = 0
-  for (const [value, name] of listValues.entries()) {
+  for (const [value, names] of listValues.entries()) {
     indexListSelection.value.push({
-      key: name,
-      label: value
+      key: value,
+      label: value,
+      names
     })
   }
   indexListSelection.value.sort((a, b) => {
@@ -203,15 +209,29 @@ function replaceIndexListSelection(indexListSelection, listValues) {
 }
 
 /**Makes a single line on the plot visible.
- * @param {string} name Name of the line.
+ * @param {string[]} names Names of the lines.
  * @param {string} plotId Id of the plot div element.
  */
-function setSingleVisible(name, plotId) {
-  Plotly.restyle(plotId, { visible: false })
+function setSingleVisible(names, plotId) {
+  const uniqueNames = new Set()
+  for (const name of names) {
+    uniqueNames.add(name)
+  }
   const plotDiv = document.getElementById(plotId)
-  const visibleIndex = plotDiv.data.findIndex((plotData) => plotData.name === name)
-  if (visibleIndex != -1) {
-    Plotly.restyle(plotId, { visible: true }, visibleIndex)
+  const visibleIndices = []
+  const invisibleIndices = []
+  for (const [index, plotData] of plotDiv.data.entries()) {
+    if (uniqueNames.has(plotData.name)) {
+      visibleIndices.push(index)
+    } else {
+      invisibleIndices.push(index)
+    }
+  }
+  if (visibleIndices.length != 0) {
+    Plotly.restyle(plotId, { visible: true }, visibleIndices)
+  }
+  if (invisibleIndices.length != 0) {
+    Plotly.restyle(plotId, { visible: false }, invisibleIndices)
   }
 }
 
@@ -577,7 +597,7 @@ export default {
         }
         nextTick(() => relayoutPlotSize(plotId))
       },
-      selectIndex(indices) {
+      selectIndex(indices, options) {
         if (indices.length === 0) {
           selectedIndex.value.length = 0
           setAllVisible(plotId)
@@ -588,7 +608,7 @@ export default {
         } else {
           selectedIndex.value[0] = indices[0]
         }
-        setSingleVisible(indices[0], plotId)
+        setSingleVisible(options[0].names, plotId)
       },
       selectIndexViaKeyboard(keyInfo) {
         if (
@@ -604,9 +624,9 @@ export default {
         if (future < 0 || future === indexSelection.value.length) {
           return
         }
-        const key = indexSelection.value[future].key
-        selectedIndex.value[0] = key
-        setSingleVisible(key, plotId)
+        const listOption = indexSelection.value[future]
+        selectedIndex.value[0] = listOption.key
+        setSingleVisible(listOption.names, plotId)
       }
     }
   }

@@ -268,7 +268,7 @@ describe('plots module', function () {
       expected.layout.xaxis.title = 'x'
       assert.deepEqual(plotObject, expected)
       assert.equal(listValues.size, 1)
-      assert.equal(listValues.get('results'), 'results')
+      assert.deepEqual(listValues.get('results'), ['results'])
     })
   })
 

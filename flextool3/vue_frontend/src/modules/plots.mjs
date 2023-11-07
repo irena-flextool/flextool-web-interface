@@ -130,7 +130,7 @@ function isParameterIndexName(name) {
  * @param {object} plotDimensions Plot dimensions specification.
  * @param {object} staticData Additional static plot data.
  * @param {object} staticLayout Additional static layout data.
- * @returns {object} Plot object and a map from list value to line name.
+ * @returns {object} Plot object and a map from list value to line names.
  */
 function makeBasicChart(dataFrame, plotDimensions, staticData = {}, staticLayout = {}) {
   const specialColumns = declareSpecialColumns(dataFrame, plotDimensions)
@@ -162,7 +162,12 @@ function makeBasicChart(dataFrame, plotDimensions, staticData = {}, staticLayout
     }
     const name = makeLineLabel(window, categoryColumns)
     if (listValue !== null) {
-      listValues.set(listValue, name)
+      let values = listValues.get(listValue)
+      if (values === undefined) {
+        values = []
+        listValues.set(listValue, values)
+      }
+      values.push(name)
     }
     let color = colors.get(name)
     const showLegend = color === undefined

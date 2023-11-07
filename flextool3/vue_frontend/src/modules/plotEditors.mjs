@@ -209,6 +209,22 @@ function nameFromKey(key) {
 
 const parameterLabel = 'Parameter'
 
+/**Parses entity's dimension from key.
+ * @param {string} entityKey Entity key.
+ * @returns {number} Dimension.
+ */
+function dimensionFromEntityKey(entityKey) {
+  return Number.parseInt(entityKey.substring(entityKeyPrefix.length))
+}
+
+/**Converts entity key to entity label.
+ * @param {string} entityKey Entity key.
+ * @returns {string} Entity label.
+ */
+function entityKeyToLabel(entityKey) {
+  return objectLabel(dimensionFromEntityKey(entityKey))
+}
+
 /**Creates object label for select options.
  * @param {number} dimension Object dimension.
  * @returns {string} Label.
@@ -396,6 +412,7 @@ export {
   differingElements,
   compareLabels,
   entityClassKey,
+  entityKeyToLabel,
   indexNameFromKey,
   indexNamePriority,
   makeEntityClassSelectionSelect,
