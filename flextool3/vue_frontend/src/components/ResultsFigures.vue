@@ -139,8 +139,12 @@ export default {
       if (fetchingSpecifications) {
         return
       }
+      const specificationIds = []
+      for (const box of boxes.value) {
+        specificationIds.push(box.key)
+      }
       const specifications = {
-        plots: specificationBundle.asArray()
+        plots: specificationBundle.asArray(specificationIds)
       }
       const storePromise = props.isCustom
         ? storeCustomPlotSpecification(

@@ -822,9 +822,17 @@ describe('plots module', function () {
     })
     it('should make a bundle with working asArray method', function () {
       const bundle = makePlotSpecificationBundle()
-      bundle.add({ number: 1 })
-      bundle.add({ number: 2 })
-      assert.deepEqual(bundle.asArray(), [{ number: 1 }, { number: 2 }])
+      const ids = []
+      ids.push(bundle.add({ number: 1 }))
+      ids.push(bundle.add({ number: 2 }))
+      assert.deepEqual(bundle.asArray(ids), [{ number: 1 }, { number: 2 }])
+    })
+    it('should make a bundle with asArray method that can reorder data', function () {
+      const bundle = makePlotSpecificationBundle()
+      const ids = []
+      ids.push(bundle.add({ number: 1 }))
+      ids.push(bundle.add({ number: 2 }))
+      assert.deepEqual(bundle.asArray(ids.reverse()), [{ number: 2 }, { number: 1 }])
     })
   })
   describe('stackLines', function () {

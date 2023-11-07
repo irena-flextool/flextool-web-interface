@@ -70,12 +70,7 @@ function makePlotSpecificationBundle() {
     delete(identifier) {
       this.specifications.delete(identifier)
     },
-    asArray() {
-      const identifiers = []
-      for (const identifier of this.specifications.keys()) {
-        identifiers.push(identifier)
-      }
-      identifiers.sort()
+    asArray(identifiers) {
       const specifications = []
       for (const identifier of identifiers) {
         specifications.push(this.specifications.get(identifier))
