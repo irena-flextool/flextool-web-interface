@@ -8,6 +8,17 @@
         @after-leave="notifyActivated"
       >
         <n-menu v-model:value="selectedBoxKey" :options="boxes" @update:value="scrollToBox" />
+        <n-button @click="showReorderingInterface">Reorder</n-button>
+        <n-modal v-model:show="isReorderingInterfaceShown">
+          <n-card title="Drag and drop plot names around">
+            <n-tree
+              draggable
+              :data="boxes"
+              :render-prefix="renderReorderListPrefix"
+              @drop="reorderBoxes"
+            />
+          </n-card>
+        </n-modal>
       </n-layout-sider>
       <n-layout-content @scroll="testScrolling">
         <n-grid cols="1">
@@ -45,7 +56,7 @@
 
 <script>
 import { h, onMounted, ref, watch } from 'vue/dist/vue.esm-bundler.js'
-import { useMessage } from 'naive-ui'
+import { NIcon, useMessage } from 'naive-ui'
 import { ChartArea, ChartBar, ChartLine, Table, Th } from '@vicons/fa'
 import {
   fetchDefaultPlotSpecification,
@@ -135,6 +146,7 @@ export default {
     const plotSpecificationBundle = makePlotSpecificationBundle()
     let scrollDetectionDisabled = false
     const plotEditors = ref([])
+    const isReorderingInterfaceShown = ref(false)
     watch(plotSpecificationBundle, function (specificationBundle) {
       if (fetchingSpecifications) {
         return
@@ -200,6 +212,7 @@ export default {
       selectedBoxKey,
       plotSpecificationBundle,
       plotEditors,
+      isReorderingInterfaceShown,
       addBox() {
         const identifier = plotSpecificationBundle.new()
         const specification = plotSpecificationBundle.get(identifier)
@@ -284,6 +297,28 @@ export default {
         for (const editor of plotEditors.value) {
           editor.notifyActivated()
         }
+      },
+      showReorderingInterface() {
+        isReorderingInterfaceShown.value = true
+      },
+      renderReorderListPrefix({ option }) {
+        return h(NIcon, { component: option.icon() }, {})
+      },
+      reorderBoxes({ node, dragNode, dropPosition }) {
+        if (node.key === dragNode.key) {
+          return
+        }
+        const dragIndex = boxes.value.findIndex((box) => box.key === dragNode.key)
+        if (dragIndex === -1) {
+          throw new Error(`Unknown drag box '${node.label}'`)
+        }
+        boxes.value.splice(dragIndex, 1)
+        const dropTargetIndex = boxes.value.findIndex((box) => box.key === node.key)
+        if (dropTargetIndex === -1) {
+          throw new Error(`Unknown drop target '${node.label}'`)
+        }
+        let dropIndex = dropPosition === 'before' ? dropTargetIndex : dropTargetIndex + 1
+        boxes.value.splice(dropIndex, 0, dragNode)
       }
     }
   }
