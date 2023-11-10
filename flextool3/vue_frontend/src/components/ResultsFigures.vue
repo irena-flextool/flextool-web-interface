@@ -220,7 +220,7 @@ export default {
       },
       dropBox(identifier) {
         for (const [i, box] of boxes.value.entries()) {
-          if (box.identifier === identifier) {
+          if (box.key === identifier) {
             boxes.value.splice(i, 1)
             break
           }
