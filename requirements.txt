@@ -1,3 +1,6 @@
 django[argon2]
-spinetoolbox==0.7.1
+spinetoolbox==0.8.1
+spine_items==0.22.1
+spine_engine==0.24.0
+spinedb_api==0.31.1
 django-vite

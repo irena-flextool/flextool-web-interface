@@ -483,7 +483,7 @@ def _ensure_database_up_to_date(func, database, request, project_id):
         except SpineDBAPIError as error:
             return HttpResponseServerError(f"Failed to upgrade database: {error}")
         else:
-            db_map.connection.close()
+            db_map.close()
             context = {"database": "model" if database == Database.MODEL else "result"}
             return render(request, "flextool3/database_upgraded.html", context)
     except SpineDBAPIError as error:
@@ -492,7 +492,7 @@ def _ensure_database_up_to_date(func, database, request, project_id):
         try:
             return func(project, db_map)
         finally:
-            db_map.connection.close()
+            db_map.close()
 
 
 def _backup_database(database_path):

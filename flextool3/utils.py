@@ -1,7 +1,7 @@
 """General purpose utilities and helpers."""
 from contextlib import contextmanager
 import datetime
-from enum import auto, Enum, IntEnum, unique
+from enum import auto, Enum, unique
 from pathlib import Path
 from django.utils import timezone
 from spinedb_api import DatabaseMapping, append_filter_config, SpineDBAPIError
@@ -24,22 +24,16 @@ class Database(Enum):
 class Key(Enum):
     """Dictionary keys for interface requests."""
 
-    ALTERNATIVE_ID = "alternative_id"
-    CLASS_ID = "class_id"
-    ENTITY_ID = "entity_id"
-    OBJECT_CLASS_ID = "object_class_id"
-    OBJECT_ID = "object_id"
-    RELATIONSHIP_CLASS_ID = "relationship_class_id"
-    VALUE_LIST_IDS = "value_list_ids"
+    ALTERNATIVE_NAME = "alternative_name"
+    CLASS_NAME = "class_name"
+    ENTITY_NAME = "entity_name"
+    OBJECT_CLASS_NAME = "object_class_name"
+    OBJECT_NAME = "object_id"
+    RELATIONSHIP_CLASS_NAME = "relationship_class_name"
+    VALUE_LIST_NAMES = "value_list_names"
 
     def __str__(self):
         return self.value
-
-
-@unique
-class EntityType(IntEnum):
-    OBJECT = 1
-    RELATIONSHIP = 2
 
 
 @contextmanager
@@ -67,7 +61,7 @@ def database_map(project, database, filter_configs=None):
     try:
         yield db_map
     finally:
-        db_map.connection.close()
+        db_map.close()
 
 
 def get_and_validate(dictionary, key, expected_type, required=True):

@@ -45,6 +45,7 @@ from .models import (
     ScenarioExecution,
     SUMMARY_FILE_NAME,
 )
+from .subquery import parameter_value_sq
 from .summary_view import number_to_float
 from .utils import FLEXTOOL_PROJECT_TEMPLATE
 from . import executions_view
@@ -80,7 +81,7 @@ def open_database(*args, **kwargs):
     try:
         yield db_map
     finally:
-        db_map.connection.close()
+        db_map.close()
 
 
 class MasterProjectTests(unittest.TestCase):
@@ -1396,7 +1397,7 @@ class ModelInterfaceTests(TestCase):
                             "insertions": {
                                 "parameter_value": [
                                     {
-                                        "entity_name": "my_object",
+                                        "objects": ["my_object"],
                                         "definition_id": definition_id,
                                         "alternative_id": alternative_id,
                                         "value": -5.5,
@@ -1517,7 +1518,7 @@ class ModelInterfaceTests(TestCase):
                             "insertions": {
                                 "parameter_value": [
                                     {
-                                        "entity_name": "my_object",
+                                        "objects": ["my_object"],
                                         "definition_id": parameter_id,
                                         "alternative_id": map_alternative_id,
                                         "value": {
@@ -1527,7 +1528,7 @@ class ModelInterfaceTests(TestCase):
                                         },
                                     },
                                     {
-                                        "entity_name": "my_object",
+                                        "objects": ["my_object"],
                                         "definition_id": parameter_id,
                                         "alternative_id": array_alternative_id,
                                         "value": {
@@ -4025,23 +4026,23 @@ class ExamplesInterfaceTests(TestCase):
                     .first()
                 )
                 self.assertIsNotNone(alternative_row)
-                self._assert_values_exist("unit", "is_active", {"coal_plant"}, db_map)
+                self._assert_values_exist("unit", "efficiency", {"coal_plant"}, db_map)
                 self._assert_values_exist(
-                    "node", "is_active", {"coal_market", "west"}, db_map
+                    "node", "has_balance", {"west"}, db_map
                 )
                 self._assert_values_exist(
                     "group", "output_results", {"electricity", "to_west_node"}, db_map
                 )
 
     def _assert_values_exist(self, object_class, parameter, object_names, db_map):
-        subquery = db_map.object_parameter_value_sq
+        subquery = parameter_value_sq(db_map)
         values = (
             db_map.query(subquery)
-            .filter(subquery.c.object_class_name == object_class)
-            .filter(subquery.c.parameter_name == parameter)
+            .filter(subquery.c.entity_class_name == object_class)
+            .filter(subquery.c.parameter_definition_name == parameter)
             .all()
         )
-        objects_in_values = {v.object_name for v in values}
+        objects_in_values = {v.entity_name for v in values}
         self.assertEqual(objects_in_values, object_names)
 
 

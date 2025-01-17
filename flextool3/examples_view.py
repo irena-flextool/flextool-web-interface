@@ -1,7 +1,6 @@
 from django.http import JsonResponse
 from spinedb_api import export_data, import_data
 from spinedb_api.filters.scenario_filter import scenario_filter_config
-from spinedb_api.filters.tool_filter import tool_filter_config
 
 from .utils import Database, database_map, get_and_validate
 
@@ -33,7 +32,6 @@ def add_example_to_model(project, request_body):
     example_name = get_and_validate(request_body, "name", str)
     filter_config = [
         scenario_filter_config(example_name),
-        tool_filter_config("FlexTool3"),
     ]
     with database_map(project, Database.INITIALIZATION, filter_config) as db_map:
         data = export_data(db_map)

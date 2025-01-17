@@ -1,11 +1,11 @@
 import json
-from operator import attrgetter
 
 from django.http import JsonResponse, HttpResponseBadRequest
 from sqlalchemy.sql.expression import Alias, and_
 
 from .exception import FlexToolException
-from .utils import Database, database_map, EntityType, get_and_validate
+from .subquery import parameter_value_sq, wide_entity_sq
+from .utils import Database, database_map, get_and_validate
 from .view_utils import resolve_scenario_execution
 
 
@@ -39,22 +39,14 @@ def get_entities(project, body):
     classes = get_and_validate(body, "classes", list)
     entities = []
     with database_map(project, Database.RESULT) as db_map:
-        subquery = db_map.ext_object_sq
+        subquery = wide_entity_sq(db_map)
         for row in (
             db_map.query(subquery)
-            .filter(subquery.c.class_name.in_(classes))
+            .filter(subquery.c.entity_class_name.in_(classes))
             .order_by(subquery.c.name)
         ):
-            entities.append({"names": [row.name], "class_name": row.class_name})
-        subquery = db_map.wide_relationship_sq
-        for row in (
-            db_map.query(subquery)
-            .filter(subquery.c.class_name.in_(classes))
-            .order_by(subquery.c.name)
-        ):
-            entities.append(
-                {"names": row.object_name_list.split(","), "class_name": row.class_name}
-            )
+            names = [row.name] if not row.element_name_list else row.element_name_list.split(",")
+            entities.append({"names": names, "class_name": row.entity_class_name})
     return JsonResponse({"entities": entities})
 
 
@@ -105,42 +97,18 @@ def get_value_indexes(project, body):
     parameters = get_and_validate(body, "parameters", list)
     indexes = []
     with database_map(project, Database.RESULT) as db_map:
-        entity_class_types = _fetch_entity_class_types(db_map)
-        object_classes = [
-            class_
-            for class_ in classes
-            if entity_class_types.get(class_) == EntityType.OBJECT
-        ]
-        if object_classes:
-            filter_conditions = _make_object_filter(
-                object_classes,
-                [],
-                parameters,
-                alternative_ids,
-                db_map.object_parameter_value_sq,
+        subquery = parameter_value_sq(db_map)
+        filter_conditions = _make_entity_filter(
+            classes,
+            parameters,
+            alternative_ids,
+            subquery,
+        )
+        indexes.extend(
+            _query_parameter_dimensions(
+                filter_conditions, subquery, db_map
             )
-            indexes.extend(
-                _query_parameter_dimensions(
-                    EntityType.OBJECT, filter_conditions, db_map
-                )
-            )
-        relationship_classes = [
-            class_
-            for class_ in classes
-            if entity_class_types.get(class_) == EntityType.RELATIONSHIP
-        ]
-        if relationship_classes:
-            filter_conditions = _make_relationship_filter(
-                relationship_classes,
-                parameters,
-                alternative_ids,
-                db_map.relationship_parameter_value_sq,
-            )
-            indexes.extend(
-                _query_parameter_dimensions(
-                    EntityType.RELATIONSHIP, filter_conditions, db_map
-                )
-            )
+        )
     return JsonResponse({"indexes": indexes})
 
 
@@ -158,92 +126,59 @@ def get_parameter_values(project, body):
     alternative_ids = list(alternative_to_execution)
     classes = get_and_validate(body, "classes", list)
     parameters = get_and_validate(body, "parameters", list)
-    objects = get_and_validate(body, "objects", list, required=False)
-    values = []
+    elements = get_and_validate(body, "objects", list, required=False)
     with database_map(project, Database.RESULT) as db_map:
-        entity_class_types = _fetch_entity_class_types(db_map)
-        object_classes = [
-            class_
-            for class_ in classes
-            if entity_class_types.get(class_) == EntityType.OBJECT
-        ]
-        if object_classes:
-            filter_conditions = _make_object_filter(
-                object_classes,
-                objects if objects is not None else [],
-                parameters if parameters is not None else [],
-                alternative_ids,
-                db_map.object_parameter_value_sq,
-            )
-            values += _query_parameter_values(
-                EntityType.OBJECT,
-                filter_conditions,
-                None,
-                alternative_to_execution,
-                db_map,
-            )
-        relationship_classes = [
-            class_
-            for class_ in classes
-            if entity_class_types.get(class_) == EntityType.RELATIONSHIP
-        ]
-        if relationship_classes:
-            filter_conditions = _make_relationship_filter(
-                relationship_classes,
-                parameters if parameters is not None else [],
-                alternative_ids,
-                db_map.relationship_parameter_value_sq,
-            )
-            values += _query_parameter_values(
-                EntityType.RELATIONSHIP,
-                filter_conditions,
-                objects if objects is not None else [],
-                alternative_to_execution,
-                db_map,
-            )
+        subquery = parameter_value_sq(db_map)
+        filter_conditions = _make_entity_filter(
+            classes,
+            parameters if parameters is not None else [],
+            alternative_ids,
+            subquery,
+        )
+        values = _query_parameter_values(
+            filter_conditions,
+            elements,
+            alternative_to_execution,
+            subquery,
+            db_map
+        )
     return JsonResponse({"values": values})
 
 
 def _query_parameter_values(
-    entity_type, filter_conditions, accept_objects, alternative_to_execution, db_map
+    filter_conditions, accept_elements, alternative_to_execution, subquery, db_map
 ):
     """Reads parameter values from database.
 
     Args:
-        entity_type (EntityType): entity type
         filter_conditions (tuple): query filters
-        accept_objects (list of list, optional): object names per dimension
+        accept_elements (list of list, optional): element names per dimension
         alternative_to_execution (dict): mapping from alternative id to scenario execution
-        db_map (DatabaseMappingBase):
+        subquery (Alias): parameter value subquery
+        db_map (DatabaseMapping): database mapping
 
     Returns:
         dict: parameter value records
     """
+
     records = []
-    get_class_name, get_object_names, get_object_labels = _entity_handling_functions(
-        entity_type
-    )
-    subquery = {
-        EntityType.OBJECT: db_map.object_parameter_value_sq,
-        EntityType.RELATIONSHIP: db_map.relationship_parameter_value_sq,
-    }[entity_type]
     for row in db_map.query(subquery).filter(and_(*filter_conditions)):
-        objects = get_object_names(row)
+        elements = row.element_name_list.split(",") if row.element_name_list else [row.entity_name]
         if (
-            entity_type == EntityType.RELATIONSHIP
-            and accept_objects
-            and _reject_objects(objects, accept_objects)
+            accept_elements is not None
+            and _reject_elements(elements, accept_elements)
         ):
             continue
         try:
             execution = alternative_to_execution[row.alternative_id]
         except KeyError:
             raise FlexToolException(f"No execution for alternative id.")
+        dimensions = row.dimension_name_list.split(",") if row.dimension_name_list else [row.entity_class_name]
         record = {
-            "class": get_class_name(row),
-            "object_classes": get_object_labels(row),
-            "objects": objects,
-            "parameter": row.parameter_name,
+            "class": row.entity_class_name,
+            "object_classes": dimensions,
+            "objects": elements,
+            "parameter": row.parameter_definition_name,
             "scenario": execution.scenario.name,
             "time_stamp": execution.execution_time.isoformat(),
             "type": row.type,
@@ -253,32 +188,24 @@ def _query_parameter_values(
     return records
 
 
-def _query_parameter_dimensions(entity_type, filter_conditions, db_map):
+def _query_parameter_dimensions(filter_conditions, subquery, db_map):
     """Reads parameter value dimensions from the first suitable parameter value found in database.
 
     Args:
-        entity_type (EntityType): entity type
         filter_conditions (tuple): query filters
+        subquery (Alias): parameter value subquery
         db_map (DatabaseMappingBase):
 
     Returns:
         list: dimension records
     """
     dimensions = {}
-    get_class_name, get_object_names, get_object_labels = _entity_handling_functions(
-        entity_type
-    )
-    subquery = {
-        EntityType.OBJECT: db_map.object_parameter_value_sq,
-        EntityType.RELATIONSHIP: db_map.relationship_parameter_value_sq,
-    }[entity_type]
     queried_fingerprints = set()
     for row in db_map.query(subquery).filter(and_(*filter_conditions)):
-        fingerprint = (row.entity_class_id, row.parameter_id, row.alternative_id)
+        fingerprint = (row.entity_class_name, row.parameter_definition_name, row.alternative_id)
         if fingerprint in queried_fingerprints:
             continue
-        else:
-            queried_fingerprints.add(fingerprint)
+        queried_fingerprints.add(fingerprint)
         value = json.loads(row.value)
         indexes = {}
         _collect_indexes(value, indexes)
@@ -289,56 +216,27 @@ def _query_parameter_dimensions(entity_type, filter_conditions, db_map):
                 existing_class_and_parameter = set(
                     zip(existing["class_names"], existing["parameter_names"])
                 )
-                class_name = get_class_name(row)
-                parameter = row.parameter_name
-                if (class_name, parameter) not in existing_class_and_parameter:
-                    existing["class_names"].append(class_name)
+                entity_class_name = row.entity_class_name
+                parameter = row.parameter_definition_name
+                if (entity_class_name, parameter) not in existing_class_and_parameter:
+                    existing["class_names"].append(entity_class_name)
                     existing["parameter_names"].append(parameter)
             else:
                 dimensions[name] = {
                     "index_name": name,
                     "indexes": sorted(index),
                     "depth": i,
-                    "class_names": [get_class_name(row)],
-                    "parameter_names": [row.parameter_name],
+                    "class_names": [row.entity_class_name],
+                    "parameter_names": [row.parameter_definition_name],
                 }
     return list(dimensions.values())
 
 
-def _entity_handling_functions(entity_type):
-    """Generates a callable suitable for retrieving information
-    from database row of given entity type.
-
-    Args:
-        entity_type (EntityType): entity type
-
-    Returns:
-        tuple: functions needed to query specified entity type
-    """
-    class_name_fields = {
-        EntityType.OBJECT: "object_class_name",
-        EntityType.RELATIONSHIP: "relationship_class_name",
-    }
-    object_lists = {
-        EntityType.OBJECT: lambda r: [r.object_name],
-        EntityType.RELATIONSHIP: lambda r: r.object_name_list.split(","),
-    }
-    object_labels = {
-        EntityType.OBJECT: lambda r: [r.object_class_name],
-        EntityType.RELATIONSHIP: lambda r: r.object_class_name_list.split(","),
-    }
-    get_class_name = attrgetter(class_name_fields[entity_type])
-    get_object_names = object_lists[entity_type]
-    get_object_labels = object_labels[entity_type]
-    return get_class_name, get_object_names, get_object_labels
-
-
-def _make_object_filter(object_classes, objects, parameters, alternative_ids, subquery):
+def _make_entity_filter(entity_classes, parameters, alternative_ids, subquery):
     """Creates object parameter value query filters.
 
     Args:
-        object_classes (list of str): object class names
-        objects (list of list): object names per dimension
+        entity_classes (list of str): entity class names
         parameters (list of str): parameter definition names
         alternative_ids (list of int): alternative ids
         subquery (Alias): object parameter value subquery
@@ -347,73 +245,30 @@ def _make_object_filter(object_classes, objects, parameters, alternative_ids, su
         tuple: query filters
     """
     filters = ()
-    if object_classes:
-        filters = filters + (subquery.c.object_class_name.in_(object_classes),)
-    if objects and objects[0]:
-        filters = filters + (subquery.c.object_name.in_(objects[0]),)
+    if entity_classes:
+        filters = filters + (subquery.c.entity_class_name.in_(entity_classes),)
     if parameters:
-        filters = filters + (subquery.c.parameter_name.in_(parameters),)
+        filters = filters + (subquery.c.parameter_definition_name.in_(parameters),)
     if alternative_ids:
         filters = filters + (subquery.c.alternative_id.in_(alternative_ids),)
     return filters
 
 
-def _make_relationship_filter(
-    relationship_classes, parameters, alternative_ids, subquery
-):
-    """Creates relationship parameter value query filters.
+def _reject_elements(elements, acceptable_elements):
+    """Returns True if any element in element list is not
+    in any corresponding list of acceptable_elements.
 
     Args:
-        relationship_classes (list of str): relationship class names
-        parameters (list of str): parameter names
-        alternative_ids (list of int): alternative ids
-        subquery (Alias): relationship parameter value subquery
-
-    Returns:
-        tuple: query filters
-    """
-    filters = ()
-    if relationship_classes:
-        filters = filters + (
-            subquery.c.relationship_class_name.in_(relationship_classes),
-        )
-    if parameters:
-        filters = filters + (subquery.c.parameter_name.in_(parameters),)
-    if alternative_ids:
-        filters = filters + (subquery.c.alternative_id.in_(alternative_ids),)
-    return filters
-
-
-def _reject_objects(objects, acceptable_objects):
-    """Returns True if any object in objects list is not
-    in any corresponding list of acceptable_objects.
-
-    Args:
-        objects (list of str): object names
-        acceptable_objects (list of list): acceptable object names per dimension
+        elements (list of str): element names
+        acceptable_elements (list of list): acceptable element names per dimension
 
     Return:
-        bool: True if objects should be discarded, False otherwise
+        bool: True if elements should be discarded, False otherwise
     """
-    for object_, acceptables in zip(objects, acceptable_objects):
-        if acceptables and object_ not in acceptables:
+    for element, acceptables in zip(elements, acceptable_elements):
+        if acceptables and element not in acceptables:
             return True
     return False
-
-
-def _fetch_entity_class_types(db_map):
-    """Connects entity class names to whether they are object or relationship classes.
-
-    Args:
-        db_map (DatabaseMappingBase): database mapping
-
-    Returns:
-        dict: map from entity class name to entity type
-    """
-    return {
-        row.name: EntityType.OBJECT if row.type_id == 1 else EntityType.RELATIONSHIP
-        for row in db_map.query(db_map.entity_class_sq)
-    }
 
 
 def _collect_indexes(value, indexes, depth=0):
